@@ -37,6 +37,13 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
     );
   }
 
+  void _openEditExpense(GarageExpense exp) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AddExpenseScreen(existing: exp)),
+    );
+  }
+
   void _confirmDeleteExpense(GarageExpense exp) {
     showDialog(
       context: context,
@@ -351,13 +358,27 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.textMuted),
-                                    tooltip: 'Delete Expense',
-                                    onPressed: () => _confirmDeleteExpense(exp),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        visualDensity: VisualDensity.compact,
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.textMuted),
+                                        tooltip: 'Edit Expense',
+                                        onPressed: () => _openEditExpense(exp),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      IconButton(
+                                        visualDensity: VisualDensity.compact,
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.textMuted),
+                                        tooltip: 'Delete Expense',
+                                        onPressed: () => _confirmDeleteExpense(exp),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

@@ -238,6 +238,13 @@ void main() {
       expect(provider.todayExpenses, greaterThanOrEqualTo(1500.0));
     });
 
+    test('expense update persists through repository', () async {
+      final exp = provider.expenses.first;
+      await provider.updateExpense(exp.copyWith(amount: exp.amount + 100));
+      expect(provider.expenses.firstWhere((e) => e.id == exp.id).amount,
+          exp.amount + 100);
+    });
+
     test('Staff Attendance & Monthly Salary Net Payout Calculation', () async {
       final staffMember = provider.staff.first; // Ramesh Sharma, 28,000 monthly
       final now = DateTime.now();

@@ -10,7 +10,12 @@ import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key});
+  /// Non-null puts the screen in edit mode: fields are prefilled from this
+  /// expense and saving updates it (id and any fields the form does not
+  /// edit, e.g. receiptPath, are preserved).
+  final GarageExpense? existing;
+
+  const AddExpenseScreen({super.key, this.existing});
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -26,6 +31,25 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   ExpenseCategory _category = ExpenseCategory.consumables;
   PaymentMode _paymentMode = PaymentMode.cash;
   DateTime _expenseDate = DateTime.now();
+  bool _isSaving = false;
+
+  bool get _isEditing => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    // Edit mode: prefill everything from the expense being edited.
+    final existing = widget.existing;
+    if (existing != null) {
+      _titleController.text = existing.title;
+      _amountController.text = existing.amount.toStringAsFixed(2);
+      _vendorController.text = existing.vendorName ?? '';
+      _notesController.text = existing.notes ?? '';
+      _category = existing.category;
+      _paymentMode = existing.paymentMode;
+      _expenseDate = existing.expenseDate;
+    }
+  }
 
   @override
   void dispose() {
@@ -49,33 +73,80 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Future<void> _saveExpense() async {
+    // Latch: a fast double-tap on Save must not create two expenses.
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     final amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
     final provider = Provider.of<GarageProvider>(context, listen: false);
+    final title = _titleController.text.trim().isEmpty
+        ? _category.displayName
+        : _titleController.text.trim();
+    final vendor = _vendorController.text.trim().isEmpty ? null : _vendorController.text.trim();
+    final notes = _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
 
-    final expense = GarageExpense(
-      id: const Uuid().v4(),
-      title: _titleController.text.trim().isEmpty ? _category.displayName : _titleController.text.trim(),
-      category: _category,
-      amount: amount,
-      expenseDate: _expenseDate,
-      paymentMode: _paymentMode,
-      vendorName: _vendorController.text.trim().isEmpty ? null : _vendorController.text.trim(),
-      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-    );
+    setState(() => _isSaving = true);
 
-    await provider.addExpense(expense);
-    if (!mounted) return;
+    try {
+      if (_isEditing) {
+        // Edit mode: copyWith keeps the expense id so the repository updates
+        // the existing record in place instead of minting a new one.
+        final edited = widget.existing!.copyWith(
+          title: title,
+          category: _category,
+          amount: amount,
+          expenseDate: _expenseDate,
+          paymentMode: _paymentMode,
+          vendorName: vendor,
+          notes: notes,
+        );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Expense of ${CurrencyFormatter.format(amount)} recorded!'),
-        backgroundColor: AppColors.paid,
-      ),
-    );
+        await provider.updateExpense(edited);
+        if (!mounted) return;
 
-    Navigator.pop(context, expense);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Expense "${edited.title}" updated!'),
+            backgroundColor: AppColors.paid,
+          ),
+        );
+
+        Navigator.pop(context);
+      } else {
+        final expense = GarageExpense(
+          id: const Uuid().v4(),
+          title: title,
+          category: _category,
+          amount: amount,
+          expenseDate: _expenseDate,
+          paymentMode: _paymentMode,
+          vendorName: vendor,
+          notes: notes,
+        );
+
+        await provider.addExpense(expense);
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Expense of ${CurrencyFormatter.format(amount)} recorded!'),
+            backgroundColor: AppColors.paid,
+          ),
+        );
+
+        Navigator.pop(context, expense);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.pending,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -84,7 +155,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Garage Expense', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(_isEditing ? 'Edit Garage Expense' : 'Add Garage Expense', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
@@ -302,9 +373,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _saveExpense,
+                  onPressed: _isSaving ? null : _saveExpense,
                   icon: const Icon(Icons.check_rounded),
-                  label: const Text('Save Expense'),
+                  label: Text(_isEditing ? 'Save Changes' : 'Save Expense'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
