@@ -6,6 +6,7 @@ import '../../models/maintenance_item.dart';
 import '../../models/payment.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/contact_actions.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../utils/quantity_formatter.dart';
@@ -47,24 +48,25 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
       appBar: AppBar(
         title: Text(invoice.invoiceNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         actions: [
+          // One share action covering the whole bill — PDF/print is out of
+          // scope, so the old "Print Tax Bill" stub was removed.
           IconButton(
             icon: const Icon(Icons.share_rounded),
-            tooltip: 'Share WhatsApp Bill',
+            tooltip: 'Share Bill',
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Sending invoice ${invoice.invoiceNumber} to ${customer?.name}...'),
-                  backgroundColor: AppColors.paid,
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.print_rounded),
-            tooltip: 'Print Tax Bill',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Preparing print preview...')),
+              final lines = [
+                '${profile.name} — Tax Invoice ${invoice.invoiceNumber}',
+                'Customer: ${customer?.name ?? '-'}',
+                if (vehicle != null) 'Vehicle: ${vehicle.registrationNumber}',
+                'Grand Total: ${CurrencyFormatter.format(invoice.grandTotal)}',
+                'Balance Due: ${CurrencyFormatter.format(invoice.balanceDue)}',
+                if (invoice.dueDate != null)
+                  'Due Date: ${AppDateFormatter.formatDate(invoice.dueDate!)}',
+              ];
+              ContactActions.shareText(
+                context,
+                title: 'Invoice ${invoice.invoiceNumber}',
+                text: lines.join('\n'),
               );
             },
           ),

@@ -323,50 +323,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   prefixIcon: Icon(Icons.note_alt_outlined),
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // Receipt Upload Simulation Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                    style: BorderStyle.solid,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.receipt_long_rounded, color: AppColors.primary),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Receipt Photo', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13.5)),
-                          Text('Attach bill picture / invoice voucher', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted)),
-                        ],
-                      ),
-                    ),
-                    OutlinedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Receipt image attached!')),
-                        );
-                      },
-                      child: const Text('Attach'),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 32),
 
               // Save Button

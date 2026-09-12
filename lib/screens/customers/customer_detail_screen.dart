@@ -5,6 +5,7 @@ import '../../models/customer.dart';
 import '../../models/vehicle.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/contact_actions.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/status_badge.dart';
@@ -259,19 +260,19 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                     Row(
                       children: [
                         IconButton.filledTonal(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Simulating call to ${customer.phone}...')),
-                            );
-                          },
+                          onPressed: () =>
+                              ContactActions.call(context, customer.phone),
                           icon: const Icon(Icons.phone_rounded, color: AppColors.accent, size: 20),
                           tooltip: 'Call Customer',
                         ),
                         const SizedBox(width: 8),
                         IconButton.filledTonal(
                           onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Opening WhatsApp to ${customer.effectiveWhatsApp}...')),
+                            ContactActions.whatsapp(
+                              context,
+                              customer.effectiveWhatsApp,
+                              message:
+                                  'Hello ${customer.name}, this is ${provider.profile.name}.',
                             );
                           },
                           icon: const Icon(Icons.chat_bubble_rounded, color: AppColors.paid, size: 20),

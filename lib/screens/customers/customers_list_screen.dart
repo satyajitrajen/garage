@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/customer.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/contact_actions.dart';
 import '../../utils/currency_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
@@ -291,8 +292,11 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                            icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.paid, size: 20),
                                            tooltip: 'WhatsApp',
                                            onPressed: () {
-                                             ScaffoldMessenger.of(context).showSnackBar(
-                                               SnackBar(content: Text('WhatsApping ${customer.effectiveWhatsApp}...')),
+                                             ContactActions.whatsapp(
+                                               context,
+                                               customer.effectiveWhatsApp,
+                                               message:
+                                                   'Hello ${customer.name}, this is ${provider.profile.name}.',
                                              );
                                            },
                                          ),

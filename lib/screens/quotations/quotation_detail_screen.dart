@@ -7,6 +7,7 @@ import '../../models/maintenance_item.dart';
 import '../../models/invoice.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/contact_actions.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../utils/quantity_formatter.dart';
@@ -207,8 +208,17 @@ class QuotationDetailScreen extends StatelessWidget {
             icon: const Icon(Icons.share_rounded),
             tooltip: 'Share Estimate',
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Sharing Estimate PDF to customer WhatsApp...')),
+              final lines = [
+                '${profile.name} — Estimate ${quote.quotationNumber}',
+                'Customer: ${customer?.name ?? '-'}',
+                if (vehicle != null) 'Vehicle: ${vehicle.registrationNumber}',
+                'Estimated Total: ${CurrencyFormatter.format(quote.grandTotal)}',
+                'Valid until ${AppDateFormatter.formatDate(quote.validUntil)} (${quote.validityDays} days)',
+              ];
+              ContactActions.shareText(
+                context,
+                title: 'Estimate ${quote.quotationNumber}',
+                text: lines.join('\n'),
               );
             },
           ),
