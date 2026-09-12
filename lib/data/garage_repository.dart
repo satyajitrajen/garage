@@ -44,7 +44,7 @@ abstract class GarageRepository {
   Future<List<Quotation>> fetchQuotations();
   Future<Quotation> createQuotation(Quotation quotation);
   Future<Quotation> updateQuotation(Quotation quotation);
-  Future<Quotation> updateQuotationStatus(String id, QuotationStatus status);
+  Future<Quotation> updateQuotationStatus(String quotationId, QuotationStatus status);
 
   Future<List<Invoice>> fetchInvoices();
   Future<Invoice> createInvoice(Invoice invoice);

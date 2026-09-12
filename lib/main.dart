@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'data/mock/mock_garage_repository.dart';
 import 'providers/garage_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/main_navigation_screen.dart';
@@ -25,7 +26,7 @@ class NexoryGarageApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<GarageProvider>(
-      create: (_) => GarageProvider(),
+      create: (_) => GarageProvider(MockGarageRepository())..load(),
       child: Selector<GarageProvider, bool>(
         selector: (_, provider) => provider.isDarkMode,
         builder: (context, isDarkMode, child) {

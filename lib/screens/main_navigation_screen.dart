@@ -43,6 +43,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final activeVehiclesCount = provider.activeVehiclesUnderMaintenanceCount;
     final pendingInvoicesCount = provider.invoices.where((i) => i.balanceDue > 0).length;
 
+    if (provider.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (provider.loadError != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 40),
+              const SizedBox(height: 12),
+              const Text('Failed to load garage data'),
+              const SizedBox(height: 16),
+              FilledButton(onPressed: provider.load, child: const Text('Retry')),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       body: IndexedStack(

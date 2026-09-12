@@ -19,9 +19,10 @@ class QuotationDetailScreen extends StatelessWidget {
 
   const QuotationDetailScreen({super.key, required this.quotationId});
 
-  void _convertJobCard(BuildContext context, Quotation quote) {
+  Future<void> _convertJobCard(BuildContext context, Quotation quote) async {
     final provider = Provider.of<GarageProvider>(context, listen: false);
-    final jobCard = provider.convertQuotationToJobCard(quote);
+    final jobCard = await provider.convertQuotationToJobCard(quote);
+    if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -38,9 +39,9 @@ class QuotationDetailScreen extends StatelessWidget {
     );
   }
 
-  void _convertInvoice(BuildContext context, Quotation quote) {
+  Future<void> _convertInvoice(BuildContext context, Quotation quote) async {
     final provider = Provider.of<GarageProvider>(context, listen: false);
-    final invoice = provider.addInvoice(
+    final invoice = await provider.addInvoice(
       Invoice(
         id: const Uuid().v4(),
         invoiceNumber: provider.generateInvoiceNumber(),
@@ -54,8 +55,9 @@ class QuotationDetailScreen extends StatelessWidget {
       ),
     );
 
-    provider.updateQuotationStatus(quote.id, QuotationStatus.converted);
+    await provider.updateQuotationStatus(quote.id, QuotationStatus.converted);
 
+    if (!context.mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(

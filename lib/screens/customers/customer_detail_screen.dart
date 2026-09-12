@@ -89,9 +89,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.pending),
-            onPressed: () {
-              final deleted = provider.deleteCustomer(customer.id);
+            onPressed: () async {
               Navigator.pop(ctx);
+              final deleted = await provider.deleteCustomer(customer.id);
+              if (!context.mounted) return;
               if (!deleted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

@@ -13,29 +13,54 @@ import '../garage_profile.dart';
 import '../garage_repository.dart';
 
 class MockGarageRepository implements GarageRepository {
-  late List<Customer> _customers;
-  late List<Vehicle> _vehicles;
-  late List<Staff> _staff;
-  late List<JobCard> _jobCards;
-  late List<Quotation> _quotations;
-  late List<Invoice> _invoices;
-  late List<GarageExpense> _expenses;
-  late List<AttendanceRecord> _attendance;
-  late List<SalaryAdvance> _salaryAdvances;
-  late List<MaintenanceItem> _catalog;
+  final List<Customer> _customers;
+  final List<Vehicle> _vehicles;
+  final List<Staff> _staff;
+  final List<JobCard> _jobCards;
+  final List<Quotation> _quotations;
+  final List<Invoice> _invoices;
+  final List<GarageExpense> _expenses;
+  final List<AttendanceRecord> _attendance;
+  final List<SalaryAdvance> _salaryAdvances;
+  final List<MaintenanceItem> _catalog;
 
-  MockGarageRepository() {
-    _customers = MockDataService.getInitialCustomers();
-    _vehicles = MockDataService.getInitialVehicles();
-    _catalog = MockDataService.getCatalogItems();
-    _staff = MockDataService.getInitialStaff();
-    _jobCards = MockDataService.getInitialJobCards();
-    _quotations = MockDataService.getInitialQuotations();
-    _invoices = MockDataService.getInitialInvoices();
-    _expenses = MockDataService.getInitialExpenses();
-    _attendance = MockDataService.getInitialAttendance(_staff);
-    _salaryAdvances = MockDataService.getInitialSalaryAdvances();
+  factory MockGarageRepository() {
+    final staff = MockDataService.getInitialStaff();
+    return MockGarageRepository._(
+      customers: MockDataService.getInitialCustomers(),
+      vehicles: MockDataService.getInitialVehicles(),
+      catalog: MockDataService.getCatalogItems(),
+      staff: staff,
+      jobCards: MockDataService.getInitialJobCards(),
+      quotations: MockDataService.getInitialQuotations(),
+      invoices: MockDataService.getInitialInvoices(),
+      expenses: MockDataService.getInitialExpenses(),
+      attendance: MockDataService.getInitialAttendance(staff),
+      salaryAdvances: MockDataService.getInitialSalaryAdvances(),
+    );
   }
+
+  MockGarageRepository._({
+    required List<Customer> customers,
+    required List<Vehicle> vehicles,
+    required List<Staff> staff,
+    required List<JobCard> jobCards,
+    required List<Quotation> quotations,
+    required List<Invoice> invoices,
+    required List<GarageExpense> expenses,
+    required List<AttendanceRecord> attendance,
+    required List<SalaryAdvance> salaryAdvances,
+    required List<MaintenanceItem> catalog,
+  })  : _customers = customers,
+        _vehicles = vehicles,
+        _staff = staff,
+        _jobCards = jobCards,
+        _quotations = quotations,
+        _invoices = invoices,
+        _expenses = expenses,
+        _attendance = attendance,
+        _salaryAdvances = salaryAdvances,
+        _catalog = catalog;
 
   // Profile & config
 
@@ -209,10 +234,10 @@ class MockGarageRepository implements GarageRepository {
 
   @override
   Future<Quotation> updateQuotationStatus(
-    String id,
+    String quotationId,
     QuotationStatus status,
   ) async {
-    final i = _quotations.indexWhere((q) => q.id == id);
+    final i = _quotations.indexWhere((q) => q.id == quotationId);
     if (i == -1) throw Exception('Quotation not found');
     _quotations[i] = _quotations[i].copyWith(status: status);
     return _quotations[i];

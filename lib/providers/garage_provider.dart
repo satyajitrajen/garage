@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import '../data/app_config.dart';
+import '../data/garage_profile.dart';
+import '../data/garage_repository.dart';
 import '../models/customer.dart';
 import '../models/vehicle.dart';
 import '../models/maintenance_item.dart';
@@ -9,10 +12,20 @@ import '../models/invoice.dart';
 import '../models/payment.dart';
 import '../models/expense.dart';
 import '../models/staff.dart';
-import '../services/mock_data_service.dart';
 
+/// Single source of app state. All data is fetched from a [GarageRepository]
+/// and mirrored in memory for synchronous reads by the UI; every mutation is
+/// delegated to the repository first, then applied to the cache.
 class GarageProvider extends ChangeNotifier {
+  GarageProvider(this._repo);
+
+  final GarageRepository _repo;
   final _uuid = const Uuid();
+
+  bool _isLoading = true;
+  String? _loadError;
+  GarageProfile? _profile;
+  AppConfig? _config;
 
   // State collections
   List<Customer> _customers = [];
@@ -27,6 +40,65 @@ class GarageProvider extends ChangeNotifier {
   List<SalaryAdvance> _salaryAdvances = [];
   List<MaintenanceItem> _catalog = [];
 
+  bool get isLoading => _isLoading;
+  String? get loadError => _loadError;
+
+  /// Screens are gated behind the loading state in MainNavigationScreen, so
+  /// accessing profile/config before load() completes is a programming error.
+  GarageProfile get profile =>
+      _profile ?? (throw StateError('profile accessed before load completed'));
+  AppConfig get config =>
+      _config ?? (throw StateError('config accessed before load completed'));
+
+  Future<void> load() => _fetchAll(showLoading: true);
+
+  /// Re-fetches without toggling isLoading (pull-to-refresh keeps content).
+  Future<void> refresh() => _fetchAll(showLoading: false);
+
+  Future<void> _fetchAll({required bool showLoading}) async {
+    if (showLoading) {
+      _isLoading = true;
+      _loadError = null;
+      notifyListeners();
+    }
+    try {
+      final results = await Future.wait([
+        _repo.fetchProfile(),
+        _repo.fetchConfig(),
+        _repo.fetchCustomers(),
+        _repo.fetchVehicles(),
+        _repo.fetchStaff(),
+        _repo.fetchJobCards(),
+        _repo.fetchQuotations(),
+        _repo.fetchInvoices(),
+        _repo.fetchExpenses(),
+        _repo.fetchAttendance(),
+        _repo.fetchSalaryAdvances(),
+        _repo.fetchCatalog(),
+      ]);
+      _profile = results[0] as GarageProfile;
+      _config = results[1] as AppConfig;
+      _customers = results[2] as List<Customer>;
+      _vehicles = results[3] as List<Vehicle>;
+      _staff = results[4] as List<Staff>;
+      _jobCards = results[5] as List<JobCard>;
+      _quotations = results[6] as List<Quotation>;
+      _invoices = results[7] as List<Invoice>;
+      _expenses = results[8] as List<GarageExpense>;
+      _attendance = results[9] as List<AttendanceRecord>;
+      _salaryAdvances = results[10] as List<SalaryAdvance>;
+      _catalog = results[11] as List<MaintenanceItem>;
+      _payments = [for (final inv in _invoices) ...inv.payments];
+      _loadError = null;
+    } catch (e) {
+      _loadError = e.toString();
+      if (!showLoading) return; // refresh failure: keep old data on screen
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Theme mode toggle
   bool _isDarkMode = false;
   bool get isDarkMode => _isDarkMode;
@@ -34,29 +106,6 @@ class GarageProvider extends ChangeNotifier {
   void toggleTheme() {
     _isDarkMode = !_isDarkMode;
     notifyListeners();
-  }
-
-  GarageProvider() {
-    _initMockData();
-  }
-
-  void _initMockData() {
-    _customers = MockDataService.getInitialCustomers();
-    _vehicles = MockDataService.getInitialVehicles();
-    _catalog = MockDataService.getCatalogItems();
-    _staff = MockDataService.getInitialStaff();
-    _jobCards = MockDataService.getInitialJobCards();
-    _quotations = MockDataService.getInitialQuotations();
-    _invoices = MockDataService.getInitialInvoices();
-    _expenses = MockDataService.getInitialExpenses();
-    _attendance = MockDataService.getInitialAttendance(_staff);
-    _salaryAdvances = MockDataService.getInitialSalaryAdvances();
-
-    // Collect all payments from invoices
-    _payments = [];
-    for (var inv in _invoices) {
-      _payments.addAll(inv.payments);
-    }
   }
 
   // Getters
@@ -125,27 +174,10 @@ class GarageProvider extends ChangeNotifier {
     }).toList();
   }
 
-  List<JobCard> get recentJobCards {
-    final sorted = List<JobCard>.from(_jobCards)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return sorted.take(5).toList();
-  }
-
   List<Invoice> get recentInvoices {
     final sorted = List<Invoice>.from(_invoices)
       ..sort((a, b) => b.invoiceDate.compareTo(a.invoiceDate));
     return sorted.take(5).toList();
-  }
-
-  Map<ExpenseCategory, double> get expenseCategoryBreakdown {
-    final Map<ExpenseCategory, double> map = {};
-    for (var cat in ExpenseCategory.values) {
-      map[cat] = 0.0;
-    }
-    for (var exp in _expenses) {
-      map[exp.category] = (map[exp.category] ?? 0.0) + exp.amount;
-    }
-    return map;
   }
 
   // -------------------------------------------------------------
@@ -177,32 +209,33 @@ class GarageProvider extends ChangeNotifier {
     }).toList();
   }
 
-  Customer addCustomer(Customer customer) {
-    _customers.insert(0, customer);
+  Future<Customer> addCustomer(Customer customer) async {
+    final created = await _repo.createCustomer(customer);
+    _customers.insert(0, created);
     notifyListeners();
-    return customer;
+    return created;
   }
 
-  void updateCustomer(Customer customer) {
-    final index = _customers.indexWhere((c) => c.id == customer.id);
-    if (index != -1) {
-      _customers[index] = customer;
+  Future<Customer> updateCustomer(Customer customer) async {
+    final updated = await _repo.updateCustomer(customer);
+    final index = _customers.indexWhere((c) => c.id == updated.id);
+    if (index != -1) _customers[index] = updated;
+    notifyListeners();
+    return updated;
+  }
+
+  /// Deletes a customer and their vehicles. Deletion is blocked (returns
+  /// false) while the customer still has outstanding dues on any invoice,
+  /// otherwise those documents would silently orphan and corrupt
+  /// pending-payment analytics.
+  Future<bool> deleteCustomer(String customerId) async {
+    final ok = await _repo.deleteCustomer(customerId);
+    if (ok) {
+      _customers.removeWhere((c) => c.id == customerId);
+      _vehicles.removeWhere((v) => v.customerId == customerId);
       notifyListeners();
     }
-  }
-
-  /// Deletes a customer and their vehicles. Deletion is blocked while the
-  /// customer still has outstanding dues on any invoice, otherwise those
-  /// documents would silently orphan and corrupt pending-payment analytics.
-  /// Returns false (and does not delete) when dues exist.
-  bool deleteCustomer(String customerId) {
-    if (getCustomerOutstandingBalance(customerId) > 0.01) {
-      return false;
-    }
-    _customers.removeWhere((c) => c.id == customerId);
-    _vehicles.removeWhere((v) => v.customerId == customerId);
-    notifyListeners();
-    return true;
+    return ok;
   }
 
   double getCustomerOutstandingBalance(String customerId) {
@@ -226,21 +259,23 @@ class GarageProvider extends ChangeNotifier {
     }
   }
 
-  Vehicle addVehicle(Vehicle vehicle) {
-    _vehicles.insert(0, vehicle);
+  Future<Vehicle> addVehicle(Vehicle vehicle) async {
+    final created = await _repo.createVehicle(vehicle);
+    _vehicles.insert(0, created);
     notifyListeners();
-    return vehicle;
+    return created;
   }
 
-  void updateVehicle(Vehicle vehicle) {
-    final index = _vehicles.indexWhere((v) => v.id == vehicle.id);
-    if (index != -1) {
-      _vehicles[index] = vehicle;
-      notifyListeners();
-    }
+  Future<Vehicle> updateVehicle(Vehicle vehicle) async {
+    final updated = await _repo.updateVehicle(vehicle);
+    final index = _vehicles.indexWhere((v) => v.id == updated.id);
+    if (index != -1) _vehicles[index] = updated;
+    notifyListeners();
+    return updated;
   }
 
-  void deleteVehicle(String vehicleId) {
+  Future<void> deleteVehicle(String vehicleId) async {
+    await _repo.deleteVehicle(vehicleId);
     _vehicles.removeWhere((v) => v.id == vehicleId);
     notifyListeners();
   }
@@ -287,59 +322,44 @@ class GarageProvider extends ChangeNotifier {
         firstNumber: 1001,
       );
 
-  JobCard addJobCard(JobCard jobCard) {
-    _jobCards.insert(0, jobCard);
+  Future<JobCard> addJobCard(JobCard jobCard) async {
+    final created = await _repo.createJobCard(jobCard);
+    _jobCards.insert(0, created);
     notifyListeners();
-    return jobCard;
+    return created;
   }
 
-  void updateJobCard(JobCard jobCard) {
-    final index = _jobCards.indexWhere((jc) => jc.id == jobCard.id);
-    if (index != -1) {
-      _jobCards[index] = jobCard;
-      notifyListeners();
-    }
+  Future<JobCard> updateJobCard(JobCard jobCard) async {
+    final updated = await _repo.updateJobCard(jobCard);
+    final index = _jobCards.indexWhere((jc) => jc.id == updated.id);
+    if (index != -1) _jobCards[index] = updated;
+    notifyListeners();
+    return updated;
   }
 
-  void updateJobStatus(String jobCardId, JobStatus status) {
+  Future<JobCard> updateJobStatus(String jobCardId, JobStatus status) async {
+    final updated = await _repo.updateJobStatus(jobCardId, status);
     final index = _jobCards.indexWhere((jc) => jc.id == jobCardId);
-    if (index != -1) {
-      final isCompleted = status == JobStatus.delivered;
-      _jobCards[index] = _jobCards[index].copyWith(
-        status: status,
-        // completedAt is only stamped once the vehicle is actually delivered;
-        // moving a job back to an earlier state clears the stale timestamp.
-        completedAt: isCompleted ? DateTime.now() : (status == JobStatus.cancelled ? _jobCards[index].completedAt : null),
-      );
-      notifyListeners();
-    }
+    if (index != -1) _jobCards[index] = updated;
+    notifyListeners();
+    return updated;
   }
 
-  void addOrUpdateItemInJobCard(String jobCardId, MaintenanceItem item) {
+  Future<JobCard> addOrUpdateItemInJobCard(
+      String jobCardId, MaintenanceItem item) async {
+    final updated = await _repo.upsertJobCardItem(jobCardId, item);
     final index = _jobCards.indexWhere((jc) => jc.id == jobCardId);
-    if (index != -1) {
-      final currentJob = _jobCards[index];
-      final currentItems = List<MaintenanceItem>.from(currentJob.items);
-      final itemIndex = currentItems.indexWhere((i) => i.id == item.id);
-      if (itemIndex != -1) {
-        currentItems[itemIndex] = item;
-      } else {
-        currentItems.add(item);
-      }
-      _jobCards[index] = currentJob.copyWith(items: currentItems);
-      notifyListeners();
-    }
+    if (index != -1) _jobCards[index] = updated;
+    notifyListeners();
+    return updated;
   }
 
-  void removeItemFromJobCard(String jobCardId, String itemId) {
+  Future<JobCard> removeItemFromJobCard(String jobCardId, String itemId) async {
+    final updated = await _repo.removeJobCardItem(jobCardId, itemId);
     final index = _jobCards.indexWhere((jc) => jc.id == jobCardId);
-    if (index != -1) {
-      final currentJob = _jobCards[index];
-      final currentItems = List<MaintenanceItem>.from(currentJob.items)
-        ..removeWhere((i) => i.id == itemId);
-      _jobCards[index] = currentJob.copyWith(items: currentItems);
-      notifyListeners();
-    }
+    if (index != -1) _jobCards[index] = updated;
+    notifyListeners();
+    return updated;
   }
 
   // -------------------------------------------------------------
@@ -351,29 +371,33 @@ class GarageProvider extends ChangeNotifier {
         firstNumber: 1001,
       );
 
-  Quotation addQuotation(Quotation quote) {
-    _quotations.insert(0, quote);
+  Future<Quotation> addQuotation(Quotation quote) async {
+    final created = await _repo.createQuotation(quote);
+    _quotations.insert(0, created);
     notifyListeners();
-    return quote;
+    return created;
   }
 
-  void updateQuotation(Quotation quote) {
-    final index = _quotations.indexWhere((q) => q.id == quote.id);
-    if (index != -1) {
-      _quotations[index] = quote;
-      notifyListeners();
-    }
+  Future<Quotation> updateQuotation(Quotation quote) async {
+    final updated = await _repo.updateQuotation(quote);
+    final index = _quotations.indexWhere((q) => q.id == updated.id);
+    if (index != -1) _quotations[index] = updated;
+    notifyListeners();
+    return updated;
   }
 
-  void updateQuotationStatus(String id, QuotationStatus status) {
+  Future<Quotation> updateQuotationStatus(String id, QuotationStatus status) async {
+    final updated = await _repo.updateQuotationStatus(id, status);
     final index = _quotations.indexWhere((q) => q.id == id);
-    if (index != -1) {
-      _quotations[index] = _quotations[index].copyWith(status: status);
-      notifyListeners();
-    }
+    if (index != -1) _quotations[index] = updated;
+    notifyListeners();
+    return updated;
   }
 
-  JobCard convertQuotationToJobCard(Quotation quote, {String? assignedStaffId}) {
+  Future<JobCard> convertQuotationToJobCard(
+    Quotation quote, {
+    String? assignedStaffId,
+  }) async {
     final jobCard = JobCard(
       id: _uuid.v4(),
       jobCardNumber: generateJobCardNumber(),
@@ -383,13 +407,14 @@ class GarageProvider extends ChangeNotifier {
       kmReading: quote.kmReading,
       assignedStaffId: assignedStaffId,
       status: JobStatus.inProgress,
-      promisedDeliveryDate: DateTime.now().add(const Duration(hours: 6)),
+      promisedDeliveryDate:
+          DateTime.now().add(Duration(hours: config.promisedDeliveryHours)),
       items: List.from(quote.items),
       supervisorNotes: 'Created directly from approved quotation ${quote.quotationNumber}',
     );
 
-    addJobCard(jobCard);
-    updateQuotationStatus(quote.id, QuotationStatus.converted);
+    await addJobCard(jobCard);
+    await updateQuotationStatus(quote.id, QuotationStatus.converted);
     return jobCard;
   }
 
@@ -410,30 +435,34 @@ class GarageProvider extends ChangeNotifier {
     }
   }
 
-  Invoice addInvoice(Invoice invoice) {
-    _invoices.insert(0, invoice);
-    if (invoice.payments.isNotEmpty) {
-      for (var p in invoice.payments) {
-        _payments.insert(0, p);
-      }
-    }
+  Future<Invoice> addInvoice(Invoice invoice) async {
+    final created = await _repo.createInvoice(invoice);
+    _invoices.insert(0, created);
+    _payments.insertAll(0, created.payments);
     // Update vehicle last serviced date & km
-    final vehicle = getVehicleById(invoice.vehicleId);
+    final vehicle = getVehicleById(created.vehicleId);
     if (vehicle != null) {
-      updateVehicle(vehicle.copyWith(
-        currentKm: invoice.kmReading > vehicle.currentKm ? invoice.kmReading : vehicle.currentKm,
-        lastServiceDate: invoice.invoiceDate,
+      await updateVehicle(vehicle.copyWith(
+        currentKm: created.kmReading > vehicle.currentKm
+            ? created.kmReading
+            : vehicle.currentKm,
+        lastServiceDate: created.invoiceDate,
       ));
     }
     // If associated with a job card, mark job card as delivered
-    if (invoice.jobCardId != null) {
-      updateJobStatus(invoice.jobCardId!, JobStatus.delivered);
+    if (created.jobCardId != null) {
+      await updateJobStatus(created.jobCardId!, JobStatus.delivered);
     }
     notifyListeners();
-    return invoice;
+    return created;
   }
 
-  Invoice createInvoiceFromJobCard(JobCard jobCard, {double discount = 0, double taxPercent = 18.0}) {
+  Future<Invoice> createInvoiceFromJobCard(
+    JobCard jobCard, {
+    double discount = 0,
+    double? taxPercent,
+    String? notes,
+  }) async {
     if (jobCard.items.isEmpty) {
       throw Exception('Cannot invoice a job card with no work items');
     }
@@ -446,11 +475,11 @@ class GarageProvider extends ChangeNotifier {
       kmReading: jobCard.kmReading,
       items: List.from(jobCard.items),
       discountAmount: discount,
-      taxPercent: taxPercent,
+      taxPercent: taxPercent ?? config.defaultTaxPercent,
       invoiceDate: DateTime.now(),
-      dueDate: DateTime.now().add(const Duration(days: 7)),
-      notes: 'Thank you for choosing us! Standard warranty applies.',
-      termsAndConditions: 'All parts replaced carry manufacturer warranty. Labour warranty 30 days.',
+      dueDate: DateTime.now().add(Duration(days: config.invoiceDueDays)),
+      notes: notes ?? config.invoiceNotes,
+      termsAndConditions: config.invoiceTerms,
     );
 
     return addInvoice(invoice);
@@ -459,18 +488,18 @@ class GarageProvider extends ChangeNotifier {
   // -------------------------------------------------------------
   // PAYMENT METHODS
   // -------------------------------------------------------------
-  Payment recordPayment({
+  Future<Payment> recordPayment({
     required String invoiceId,
     required double amount,
     required PaymentMode mode,
     String? transactionRef,
     String? notes,
     String? receivedBy,
-  }) {
-    final invoiceIndex = _invoices.indexWhere((inv) => inv.id == invoiceId);
-    if (invoiceIndex == -1) throw Exception('Invoice not found');
+  }) async {
+    final i = _invoices.indexWhere((inv) => inv.id == invoiceId);
+    if (i == -1) throw Exception('Invoice not found');
 
-    final invoice = _invoices[invoiceIndex];
+    final invoice = _invoices[i];
     if (invoice.status == InvoiceStatus.cancelled) {
       throw Exception('Cannot record payment against a cancelled invoice');
     }
@@ -479,49 +508,49 @@ class GarageProvider extends ChangeNotifier {
     const epsilon = 0.01;
     if (amount <= 0 || amount > invoice.balanceDue + epsilon) {
       throw Exception(
-        'Payment amount must be between 0 and ${invoice.balanceDue.toStringAsFixed(2)}',
-      );
+          'Payment amount must be between 0 and ${invoice.balanceDue.toStringAsFixed(2)}');
     }
     // Never record more than the remaining balance.
-    final safeAmount = amount.clamp(0.0, invoice.balanceDue);
     final payment = Payment(
       id: _uuid.v4(),
       invoiceId: invoiceId,
       customerId: invoice.customerId,
-      amount: safeAmount,
+      amount: amount.clamp(0.0, invoice.balanceDue),
       mode: mode,
       transactionRef: transactionRef,
       paymentDate: DateTime.now(),
       notes: notes,
-      receivedBy: receivedBy ?? 'Cashier',
+      receivedBy: receivedBy ?? config.defaultReceivedBy,
     );
 
-    final updatedPayments = List<Payment>.from(invoice.payments)..add(payment);
-    _invoices[invoiceIndex] = invoice.copyWith(payments: updatedPayments);
-    _payments.insert(0, payment);
+    final saved = await _repo.createPayment(payment);
+    _invoices[i] = _invoices[i].copyWith(payments: [..._invoices[i].payments, saved]);
+    _payments.insert(0, saved);
 
     notifyListeners();
-    return payment;
+    return saved;
   }
 
   // -------------------------------------------------------------
   // EXPENSE METHODS
   // -------------------------------------------------------------
-  GarageExpense addExpense(GarageExpense expense) {
-    _expenses.insert(0, expense);
+  Future<GarageExpense> addExpense(GarageExpense expense) async {
+    final created = await _repo.createExpense(expense);
+    _expenses.insert(0, created);
     notifyListeners();
-    return expense;
+    return created;
   }
 
-  void updateExpense(GarageExpense expense) {
-    final index = _expenses.indexWhere((e) => e.id == expense.id);
-    if (index != -1) {
-      _expenses[index] = expense;
-      notifyListeners();
-    }
+  Future<GarageExpense> updateExpense(GarageExpense expense) async {
+    final updated = await _repo.updateExpense(expense);
+    final index = _expenses.indexWhere((e) => e.id == updated.id);
+    if (index != -1) _expenses[index] = updated;
+    notifyListeners();
+    return updated;
   }
 
-  void deleteExpense(String expenseId) {
+  Future<void> deleteExpense(String expenseId) async {
+    await _repo.deleteExpense(expenseId);
     _expenses.removeWhere((e) => e.id == expenseId);
     notifyListeners();
   }
@@ -537,21 +566,23 @@ class GarageProvider extends ChangeNotifier {
     }
   }
 
-  Staff addStaff(Staff staffMember) {
-    _staff.add(staffMember);
+  Future<Staff> addStaff(Staff staffMember) async {
+    final created = await _repo.createStaff(staffMember);
+    _staff.insert(0, created);
     notifyListeners();
-    return staffMember;
+    return created;
   }
 
-  void updateStaff(Staff staffMember) {
-    final index = _staff.indexWhere((s) => s.id == staffMember.id);
-    if (index != -1) {
-      _staff[index] = staffMember;
-      notifyListeners();
-    }
+  Future<Staff> updateStaff(Staff staffMember) async {
+    final updated = await _repo.updateStaff(staffMember);
+    final index = _staff.indexWhere((s) => s.id == updated.id);
+    if (index != -1) _staff[index] = updated;
+    notifyListeners();
+    return updated;
   }
 
-  void deleteStaff(String staffId) {
+  Future<void> deleteStaff(String staffId) async {
+    await _repo.deleteStaff(staffId);
     _staff.removeWhere((s) => s.id == staffId);
     notifyListeners();
   }
@@ -564,67 +595,60 @@ class GarageProvider extends ChangeNotifier {
     }).length;
   }
 
+  /// Static calendar-day equality helper shared by attendance lookups.
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
   AttendanceRecord? getAttendanceForStaffOnDate(String staffId, DateTime date) {
     try {
-      return _attendance.firstWhere((a) =>
-          a.staffId == staffId &&
-          a.date.year == date.year &&
-          a.date.month == date.month &&
-          a.date.day == date.day);
+      return _attendance
+          .firstWhere((a) => a.staffId == staffId && _sameDay(a.date, date));
     } catch (_) {
       return null;
     }
   }
 
-  void markAttendance({
+  Future<void> markAttendance({
     required String staffId,
     required DateTime date,
     required AttendanceStatus status,
     String? notes,
-  }) {
+  }) async {
     final normalizedDate = DateTime(date.year, date.month, date.day);
-    final index = _attendance.indexWhere((a) =>
-        a.staffId == staffId &&
-        a.date.year == date.year &&
-        a.date.month == date.month &&
-        a.date.day == date.day);
+    final record = AttendanceRecord(
+      id: _uuid.v4(),
+      staffId: staffId,
+      date: normalizedDate,
+      status: status,
+      notes: notes,
+    );
+    final saved = await _repo.saveAttendance(record);
 
+    final index = _attendance.indexWhere(
+        (a) => a.staffId == staffId && _sameDay(a.date, normalizedDate));
     if (index != -1) {
-      _attendance[index] = AttendanceRecord(
-        id: _attendance[index].id,
-        staffId: staffId,
-        date: normalizedDate,
-        status: status,
-        notes: notes,
-      );
+      _attendance[index] = saved;
     } else {
-      _attendance.add(
-        AttendanceRecord(
-          id: _uuid.v4(),
-          staffId: staffId,
-          date: normalizedDate,
-          status: status,
-          notes: notes,
-        ),
-      );
+      _attendance.add(saved);
     }
     notifyListeners();
   }
 
-  void markAllPresentToday() {
+  Future<void> markAllPresentToday() async {
     final today = DateTime.now();
     for (var s in _staff) {
       if (s.isActive) {
-        markAttendance(staffId: s.id, date: today, status: AttendanceStatus.present);
+        await markAttendance(
+            staffId: s.id, date: today, status: AttendanceStatus.present);
       }
     }
   }
 
-  SalaryAdvance addSalaryAdvance({
+  Future<SalaryAdvance> addSalaryAdvance({
     required String staffId,
     required double amount,
     String? reason,
-  }) {
+  }) async {
     final advance = SalaryAdvance(
       id: _uuid.v4(),
       staffId: staffId,
@@ -632,11 +656,13 @@ class GarageProvider extends ChangeNotifier {
       date: DateTime.now(),
       reason: reason,
     );
-    _salaryAdvances.insert(0, advance);
+    final saved = await _repo.createSalaryAdvance(advance);
+    _salaryAdvances.insert(0, saved);
+    notifyListeners();
 
     // Also record this as a Garage Expense under staff salaries/refreshments
     final staffMember = getStaffById(staffId);
-    addExpense(GarageExpense(
+    await addExpense(GarageExpense(
       id: _uuid.v4(),
       title: 'Salary Advance - ${staffMember?.name ?? "Staff"}',
       category: ExpenseCategory.miscellaneous,
@@ -645,38 +671,27 @@ class GarageProvider extends ChangeNotifier {
       notes: reason,
     ));
 
-    notifyListeners();
-    return advance;
+    return saved;
   }
 
   /// Disburses the net salary for a staff member for [month]/[year]:
   /// marks all outstanding advances for that month as deducted and records
   /// the payout as a real workshop expense so monthly P&L stays accurate.
-  void disburseSalary({
+  Future<void> disburseSalary({
     required String staffId,
     required int month,
     required int year,
     required double netPayable,
-  }) {
+  }) async {
     final staffMember = getStaffById(staffId);
     if (staffMember == null) return;
 
     // Mark this month's advances as settled in payroll.
-    for (var i = 0; i < _salaryAdvances.length; i++) {
-      final adv = _salaryAdvances[i];
-      if (adv.staffId == staffId && adv.date.month == month && adv.date.year == year && !adv.isDeducted) {
-        _salaryAdvances[i] = SalaryAdvance(
-          id: adv.id,
-          staffId: adv.staffId,
-          amount: adv.amount,
-          date: adv.date,
-          reason: adv.reason,
-          isDeducted: true,
-        );
-      }
-    }
+    _salaryAdvances
+      ..clear()
+      ..addAll(await _repo.settleSalaryAdvances(staffId, month, year));
 
-    addExpense(GarageExpense(
+    await addExpense(GarageExpense(
       id: _uuid.v4(),
       title: 'Salary Paid - ${staffMember.name} (${_monthName(month)} $year)',
       category: ExpenseCategory.miscellaneous,
@@ -736,7 +751,7 @@ class GarageProvider extends ChangeNotifier {
     final advances = getAdvancesForStaff(staffId, month: month, year: year);
     final totalAdvances = advances.fold(0.0, (sum, a) => sum + a.amount);
 
-    const workingDays = 26; // approx 26 working days in a month
+    final workingDays = config.workingDaysPerMonth;
     final dailyRate = staffMember.monthlySalary / workingDays;
     final absentDeduction = absentCount * dailyRate;
     final halfDayDeduction = halfDayCount * (dailyRate / 2);

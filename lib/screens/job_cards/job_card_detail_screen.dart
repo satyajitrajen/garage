@@ -54,7 +54,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
     );
   }
 
-  void _generateInvoice(JobCard jobCard) {
+  Future<void> _generateInvoice(JobCard jobCard) async {
     final provider = Provider.of<GarageProvider>(context, listen: false);
     if (jobCard.items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -63,8 +63,9 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
       return;
     }
     final existingInvoice = provider.invoices.where((inv) => inv.jobCardId == jobCard.id).firstOrNull;
-    final invoice = existingInvoice ?? provider.createInvoiceFromJobCard(jobCard);
+    final invoice = existingInvoice ?? await provider.createInvoiceFromJobCard(jobCard);
 
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(

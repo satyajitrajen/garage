@@ -52,7 +52,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
   double _remainingDueSnapshot = 0;
 
-  void _submitPayment() {
+  Future<void> _submitPayment() async {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
@@ -77,7 +77,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
     final Payment payment;
     try {
-      payment = provider.recordPayment(
+      payment = await provider.recordPayment(
         invoiceId: invoice.id,
         amount: amount,
         mode: _selectedMode,
@@ -85,6 +85,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not record payment: $e')),
       );
