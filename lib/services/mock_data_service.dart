@@ -11,7 +11,6 @@ import '../data/garage_profile.dart';
 import '../data/app_config.dart';
 
 class MockDataService {
-
   // Standard Inventory / Common Parts Catalogue for quick selection
   static List<MaintenanceItem> getCatalogItems() {
     return [
@@ -455,7 +454,8 @@ class MockDataService {
             isLabour: true,
           ),
         ],
-        supervisorNotes: 'Front brake pads worn out down to 2mm. Replacement approved by customer.',
+        supervisorNotes:
+            'Front brake pads worn out down to 2mm. Replacement approved by customer.',
       ),
       JobCard(
         id: 'jc_2',
@@ -536,7 +536,8 @@ class MockDataService {
             taxPercent: 18.0,
           ),
         ],
-        supervisorNotes: 'Waiting for OEM headlight delivery from regional distributor.',
+        supervisorNotes:
+            'Waiting for OEM headlight delivery from regional distributor.',
       ),
       JobCard(
         id: 'jc_4',
@@ -927,15 +928,15 @@ class MockDataService {
   }
 
   static GarageProfile getGarageProfile() => const GarageProfile(
-      name: 'Nexory Garage & Body Shop',
-      tagline: 'Multi-Brand Auto Care',
-      addressLine: 'Shop 14, Andheri Industrial Estate',
-      city: 'Mumbai, MH',
-      phone: '+91 98200 12345',
-      email: 'service@nexorygarage.in',
-      gstin: '27AAAAA0000A1Z5',
-      upiId: 'nexorygarage@upi',
-    );
+    name: 'Nexory Garage & Body Shop',
+    tagline: 'Multi-Brand Auto Care',
+    addressLine: 'Shop 14, Andheri Industrial Estate',
+    city: 'Mumbai, MH',
+    phone: '+91 98200 12345',
+    email: 'service@nexorygarage.in',
+    gstin: '27AAAAA0000A1Z5',
+    upiId: 'nexorygarage@upi',
+  );
 
   static AppConfig getAppConfig() => const AppConfig();
 }
