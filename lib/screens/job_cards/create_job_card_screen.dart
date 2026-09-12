@@ -15,13 +15,20 @@ import '../maintenance/add_maintenance_screen.dart';
 import 'job_card_detail_screen.dart';
 
 class CreateJobCardScreen extends StatefulWidget {
-  final Customer customer;
-  final Vehicle vehicle;
+  /// Customer/vehicle a NEW job card is created for. The screen shows them as
+  /// a read-only summary banner; the caller decides them before pushing.
+  final Customer? customer;
+  final Vehicle? vehicle;
+
+  /// Non-null puts the screen in edit mode: fields are prefilled from this
+  /// job card and saving updates it (id, number, status and timestamps kept).
+  final JobCard? existing;
 
   const CreateJobCardScreen({
     super.key,
-    required this.customer,
-    required this.vehicle,
+    this.customer,
+    this.vehicle,
+    this.existing,
   });
 
   @override
@@ -33,6 +40,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
   final _complaintController = TextEditingController();
   final _kmController = TextEditingController();
   final _notesController = TextEditingController();
+  final _estCostController = TextEditingController();
 
   final List<String> _complaints = [];
   final List<MaintenanceItem> _selectedItems = [];
@@ -41,18 +49,47 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
   late DateTime _promisedDate;
   bool _isSaving = false;
 
+  bool get _isEditing => widget.existing != null;
+
   // Single source: the model's default inspection checklist (mutable copy so
-  // the form checkboxes can be toggled).
+  // the form checkboxes can be toggled). Edit mode swaps this for a mutable
+  // copy of the job card's own captured checklist.
   final Map<String, bool> _inspectionChecklist =
       Map<String, bool>.from(JobCard.defaultChecklist);
 
   @override
   void initState() {
     super.initState();
+    final provider = context.read<GarageProvider>();
     _promisedDate = DateTime.now().add(
-      Duration(hours: context.read<GarageProvider>().config.promisedDeliveryHours),
+      Duration(hours: provider.config.promisedDeliveryHours),
     );
-    _kmController.text = widget.vehicle.currentKm.toString();
+    _kmController.text = widget.vehicle?.currentKm.toString() ?? '';
+
+    // Edit mode: prefill everything from the job card being edited.
+    final existing = widget.existing;
+    if (existing != null) {
+      _promisedDate = existing.promisedDeliveryDate;
+      _kmController.text = existing.kmReading.toString();
+      _complaints.addAll(existing.customerComplaints);
+      _selectedItems.addAll(existing.items.map((item) => item.copyWith()));
+      _notesController.text = existing.supervisorNotes ?? '';
+      _estCostController.text = existing.estimatedCostNote ?? '';
+      _inspectionChecklist
+        ..clear()
+        ..addAll(Map<String, bool>.from(existing.inspectionChecklist));
+      // Dropdowns assert when their initial value is not among the options,
+      // so a staff member that no longer exists / is inactive falls back to
+      // unassigned instead of crashing the form.
+      _assignedStaffId = provider.staff
+              .any((s) => s.id == existing.assignedStaffId && s.isActive)
+          ? existing.assignedStaffId
+          : null;
+      _fuelLevel = const ['Empty', '1/4', '1/2', '3/4', 'Full']
+              .contains(existing.fuelLevel)
+          ? existing.fuelLevel
+          : '1/2';
+    }
   }
 
   @override
@@ -60,6 +97,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
     _complaintController.dispose();
     _kmController.dispose();
     _notesController.dispose();
+    _estCostController.dispose();
     super.dispose();
   }
 
@@ -130,38 +168,76 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
     }
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
+    final existing = widget.existing;
+    // Rebuilt explicitly (not copyWith) so fields the form does not edit —
+    // id, jobCardNumber, status, createdAt, completedAt — carry over exactly
+    // as before on the edit path, the same approach the quotation edit uses.
     final jobCard = JobCard(
-      id: const Uuid().v4(),
-      jobCardNumber: provider.generateJobCardNumber(),
-      customerId: widget.customer.id,
-      vehicleId: widget.vehicle.id,
+      id: existing?.id ?? const Uuid().v4(),
+      // Numbers are generated only for new job cards.
+      jobCardNumber: existing?.jobCardNumber ?? provider.generateJobCardNumber(),
+      customerId: existing?.customerId ?? widget.customer!.id,
+      vehicleId: existing?.vehicleId ?? widget.vehicle!.id,
       customerComplaints: _complaints,
       inspectionChecklist: _inspectionChecklist,
       fuelLevel: _fuelLevel,
-      kmReading: int.tryParse(_kmController.text.trim()) ?? widget.vehicle.currentKm,
+      kmReading: int.tryParse(_kmController.text.trim()) ??
+          existing?.kmReading ??
+          widget.vehicle?.currentKm ??
+          0,
       assignedStaffId: _assignedStaffId,
-      status: JobStatus.inProgress,
+      status: existing?.status ?? JobStatus.inProgress,
       promisedDeliveryDate: _promisedDate,
+      createdAt: existing?.createdAt,
+      completedAt: existing?.completedAt,
       items: _selectedItems,
+      estimatedCostNote:
+          _estCostController.text.trim().isEmpty ? null : _estCostController.text.trim(),
       supervisorNotes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 
-    await provider.addJobCard(jobCard);
-    if (!mounted) return;
+    try {
+      if (_isEditing) {
+        await provider.updateJobCard(jobCard);
+        if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Job Card ${jobCard.jobCardNumber} created successfully!'),
-        backgroundColor: AppColors.paid,
-      ),
-    );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Job Card ${jobCard.jobCardNumber} updated successfully!'),
+            backgroundColor: AppColors.paid,
+          ),
+        );
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => JobCardDetailScreen(jobCardId: jobCard.id),
-      ),
-    );
+        Navigator.pop(context);
+      } else {
+        await provider.addJobCard(jobCard);
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Job Card ${jobCard.jobCardNumber} created successfully!'),
+            backgroundColor: AppColors.paid,
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => JobCardDetailScreen(jobCardId: jobCard.id),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.pending,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -169,9 +245,17 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
     final provider = Provider.of<GarageProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Edit mode: the customer/vehicle are locked, so they are resolved from
+    // the provider by the job card's ids and shown read-only below.
+    final Customer? customer =
+        _isEditing ? provider.getCustomerById(widget.existing!.customerId) : widget.customer;
+    final Vehicle? vehicle =
+        _isEditing ? provider.getVehicleById(widget.existing!.vehicleId) : widget.vehicle;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Job Card', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(_isEditing ? 'Edit Job Card' : 'New Job Card',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
@@ -180,7 +264,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Customer & Vehicle summary banner
+              // Customer & Vehicle summary banner (read-only; locked in edit mode)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -206,7 +290,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.vehicle.registrationNumber,
+                            vehicle?.registrationNumber ?? 'Vehicle',
                             style: GoogleFonts.poppins(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
@@ -215,15 +299,28 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${widget.vehicle.displayName} • ${widget.customer.name}',
+                            '${vehicle?.displayName ?? '—'} • ${customer?.name ?? '—'}',
                             style: GoogleFonts.poppins(
                               fontSize: 13.5,
                               color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                             ),
                           ),
+                          if (_isEditing) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              '${widget.existing!.jobCardNumber} • customer & vehicle locked',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11.5,
+                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
+                    if (_isEditing)
+                      Icon(Icons.lock_rounded, size: 18,
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted),
                   ],
                 ),
               ),
@@ -471,15 +568,26 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                   hintText: 'e.g. Scratches on front left bumper noted, spare wheel in trunk',
                 ),
               ),
+              const SizedBox(height: 14),
+
+              // Estimated Cost Note
+              TextFormField(
+                controller: _estCostController,
+                decoration: const InputDecoration(
+                  labelText: 'Est. cost note (optional)',
+                  hintText: 'e.g. Approx 4,000 depending on parts availability',
+                  prefixIcon: Icon(Icons.request_quote_rounded, color: AppColors.primary),
+                ),
+              ),
               const SizedBox(height: 32),
 
               // Save Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _saveJobCard,
+                  onPressed: _isSaving ? null : _saveJobCard,
                   icon: const Icon(Icons.check_circle_rounded),
-                  label: const Text('Create & Issue Job Card'),
+                  label: Text(_isEditing ? 'Save Changes' : 'Create & Issue Job Card'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),

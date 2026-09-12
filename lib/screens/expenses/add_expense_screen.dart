@@ -111,7 +111,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           ),
         );
 
-        Navigator.pop(context);
+        Navigator.pop(context, edited);
       } else {
         final expense = GarageExpense(
           id: const Uuid().v4(),

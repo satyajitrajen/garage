@@ -11,6 +11,7 @@ import '../../utils/date_formatter.dart';
 import '../../widgets/status_badge.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
+import 'create_job_card_screen.dart';
 
 class JobCardDetailScreen extends StatefulWidget {
   final String jobCardId;
@@ -22,6 +23,34 @@ class JobCardDetailScreen extends StatefulWidget {
 }
 
 class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
+  /// A delivered or cancelled job card is closed: no more edits or item
+  /// changes are allowed on it.
+  bool _isJobActive(JobCard jobCard) =>
+      jobCard.status != JobStatus.delivered && jobCard.status != JobStatus.cancelled;
+
+  bool _hasText(String? value) => value != null && value.trim().isNotEmpty;
+
+  /// Opens the job card form in edit mode. The detail screen resolves the job
+  /// card by id from the provider on every build, so the notifyListeners from
+  /// the update refreshes everything shown here automatically.
+  Future<void> _editJobCard(JobCard jobCard) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateJobCardScreen(existing: jobCard),
+      ),
+    );
+  }
+
+  Future<void> _removeItem(JobCard jobCard, MaintenanceItem item) async {
+    final provider = Provider.of<GarageProvider>(context, listen: false);
+    await provider.removeItemFromJobCard(jobCard.id, item.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Removed "${item.name}" from this job card')),
+    );
+  }
+
   Future<void> _editWorkItems(JobCard jobCard) async {
     final updatedItems = await Navigator.push<List<MaintenanceItem>>(
       context,
@@ -33,13 +62,23 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
       ),
     );
 
-    if (updatedItems != null && mounted) {
-      final provider = Provider.of<GarageProvider>(context, listen: false);
-      // Re-fetch: the job card may have changed (e.g. status updated) while
-      // the items editor was open; copying onto a stale snapshot would
-      // silently revert those changes.
-      final fresh = provider.getJobCardById(jobCard.id) ?? jobCard;
-      await provider.updateJobCard(fresh.copyWith(items: updatedItems));
+    if (updatedItems == null || !mounted) return;
+    final provider = Provider.of<GarageProvider>(context, listen: false);
+    // Re-fetch: the job may have changed (e.g. been closed) while the items
+    // editor was open; item changes on a delivered/cancelled job are blocked.
+    final fresh = provider.getJobCardById(jobCard.id);
+    if (fresh == null || !_isJobActive(fresh)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This job card is closed; its work items can no longer be changed'),
+        ),
+      );
+      return;
+    }
+    // Upsert each picked item through the provider: new ids append, known
+    // ids replace in place (this is the same flow the create form uses).
+    for (final item in updatedItems) {
+      await provider.addOrUpdateItemInJobCard(jobCard.id, item);
     }
   }
 
@@ -109,6 +148,12 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
           ],
         ),
         actions: [
+          if (_isJobActive(jobCard))
+            IconButton(
+              tooltip: 'Edit job card',
+              onPressed: () => _editJobCard(jobCard),
+              icon: const Icon(Icons.edit_rounded),
+            ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: StatusBadge.fromJobStatus(jobCard.status),
@@ -243,6 +288,45 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                       ),
                     ],
                   ),
+                  if (_hasText(jobCard.estimatedCostNote)) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.request_quote_rounded, size: 15, color: AppColors.primary),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Est. cost note: ${jobCard.estimatedCostNote}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (jobCard.status == JobStatus.delivered && jobCard.completedAt != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.verified_rounded, size: 15, color: AppColors.paid),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Completed: ${AppDateFormatter.formatDateTime(jobCard.completedAt!)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.paid,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -288,7 +372,91 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+
+            // Inspection Checklist (captured data; hidden when none recorded)
+            if (jobCard.inspectionChecklist.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Inspection Checklist '
+                      '(${jobCard.inspectionChecklist.values.where((v) => v).length}/${jobCard.inspectionChecklist.length})',
+                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 10),
+                    ...jobCard.inspectionChecklist.entries.map((entry) {
+                      final done = entry.value;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                              size: 16,
+                              color: done ? AppColors.paid : AppColors.textMuted,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                entry.key,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13.5,
+                                  color: done
+                                      ? (isDark ? Colors.white : AppColors.textPrimary)
+                                      : AppColors.textMuted,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ],
+
+            // Supervisor Notes (captured data; hidden when empty)
+            if (_hasText(jobCard.supervisorNotes)) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Supervisor Notes',
+                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      jobCard.supervisorNotes!,
+                      style: GoogleFonts.poppins(fontSize: 13.5, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             // Work Items & Spare Parts Table
             Container(
@@ -311,7 +479,8 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                         style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
                       ),
                       TextButton.icon(
-                        onPressed: () => _editWorkItems(jobCard),
+                        onPressed:
+                            _isJobActive(jobCard) ? () => _editWorkItems(jobCard) : null,
                         icon: const Icon(Icons.edit_note_rounded, size: 18),
                         label: const Text('Add / Edit Items'),
                       ),
@@ -358,6 +527,19 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                                 color: isDark ? Colors.white : AppColors.textPrimary,
                               ),
                             ),
+                            if (_isJobActive(jobCard)) ...[
+                              const SizedBox(width: 4),
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                tooltip: 'Remove item',
+                                onPressed: () => _removeItem(jobCard, item),
+                                icon: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 20,
+                                  color: AppColors.pending,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       );

@@ -245,6 +245,19 @@ void main() {
           exp.amount + 100);
     });
 
+    test('job card item upsert/remove via provider', () async {
+      final jc = provider.jobCards.first;
+      final item = provider.catalog.first.copyWith(id: 'temp-item', quantity: 2);
+      await provider.addOrUpdateItemInJobCard(jc.id, item);
+      expect(
+          provider.jobCards.firstWhere((x) => x.id == jc.id).items.any((i) => i.id == 'temp-item'),
+          isTrue);
+      await provider.removeItemFromJobCard(jc.id, 'temp-item');
+      expect(
+          provider.jobCards.firstWhere((x) => x.id == jc.id).items.any((i) => i.id == 'temp-item'),
+          isFalse);
+    });
+
     test('Staff Attendance & Monthly Salary Net Payout Calculation', () async {
       final staffMember = provider.staff.first; // Ramesh Sharma, 28,000 monthly
       final now = DateTime.now();
