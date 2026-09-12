@@ -487,6 +487,21 @@ class GarageProvider extends ChangeNotifier {
     return addInvoice(invoice);
   }
 
+  /// Cancels an unpaid invoice. Invoices with recorded payments are blocked
+  /// from cancellation so money already collected can never vanish from
+  /// analytics; refunding is a separate workflow.
+  Future<void> cancelInvoice(String invoiceId) async {
+    final i = _invoices.indexWhere((inv) => inv.id == invoiceId);
+    if (i == -1) throw Exception('Invoice not found');
+    final invoice = _invoices[i];
+    if (invoice.totalPaidAmount > 0) {
+      throw Exception('Cannot cancel an invoice with recorded payments');
+    }
+    final cancelled = invoice.copyWith(cancelledAt: DateTime.now());
+    _invoices[i] = await _repo.updateInvoice(cancelled);
+    notifyListeners();
+  }
+
   // -------------------------------------------------------------
   // PAYMENT METHODS
   // -------------------------------------------------------------

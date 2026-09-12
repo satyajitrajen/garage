@@ -36,6 +36,7 @@ class Invoice {
   final List<Payment> payments;
   final DateTime invoiceDate;
   final DateTime? dueDate;
+  final DateTime? cancelledAt;
   final String? notes;
   final String? termsAndConditions;
 
@@ -52,6 +53,7 @@ class Invoice {
     List<Payment>? payments,
     DateTime? invoiceDate,
     this.dueDate,
+    this.cancelledAt,
     this.notes,
     this.termsAndConditions,
   })  : payments = payments ?? [],
@@ -73,16 +75,25 @@ class Invoice {
   double get grandTotal => taxableSubtotal + totalTaxAmount;
 
   double get totalPaidAmount => payments.fold(0.0, (sum, p) => sum + p.amount);
-  double get balanceDue => (grandTotal - totalPaidAmount).clamp(0, double.infinity);
+
+  /// Raw balance ignores cancellation. It exists because [balanceDue] reads
+  /// [status] (to zero out cancelled invoices) while [status] needs the
+  /// balance to classify the invoice — calling [balanceDue] there would
+  /// recurse forever.
+  double get _rawBalanceDue =>
+      (grandTotal - totalPaidAmount).clamp(0, double.infinity);
+
+  double get balanceDue =>
+      status == InvoiceStatus.cancelled ? 0 : _rawBalanceDue;
 
   InvoiceStatus get status {
-    if (balanceDue <= 0.01) {
+    if (cancelledAt != null) return InvoiceStatus.cancelled;
+    if (_rawBalanceDue <= 0.01) {
       return InvoiceStatus.paid;
     } else if (totalPaidAmount > 0) {
       return InvoiceStatus.partial;
-    } else {
-      return InvoiceStatus.pending;
     }
+    return InvoiceStatus.pending;
   }
 
   Invoice copyWith({
@@ -98,6 +109,7 @@ class Invoice {
     List<Payment>? payments,
     DateTime? invoiceDate,
     DateTime? dueDate,
+    DateTime? cancelledAt,
     String? notes,
     String? termsAndConditions,
   }) {
@@ -114,6 +126,7 @@ class Invoice {
       payments: payments ?? this.payments,
       invoiceDate: invoiceDate ?? this.invoiceDate,
       dueDate: dueDate ?? this.dueDate,
+      cancelledAt: cancelledAt ?? this.cancelledAt,
       notes: notes ?? this.notes,
       termsAndConditions: termsAndConditions ?? this.termsAndConditions,
     );

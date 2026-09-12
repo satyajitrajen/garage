@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../models/invoice.dart';
 import '../../models/maintenance_item.dart';
 import '../../models/payment.dart';
 import '../../providers/garage_provider.dart';
@@ -11,13 +12,19 @@ import '../../utils/quantity_formatter.dart';
 import '../../widgets/status_badge.dart';
 import '../payments/payment_collection_screen.dart';
 
-class InvoicePreviewScreen extends StatelessWidget {
+class InvoicePreviewScreen extends StatefulWidget {
   final String invoiceId;
 
   const InvoicePreviewScreen({super.key, required this.invoiceId});
 
   @override
+  State<InvoicePreviewScreen> createState() => _InvoicePreviewScreenState();
+}
+
+class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
+  @override
   Widget build(BuildContext context) {
+    final invoiceId = widget.invoiceId;
     final provider = Provider.of<GarageProvider>(context);
     final invoice = provider.getInvoiceById(invoiceId);
 
@@ -58,6 +65,29 @@ class InvoicePreviewScreen extends StatelessWidget {
               );
             },
           ),
+          // Cancel action is only meaningful while nothing has been paid and
+          // the invoice is still active — paid invoices need a refund flow and
+          // cancelled ones are already voided.
+          if (invoice.totalPaidAmount <= 0 && invoice.status != InvoiceStatus.cancelled)
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'cancel_invoice') {
+                  _confirmCancelInvoice(context, provider, invoice);
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'cancel_invoice',
+                  child: Row(
+                    children: [
+                      Icon(Icons.cancel_outlined, size: 18, color: AppColors.pending),
+                      SizedBox(width: 8),
+                      Text('Cancel Invoice'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: StatusBadge.fromInvoiceStatus(invoice.status),
@@ -413,6 +443,54 @@ class InvoicePreviewScreen extends StatelessWidget {
             const SizedBox(height: 80),
           ],
         ),
+      ),
+    );
+  }
+
+  void _confirmCancelInvoice(
+      BuildContext context, GarageProvider provider, Invoice invoice) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Invoice?'),
+        content: const Text('Cancel this invoice? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Keep Invoice'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.pending,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              try {
+                await provider.cancelInvoice(invoice.id);
+                if (!ctx.mounted) return;
+                Navigator.pop(ctx);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Invoice ${invoice.invoiceNumber} cancelled'),
+                    backgroundColor: AppColors.pending,
+                  ),
+                );
+              } catch (e) {
+                if (!ctx.mounted) return;
+                Navigator.pop(ctx);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(e.toString().replaceFirst('Exception: ', '')),
+                    backgroundColor: AppColors.pending,
+                  ),
+                );
+              }
+            },
+            child: const Text('Cancel Invoice'),
+          ),
+        ],
       ),
     );
   }

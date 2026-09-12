@@ -256,5 +256,20 @@ void main() {
       expect(newInvoice.id, equals('test_direct_inv'));
       expect(provider.getInvoiceById('test_direct_inv'), isNotNull);
     });
+
+    test('invoice cancel: unpaid invoice becomes cancelled, paid cannot cancel', () async {
+      final provider = GarageProvider(MockGarageRepository());
+      await provider.load();
+      final unpaid = provider.invoices.firstWhere((i) => i.totalPaidAmount == 0);
+      await provider.cancelInvoice(unpaid.id);
+      expect(unpaid.copyWith(cancelledAt: DateTime.now()).status, InvoiceStatus.cancelled);
+      expect(
+          provider.invoices.firstWhere((i) => i.id == unpaid.id).status,
+          InvoiceStatus.cancelled);
+      expect(provider.totalPendingPayments,
+          isNot(contains(equals(unpaid.balanceDue)))); // excluded from analytics
+      final paid = provider.invoices.firstWhere((i) => i.totalPaidAmount > 0);
+      expect(() => provider.cancelInvoice(paid.id), throwsException);
+    });
   });
 }
