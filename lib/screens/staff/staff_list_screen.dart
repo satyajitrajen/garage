@@ -37,8 +37,9 @@ class StaffListScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.pending),
             onPressed: () async {
               await provider.deleteStaff(staff.id);
-              if (!context.mounted) return;
+              if (!ctx.mounted) return;
               Navigator.pop(ctx);
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Staff member ${staff.name} deleted'),

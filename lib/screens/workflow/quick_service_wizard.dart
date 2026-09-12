@@ -34,6 +34,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   Invoice? _generatedInvoice;
+  bool _isGeneratingBill = false;
 
   @override
   void dispose() {
@@ -79,55 +80,63 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
   }
 
   Future<void> _generateFinalBill() async {
-    // Guard: never generate a second invoice for the same service.
-    if (_generatedInvoice != null) {
-      setState(() => _currentStep = 3);
-      return;
-    }
+    // Latch: prevent a double-tap from creating two invoices across the
+    // async gap before _generatedInvoice is set.
+    if (_isGeneratingBill) return;
+    _isGeneratingBill = true;
+    try {
+      // Guard: never generate a second invoice for the same service.
+      if (_generatedInvoice != null) {
+        setState(() => _currentStep = 3);
+        return;
+      }
 
-    if (_selectedItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add at least one work item or spare part')),
+      if (_selectedItems.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please add at least one work item or spare part')),
+        );
+        return;
+      }
+
+      final provider = Provider.of<GarageProvider>(context, listen: false);
+      final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
+      if (discount < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Discount cannot be negative')),
+        );
+        return;
+      }
+      final gross = _selectedItems.fold(0.0, (sum, i) => sum + i.totalAmount);
+      if (discount > gross) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Discount cannot exceed subtotal of ${CurrencyFormatter.format(gross)}')),
+        );
+        return;
+      }
+
+      final invoice = Invoice(
+        id: const Uuid().v4(),
+        invoiceNumber: provider.generateInvoiceNumber(),
+        customerId: _selectedCustomer!.id,
+        vehicleId: _selectedVehicle!.id,
+        kmReading: int.tryParse(_kmController.text.trim()) ?? _selectedVehicle!.currentKm,
+        items: List.from(_selectedItems),
+        discountAmount: discount,
+        taxPercent: 18.0,
+        invoiceDate: DateTime.now(),
+        notes: 'Quick Service counter bill generated via Nexory Wizard',
       );
-      return;
+
+      await provider.addInvoice(invoice);
+      if (!mounted) return;
+
+      setState(() {
+        _generatedInvoice = invoice;
+        _currentStep = 3;
+      });
+    } finally {
+      _isGeneratingBill = false;
     }
-
-    final provider = Provider.of<GarageProvider>(context, listen: false);
-    final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
-    if (discount < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Discount cannot be negative')),
-      );
-      return;
-    }
-    final gross = _selectedItems.fold(0.0, (sum, i) => sum + i.totalAmount);
-    if (discount > gross) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Discount cannot exceed subtotal of ${CurrencyFormatter.format(gross)}')),
-      );
-      return;
-    }
-
-    final invoice = Invoice(
-      id: const Uuid().v4(),
-      invoiceNumber: provider.generateInvoiceNumber(),
-      customerId: _selectedCustomer!.id,
-      vehicleId: _selectedVehicle!.id,
-      kmReading: int.tryParse(_kmController.text.trim()) ?? _selectedVehicle!.currentKm,
-      items: List.from(_selectedItems),
-      discountAmount: discount,
-      taxPercent: 18.0,
-      invoiceDate: DateTime.now(),
-      notes: 'Quick Service counter bill generated via Nexory Wizard',
-    );
-
-    await provider.addInvoice(invoice);
-    if (!mounted) return;
-
-    setState(() {
-      _generatedInvoice = invoice;
-      _currentStep = 3;
-    });
   }
 
   @override

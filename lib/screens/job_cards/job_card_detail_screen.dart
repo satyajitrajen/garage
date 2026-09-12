@@ -22,7 +22,7 @@ class JobCardDetailScreen extends StatefulWidget {
 }
 
 class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
-  void _editWorkItems(JobCard jobCard) async {
+  Future<void> _editWorkItems(JobCard jobCard) async {
     final updatedItems = await Navigator.push<List<MaintenanceItem>>(
       context,
       MaterialPageRoute(
