@@ -174,6 +174,34 @@ void main() {
           throwsException);
     });
 
+    test('convert guard validates the CURRENT cache, not a stale approved object', () async {
+      // Defense-in-depth pin: convertQuotationToJobCard re-checks the
+      // quotation's status in the provider's CURRENT cache instead of
+      // trusting the passed object. Seed q_1 (EST-1001) ships approved, so
+      // first grab the cached object while it is genuinely approved.
+      final staleApproved = provider.quotations.firstWhere((q) => q.id == 'q_1');
+      expect(staleApproved.status, QuotationStatus.approved);
+      final jobCountBefore = provider.jobCards.length;
+
+      // A legitimate provider method then moves the CURRENT cache entry out
+      // of approved (e.g. the customer declines after approval), so the
+      // caller's object goes stale while still claiming approved.
+      await provider.updateQuotationStatus('q_1', QuotationStatus.rejected);
+      expect(staleApproved.status, QuotationStatus.approved); // stale local copy
+
+      // Conversion must throw EVEN THOUGH the passed object claims approved:
+      // the guard reads the cache, which says rejected.
+      expect(
+          () => provider.convertQuotationToJobCard(staleApproved),
+          throwsException);
+
+      // And nothing leaked through: no job card was created, the cache entry
+      // stays rejected.
+      expect(provider.jobCards.length, jobCountBefore);
+      expect(provider.quotations.firstWhere((q) => q.id == 'q_1').status,
+          QuotationStatus.rejected);
+    });
+
     test('Invoice Calculation & Payment Collection Flow', () async {
       final invoice = Invoice(
         id: 'test_inv_1',
@@ -257,6 +285,29 @@ void main() {
       expect(
           provider.jobCards.firstWhere((x) => x.id == jc.id).items.any((i) => i.id == 'temp-item'),
           isFalse);
+    });
+
+    test('job card item upsert REPLACES an existing line (no duplicate)', () async {
+      // Seed job card jc_2 starts with 3 items. Upserting the same item id a
+      // second time must swap the line in place: list length unchanged, the
+      // single surviving entry carrying the new quantity and rate. Fractional
+      // quantity (0.5 hours of labour) is a first-class case here.
+      final jc = provider.jobCards.firstWhere((j) => j.id == 'jc_2');
+      final initialCount = jc.items.length;
+      final labour = provider.catalog.firstWhere((c) => c.id == 'cat_14');
+
+      await provider.addOrUpdateItemInJobCard(jc.id, labour.copyWith(quantity: 2));
+      var current = provider.jobCards.firstWhere((x) => x.id == jc.id);
+      expect(current.items.length, initialCount + 1);
+      expect(current.items.singleWhere((i) => i.id == labour.id).quantity, 2);
+
+      await provider.addOrUpdateItemInJobCard(
+          jc.id, labour.copyWith(quantity: 0.5, unitPrice: 999.0));
+      current = provider.jobCards.firstWhere((x) => x.id == jc.id);
+      expect(current.items.length, initialCount + 1); // replaced, not appended
+      final replaced = current.items.singleWhere((i) => i.id == labour.id);
+      expect(replaced.quantity, 0.5);
+      expect(replaced.unitPrice, 999.0);
     });
 
     test('Staff Attendance & Monthly Salary Net Payout Calculation', () async {
