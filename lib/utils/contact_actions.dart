@@ -14,6 +14,14 @@ class ContactActions {
   static Future<void> call(BuildContext context, String phone) =>
       _launch(context, Uri(scheme: 'tel', path: phone.replaceAll(' ', '')));
 
+  /// Standard opening line for customer WhatsApp chats: names the customer
+  /// and the garage so the message reads as coming from the workshop.
+  static String greeting({
+    required String customerName,
+    required String garageName,
+  }) =>
+      'Hello $customerName, this is $garageName.';
+
   /// Opens a WhatsApp chat with [phone] via the wa.me web link, optionally
   /// pre-filling the first [message].
   static Future<void> whatsapp(
@@ -53,23 +61,16 @@ class ContactActions {
   /// Launches [uri] in an external app, showing an error snack bar when the
   /// launch fails or nothing on the device can handle the link.
   static Future<void> _launch(BuildContext context, Uri uri) async {
-    try {
-      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!ok && context.mounted) {
-        showAppSnackBar(
-          context,
-          'No app found to handle this action',
-          type: SnackBarType.error,
-        );
-      }
-    } catch (_) {
-      if (context.mounted) {
-        showAppSnackBar(
-          context,
-          'No app found to handle this action',
-          type: SnackBarType.error,
-        );
-      }
+    // catchError folds launch failures (no handler app, platform errors)
+    // into a plain `false` so both failure modes share one snack bar branch.
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication)
+        .catchError((_) => false);
+    if (!ok && context.mounted) {
+      showAppSnackBar(
+        context,
+        'No app found to handle this action',
+        type: SnackBarType.error,
+      );
     }
   }
 }

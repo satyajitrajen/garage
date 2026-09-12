@@ -6,7 +6,9 @@ import '../../models/quotation.dart';
 import '../../models/maintenance_item.dart';
 import '../../models/invoice.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/contact_actions.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
@@ -27,11 +29,10 @@ class QuotationDetailScreen extends StatelessWidget {
       final jobCard = await provider.convertQuotationToJobCard(quote);
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Converted to Job Card #${jobCard.jobCardNumber}!'),
-          backgroundColor: AppColors.paid,
-        ),
+      showAppSnackBar(
+        context,
+        'Converted to Job Card #${jobCard.jobCardNumber}!',
+        type: SnackBarType.success,
       );
 
       Navigator.pushReplacement(
@@ -42,11 +43,10 @@ class QuotationDetailScreen extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: AppColors.pending,
-        ),
+      showAppSnackBar(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: SnackBarType.error,
       );
     }
   }
@@ -79,11 +79,10 @@ class QuotationDetailScreen extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: AppColors.pending,
-        ),
+      showAppSnackBar(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: SnackBarType.error,
       );
     }
   }
@@ -93,11 +92,10 @@ class QuotationDetailScreen extends StatelessWidget {
     final customer = provider.getCustomerById(quote.customerId);
     final vehicle = provider.getVehicleById(quote.vehicleId);
     if (customer == null || vehicle == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Customer or vehicle for this estimate no longer exists'),
-          backgroundColor: AppColors.pending,
-        ),
+      showAppSnackBar(
+        context,
+        'Customer or vehicle for this estimate no longer exists',
+        type: SnackBarType.error,
       );
       return;
     }
@@ -120,19 +118,17 @@ class QuotationDetailScreen extends StatelessWidget {
     try {
       await provider.updateQuotationStatus(quote.id, QuotationStatus.approved);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Estimate #${quote.quotationNumber} approved'),
-          backgroundColor: AppColors.paid,
-        ),
+      showAppSnackBar(
+        context,
+        'Estimate #${quote.quotationNumber} approved',
+        type: SnackBarType.success,
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: AppColors.pending,
-        ),
+      showAppSnackBar(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: SnackBarType.error,
       );
     }
   }
@@ -141,44 +137,45 @@ class QuotationDetailScreen extends StatelessWidget {
     final provider = Provider.of<GarageProvider>(context, listen: false);
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Decline Estimate?'),
-        content: Text(
-            'Mark estimate #${quote.quotationNumber} as declined by the customer? This cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, false),
-            child: const Text('Keep Estimate'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.pending,
-              foregroundColor: Colors.white,
+      builder: (dialogCtx) {
+        final palette = dialogCtx.palette;
+        return AlertDialog(
+          title: const Text('Decline Estimate?'),
+          content: Text(
+              'Mark estimate #${quote.quotationNumber} as declined by the customer? This cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx, false),
+              child: const Text('Keep Estimate'),
             ),
-            onPressed: () => Navigator.pop(dialogCtx, true),
-            child: const Text('Decline'),
-          ),
-        ],
-      ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: palette.pending,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(dialogCtx, true),
+              child: const Text('Decline'),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true) return;
 
     try {
       await provider.updateQuotationStatus(quote.id, QuotationStatus.rejected);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Estimate #${quote.quotationNumber} declined'),
-          backgroundColor: AppColors.pending,
-        ),
+      showAppSnackBar(
+        context,
+        'Estimate #${quote.quotationNumber} declined',
+        type: SnackBarType.error,
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: AppColors.pending,
-        ),
+      showAppSnackBar(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: SnackBarType.error,
       );
     }
   }
@@ -198,7 +195,7 @@ class QuotationDetailScreen extends StatelessWidget {
     final customer = provider.getCustomerById(quote.customerId);
     final vehicle = provider.getVehicleById(quote.vehicleId);
     final profile = provider.profile;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Scaffold(
       appBar: AppBar(
@@ -236,10 +233,10 @@ class QuotationDetailScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                color: palette.paperBg,
+                borderRadius: BorderRadius.circular(AppDimens.radiusCard),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  color: palette.border,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -269,7 +266,7 @@ class QuotationDetailScreen extends StatelessWidget {
                               style: GoogleFonts.poppins(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
+                                color: palette.primary,
                               ),
                             ),
                             if (profile.tagline.trim().isNotEmpty) ...[
@@ -281,7 +278,7 @@ class QuotationDetailScreen extends StatelessWidget {
                                 style: GoogleFonts.poppins(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
-                                  color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                                  color: palette.textSecondary,
                                 ),
                               ),
                             ],
@@ -292,7 +289,7 @@ class QuotationDetailScreen extends StatelessWidget {
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.2,
-                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                                color: palette.textMuted,
                               ),
                             ),
                             Text(
@@ -301,7 +298,7 @@ class QuotationDetailScreen extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
-                                color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                                color: palette.textMuted,
                               ),
                             ),
                             Text(
@@ -310,7 +307,7 @@ class QuotationDetailScreen extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
-                                color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                                color: palette.textMuted,
                               ),
                             ),
                             Text(
@@ -319,7 +316,7 @@ class QuotationDetailScreen extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
-                                color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                                color: palette.textMuted,
                               ),
                             ),
                             if (profile.email.trim().isNotEmpty)
@@ -329,7 +326,7 @@ class QuotationDetailScreen extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.poppins(
                                   fontSize: 11,
-                                  color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                                  color: palette.textMuted,
                                 ),
                               ),
                           ],
@@ -344,7 +341,7 @@ class QuotationDetailScreen extends StatelessWidget {
                           ),
                           Text(
                             AppDateFormatter.formatDate(quote.createdAt),
-                            style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted),
+                            style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
                           ),
                         ],
                       ),
@@ -362,19 +359,19 @@ class QuotationDetailScreen extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('ESTIMATE FOR:', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                          Text('ESTIMATE FOR:', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: palette.textMuted)),
                           const SizedBox(height: 2),
                           Text(customer?.name ?? '', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
-                          Text(customer?.phone ?? '', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textSecondary)),
+                          Text(customer?.phone ?? '', style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary)),
                         ],
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('VEHICLE:', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                          Text('VEHICLE:', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: palette.textMuted)),
                           const SizedBox(height: 2),
                           Text(vehicle?.registrationNumber ?? '', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
-                          Text('${vehicle?.displayName ?? ""} • ${quote.kmReading} KM', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textSecondary)),
+                          Text('${vehicle?.displayName ?? ""} • ${quote.kmReading} KM', style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary)),
                         ],
                       ),
                     ],
@@ -385,26 +382,26 @@ class QuotationDetailScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                      color: palette.paperHeaderBg,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
                         Expanded(
                           flex: 3,
-                          child: Text('DESCRIPTION', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                          child: Text('DESCRIPTION', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 1,
-                          child: Text('QTY', textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                          child: Text('QTY', textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('RATE', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                          child: Text('RATE', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('AMOUNT', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                          child: Text('AMOUNT', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                       ],
                     ),
@@ -425,7 +422,7 @@ class QuotationDetailScreen extends StatelessWidget {
                                 Text(item.name, style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w600)),
                                 Text(
                                   item.isLabour ? 'Labour' : 'Part (${item.category.displayName})',
-                                  style: GoogleFonts.poppins(fontSize: 11, color: AppColors.textMuted),
+                                  style: GoogleFonts.poppins(fontSize: 11, color: palette.textMuted),
                                 ),
                               ],
                             ),
@@ -449,11 +446,11 @@ class QuotationDetailScreen extends StatelessWidget {
                   const Divider(height: 24),
 
                   // Summary
-                  _buildSummaryLine('Parts Subtotal', CurrencyFormatter.format(quote.partsSubtotal), isDark),
-                  _buildSummaryLine('Labour Subtotal', CurrencyFormatter.format(quote.labourSubtotal), isDark),
+                  _buildSummaryLine('Parts Subtotal', CurrencyFormatter.format(quote.partsSubtotal), palette),
+                  _buildSummaryLine('Labour Subtotal', CurrencyFormatter.format(quote.labourSubtotal), palette),
                   if (quote.overallDiscount > 0)
-                    _buildSummaryLine('Discount', '- ${CurrencyFormatter.format(quote.overallDiscount)}', isDark, color: AppColors.paid),
-                  _buildSummaryLine('Estimated Taxes (${quote.taxPercent.toInt()}%)', CurrencyFormatter.format(quote.totalTaxAmount), isDark),
+                    _buildSummaryLine('Discount', '- ${CurrencyFormatter.format(quote.overallDiscount)}', palette, color: palette.paid),
+                  _buildSummaryLine('Estimated Taxes (${quote.taxPercent.toInt()}%)', CurrencyFormatter.format(quote.totalTaxAmount), palette),
                   const Divider(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -461,7 +458,7 @@ class QuotationDetailScreen extends StatelessWidget {
                       Text('Net Estimated Total:', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w800)),
                       Text(
                         CurrencyFormatter.format(quote.grandTotal),
-                        style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.primary),
+                        style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w900, color: palette.primary),
                       ),
                     ],
                   ),
@@ -471,16 +468,16 @@ class QuotationDetailScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.08),
+                      color: palette.accent.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.accent),
+                        Icon(Icons.info_outline_rounded, size: 16, color: palette.accent),
                         const SizedBox(width: 8),
                         Text(
                           'Valid until ${AppDateFormatter.formatDate(quote.validUntil)} (${quote.validityDays} days)',
-                          style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w500, color: AppColors.accent),
+                          style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w500, color: palette.accent),
                         ),
                       ],
                     ),
@@ -503,7 +500,8 @@ class QuotationDetailScreen extends StatelessWidget {
                       label: const Text('Convert to Job Card'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: palette.primary,
+                        foregroundColor: Colors.white,
                       ),
                     ),
                   ),
@@ -542,7 +540,7 @@ class QuotationDetailScreen extends StatelessWidget {
                       label: const Text('Approve'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: AppColors.paid,
+                        backgroundColor: palette.paid,
                         foregroundColor: Colors.white,
                       ),
                     ),
@@ -555,7 +553,7 @@ class QuotationDetailScreen extends StatelessWidget {
                       label: const Text('Decline'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        foregroundColor: AppColors.pending,
+                        foregroundColor: palette.pending,
                       ),
                     ),
                   ),
@@ -566,17 +564,17 @@ class QuotationDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.textMuted.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
+                  color: palette.textMuted.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.lock_outline_rounded, size: 16, color: AppColors.textMuted),
+                    Icon(Icons.lock_outline_rounded, size: 16, color: palette.textMuted),
                     const SizedBox(width: 8),
                     Text(
                       'This estimate is ${quote.status.displayName.toLowerCase()} — no further actions',
-                      style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                      style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w600, color: palette.textMuted),
                     ),
                   ],
                 ),
@@ -588,7 +586,7 @@ class QuotationDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryLine(String label, String val, bool isDark, {Color? color}) {
+  Widget _buildSummaryLine(String label, String val, AppPalette palette, {Color? color}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -597,11 +595,11 @@ class QuotationDetailScreen extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.poppins(fontSize: 13, color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+              style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary),
             ),
           ),
           const SizedBox(width: 8),
-          Text(val, style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w600, color: color ?? (isDark ? Colors.white : AppColors.textPrimary))),
+          Text(val, style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
         ],
       ),
     );

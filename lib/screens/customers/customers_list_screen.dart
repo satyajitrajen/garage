@@ -299,8 +299,10 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                              ContactActions.whatsapp(
                                                context,
                                                customer.effectiveWhatsApp,
-                                               message:
-                                                   'Hello ${customer.name}, this is ${provider.profile.name}.',
+                                               message: ContactActions.greeting(
+                                                 customerName: customer.name,
+                                                 garageName: provider.profile.name,
+                                               ),
                                              );
                                            },
                                          ),

@@ -5,7 +5,9 @@ import '../../models/job_card.dart';
 import '../../models/maintenance_item.dart';
 import '../../models/vehicle.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/status_badge.dart';
@@ -46,8 +48,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
     final provider = Provider.of<GarageProvider>(context, listen: false);
     await provider.removeItemFromJobCard(jobCard.id, item.id);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Removed "${item.name}" from this job card')),
+    showAppSnackBar(
+      context,
+      'Removed "${item.name}" from this job card',
+      type: SnackBarType.success,
     );
   }
 
@@ -68,17 +72,28 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
     // editor was open; item changes on a delivered/cancelled job are blocked.
     final fresh = provider.getJobCardById(jobCard.id);
     if (fresh == null || !_isJobActive(fresh)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This job card is closed; its work items can no longer be changed'),
-        ),
+      showAppSnackBar(
+        context,
+        'This job card is closed; its work items can no longer be changed',
+        type: SnackBarType.info,
       );
       return;
     }
     // Upsert each picked item through the provider: new ids append, known
     // ids replace in place (this is the same flow the create form uses).
-    for (final item in updatedItems) {
-      await provider.addOrUpdateItemInJobCard(jobCard.id, item);
+    // Wrapped so one failing item surfaces an error snack bar instead of
+    // letting a repo throw escape mid-way through the batch.
+    try {
+      for (final item in updatedItems) {
+        await provider.addOrUpdateItemInJobCard(jobCard.id, item);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -86,19 +101,20 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
     final provider = Provider.of<GarageProvider>(context, listen: false);
     await provider.updateJobStatus(jobCard.id, newStatus);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Status changed to ${newStatus.displayName}'),
-        backgroundColor: AppColors.primary,
-      ),
+    showAppSnackBar(
+      context,
+      'Status changed to ${newStatus.displayName}',
+      type: SnackBarType.info,
     );
   }
 
   Future<void> _generateInvoice(JobCard jobCard) async {
     final provider = Provider.of<GarageProvider>(context, listen: false);
     if (jobCard.items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least one work item before invoicing this job card')),
+      showAppSnackBar(
+        context,
+        'Add at least one work item before invoicing this job card',
+        type: SnackBarType.error,
       );
       return;
     }
@@ -133,7 +149,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
         : null;
 
     final existingInvoice = provider.invoices.where((inv) => inv.jobCardId == jobCard.id).firstOrNull;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Once the job is billed, its work items are locked so they can no
+    // longer diverge from the amounts printed on the invoice.
+    final itemsLocked = existingInvoice != null;
+    final palette = context.palette;
 
     return Scaffold(
       appBar: AppBar(
@@ -143,7 +162,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
             Text(jobCard.jobCardNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 18)),
             Text(
               'Created ${AppDateFormatter.formatDate(jobCard.createdAt)}',
-              style: GoogleFonts.poppins(fontSize: 12, color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted),
+              style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
             ),
           ],
         ),
@@ -169,10 +188,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                color: palette.card,
+                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  color: palette.border,
                 ),
               ),
               child: Column(
@@ -183,7 +202,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w700,
-                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                      color: palette.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -197,9 +216,9 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                           child: ChoiceChip(
                             label: Text(status.shortName),
                             selected: isSelected,
-                            selectedColor: AppColors.primary,
+                            selectedColor: palette.primary,
                             labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : (isDark ? Colors.white : AppColors.textPrimary),
+                              color: isSelected ? Colors.white : palette.textPrimary,
                               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                               fontSize: 12,
                             ),
@@ -220,10 +239,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                color: palette.card,
+                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  color: palette.border,
                 ),
               ),
               child: Column(
@@ -243,7 +262,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.12),
+                          color: palette.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -251,7 +270,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
+                            color: palette.primary,
                           ),
                         ),
                       ),
@@ -268,22 +287,22 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildInfoColumn('Odometer', '${jobCard.kmReading} KM', isDark),
-                      _buildInfoColumn('Fuel Level', jobCard.fuelLevel, isDark),
-                      _buildInfoColumn('Mechanic', staff?.name ?? 'Unassigned', isDark),
+                      _buildInfoColumn('Odometer', '${jobCard.kmReading} KM'),
+                      _buildInfoColumn('Fuel Level', jobCard.fuelLevel),
+                      _buildInfoColumn('Mechanic', staff?.name ?? 'Unassigned'),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Icon(Icons.access_time_rounded, size: 15, color: AppColors.primary),
+                      Icon(Icons.access_time_rounded, size: 15, color: palette.primary),
                       const SizedBox(width: 6),
                       Text(
                         'Promised: ${AppDateFormatter.formatDateTime(jobCard.promisedDeliveryDate)}',
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                          color: palette.primary,
                         ),
                       ),
                     ],
@@ -293,7 +312,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.request_quote_rounded, size: 15, color: AppColors.primary),
+                        Icon(Icons.request_quote_rounded, size: 15, color: palette.primary),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -301,7 +320,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                             style: GoogleFonts.poppins(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                              color: palette.textSecondary,
                             ),
                           ),
                         ),
@@ -310,9 +329,12 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   ],
                   if (jobCard.status == JobStatus.delivered && jobCard.completedAt != null) ...[
                     const SizedBox(height: 8),
+                    // crossAxisAlignment matches the est-cost-note row above so
+                    // a two-line completion timestamp aligns with its icon.
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.verified_rounded, size: 15, color: AppColors.paid),
+                        Icon(Icons.verified_rounded, size: 15, color: palette.paid),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -320,7 +342,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                             style: GoogleFonts.poppins(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.paid,
+                              color: palette.paid,
                             ),
                           ),
                         ),
@@ -337,10 +359,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                color: palette.card,
+                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  color: palette.border,
                 ),
               ),
               child: Column(
@@ -357,7 +379,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.check_circle_outline_rounded, size: 16, color: AppColors.primary),
+                          Icon(Icons.check_circle_outline_rounded, size: 16, color: palette.primary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -380,10 +402,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  color: palette.card,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    color: palette.border,
                   ),
                 ),
                 child: Column(
@@ -405,7 +427,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                             Icon(
                               done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
                               size: 16,
-                              color: done ? AppColors.paid : AppColors.textMuted,
+                              color: done ? palette.paid : palette.textMuted,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -413,9 +435,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                                 entry.key,
                                 style: GoogleFonts.poppins(
                                   fontSize: 13.5,
-                                  color: done
-                                      ? (isDark ? Colors.white : AppColors.textPrimary)
-                                      : AppColors.textMuted,
+                                  color: done ? palette.textPrimary : palette.textMuted,
                                 ),
                               ),
                             ),
@@ -435,10 +455,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  color: palette.card,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    color: palette.border,
                   ),
                 ),
                 child: Column(
@@ -462,10 +482,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                color: palette.card,
+                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  color: palette.border,
                 ),
               ),
               child: Column(
@@ -478,11 +498,20 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                         'Services & Parts (${jobCard.items.length})',
                         style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
                       ),
-                      TextButton.icon(
-                        onPressed:
-                            _isJobActive(jobCard) ? () => _editWorkItems(jobCard) : null,
-                        icon: const Icon(Icons.edit_note_rounded, size: 18),
-                        label: const Text('Add / Edit Items'),
+                      // A billed job locks its items so they can no longer
+                      // diverge from the invoice; the disabled button carries
+                      // an explanatory tooltip.
+                      Tooltip(
+                        message: itemsLocked
+                            ? 'Locked — billed on an invoice'
+                            : 'Edit the work items on this job card',
+                        child: TextButton.icon(
+                          onPressed: itemsLocked || !_isJobActive(jobCard)
+                              ? null
+                              : () => _editWorkItems(jobCard),
+                          icon: const Icon(Icons.edit_note_rounded, size: 18),
+                          label: const Text('Add / Edit Items'),
+                        ),
                       ),
                     ],
                   ),
@@ -491,7 +520,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Center(
                       child: Text(
                         'No maintenance items added yet. Tap "Add / Edit Items" to add parts & labour.',
-                        style: GoogleFonts.poppins(color: AppColors.textMuted, fontSize: 13),
+                        style: GoogleFonts.poppins(color: palette.textMuted, fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -514,7 +543,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                                   ),
                                   Text(
                                     '${item.quantity} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}',
-                                    style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted),
+                                    style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
                                   ),
                                 ],
                               ),
@@ -524,19 +553,19 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: isDark ? Colors.white : AppColors.textPrimary,
+                                color: palette.textPrimary,
                               ),
                             ),
                             if (_isJobActive(jobCard)) ...[
                               const SizedBox(width: 4),
                               IconButton(
                                 visualDensity: VisualDensity.compact,
-                                tooltip: 'Remove item',
-                                onPressed: () => _removeItem(jobCard, item),
-                                icon: const Icon(
+                                tooltip: itemsLocked ? 'Locked — billed on an invoice' : 'Remove item',
+                                onPressed: itemsLocked ? null : () => _removeItem(jobCard, item),
+                                icon: Icon(
                                   Icons.delete_outline_rounded,
                                   size: 20,
-                                  color: AppColors.pending,
+                                  color: itemsLocked ? palette.textMuted : palette.pending,
                                 ),
                               ),
                             ],
@@ -549,7 +578,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('Parts Subtotal:', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textSecondary))),
+                        Expanded(child: Text('Parts Subtotal:', style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary))),
                         const SizedBox(width: 8),
                         Text(CurrencyFormatter.format(jobCard.partsTotal), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
                       ],
@@ -558,7 +587,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('Labour Subtotal:', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textSecondary))),
+                        Expanded(child: Text('Labour Subtotal:', style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary))),
                         const SizedBox(width: 8),
                         Text(CurrencyFormatter.format(jobCard.labourTotal), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
                       ],
@@ -571,7 +600,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                         const SizedBox(width: 8),
                         Text(
                           CurrencyFormatter.format(jobCard.grandTotal),
-                          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.primary),
+                          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800, color: palette.primary),
                         ),
                       ],
                     ),
@@ -598,7 +627,8 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   label: Text('View Invoice #${existingInvoice.invoiceNumber}'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: palette.primary,
+                    foregroundColor: Colors.white,
                   ),
                 ),
               )
@@ -611,7 +641,8 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   label: const Text('Generate Invoice & Bill Customer'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: AppColors.paid,
+                    backgroundColor: palette.paid,
+                    foregroundColor: Colors.white,
                   ),
                 ),
               ),
@@ -622,7 +653,8 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
     );
   }
 
-  Widget _buildInfoColumn(String label, String value, bool isDark) {
+  Widget _buildInfoColumn(String label, String value) {
+    final palette = context.palette;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -630,7 +662,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
           label,
           style: GoogleFonts.poppins(
             fontSize: 11.5,
-            color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+            color: palette.textMuted,
           ),
         ),
         const SizedBox(height: 2),
@@ -639,7 +671,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : AppColors.textPrimary,
+            color: palette.textPrimary,
           ),
         ),
       ],
