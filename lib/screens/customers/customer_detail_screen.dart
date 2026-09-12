@@ -299,6 +299,45 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                     ],
                   ),
                 ],
+                if (customer.gstin?.trim().isNotEmpty ?? false) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'GSTIN: ${customer.gstin!.trim()}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+                if (customer.notes?.trim().isNotEmpty ?? false) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.note_alt_outlined, size: 16, color: AppColors.textMuted),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          customer.notes!.trim(),
+                          style: GoogleFonts.poppins(
+                            fontSize: 12.5,
+                            fontStyle: FontStyle.italic,
+                            color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
 
                 // Outstanding Balance Banner
                 if (outstandingDues > 0) ...[

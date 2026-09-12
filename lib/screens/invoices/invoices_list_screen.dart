@@ -144,6 +144,16 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
     );
   }
 
+  /// An invoice is overdue when its due date has passed and money is still
+  /// owed. Cancelled invoices zero out their balance and paid ones owe
+  /// nothing, so the chip can never appear on either.
+  bool _isOverdue(Invoice inv) {
+    return inv.dueDate != null &&
+        inv.status != InvoiceStatus.cancelled &&
+        inv.balanceDue > 0 &&
+        inv.dueDate!.isBefore(DateTime.now());
+  }
+
   Widget _buildKpiItem(String label, String value, bool isDark, Color? color) {
     return Expanded(
       child: Column(
@@ -233,7 +243,30 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                           color: AppColors.accent,
                         ),
                       ),
-                      StatusBadge.fromInvoiceStatus(inv.status),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_isOverdue(inv)) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.pending,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'Overdue',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          StatusBadge.fromInvoiceStatus(inv.status),
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),

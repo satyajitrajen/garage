@@ -196,14 +196,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                           top: -3,
                           right: -5,
                           child: Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: const BoxDecoration(
-                              color: AppColors.pending,
-                              shape: BoxShape.circle,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
                             constraints: const BoxConstraints(
-                              minWidth: 8,
-                              minHeight: 8,
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.pending,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${badgeCount > 9 ? '9+' : badgeCount}',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                height: 1,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),

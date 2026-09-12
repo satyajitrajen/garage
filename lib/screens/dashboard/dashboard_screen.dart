@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../models/job_card.dart';
+import '../../models/invoice.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/currency_formatter.dart';
@@ -105,9 +106,7 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          await Future.delayed(const Duration(milliseconds: 400));
-        },
+        onRefresh: () => context.read<GarageProvider>().refresh(),
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
@@ -841,6 +840,24 @@ class DashboardScreen extends StatelessWidget {
                                 color: inv.balanceDue > 0 ? AppColors.pending : AppColors.paid,
                               ),
                             ),
+                            if (_isOverdue(inv)) ...[
+                              const SizedBox(height: 2),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.pending,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: Text(
+                                  'Overdue',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                         const SizedBox(width: 4),
@@ -860,6 +877,16 @@ class DashboardScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// An invoice is overdue when its due date has passed and money is still
+  /// owed; cancelled invoices zero out their balance and paid ones owe
+  /// nothing, so the chip can never appear on either.
+  bool _isOverdue(Invoice inv) {
+    return inv.dueDate != null &&
+        inv.status != InvoiceStatus.cancelled &&
+        inv.balanceDue > 0 &&
+        inv.dueDate!.isBefore(DateTime.now());
   }
 
   Widget _buildKpiTile({

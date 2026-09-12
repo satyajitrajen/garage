@@ -39,6 +39,9 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     final vehicle = provider.getVehicleById(invoice.vehicleId);
     final profile = provider.profile;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final customerGstin = customer?.gstin?.trim();
+    final notesText = invoice.notes?.trim() ?? '';
+    final termsText = invoice.termsAndConditions?.trim() ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -133,6 +136,17 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                               color: AppColors.primary,
                             ),
                           ),
+                          if (profile.tagline.trim().isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              profile.tagline.trim(),
+                              style: GoogleFonts.poppins(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 2),
                           Text(
                             'TAX INVOICE & CASH MEMO',
@@ -164,6 +178,14 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                               color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
                             ),
                           ),
+                          if (profile.email.trim().isNotEmpty)
+                            Text(
+                              'Email: ${profile.email.trim()}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                              ),
+                            ),
                         ],
                       ),
                       Column(
@@ -211,6 +233,13 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                             Text(customer?.phone ?? '', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textSecondary)),
                             if (customer?.address != null)
                               Text(customer!.address!, style: GoogleFonts.poppins(fontSize: 11.5, color: AppColors.textMuted), maxLines: 2),
+                            if (customerGstin != null && customerGstin.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                'GSTIN: $customerGstin',
+                                style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -355,6 +384,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                       ),
                     ],
                   ),
+                  if (invoice.dueDate != null) ...[
+                    const SizedBox(height: 4),
+                    _buildSummaryRow('Due Date:', AppDateFormatter.formatDate(invoice.dueDate!), isDark),
+                  ],
                   const SizedBox(height: 16),
 
                   // Payment Logs if any
@@ -375,9 +408,20 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              '${p.mode.displayName} • ${AppDateFormatter.formatDate(p.paymentDate)}',
-                              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500),
+                            Expanded(
+                              child: Text(
+                                [
+                                  p.mode.displayName,
+                                  AppDateFormatter.formatDate(p.paymentDate),
+                                  if (p.transactionRef?.trim().isNotEmpty ?? false)
+                                    'ref ${p.transactionRef!.trim()}',
+                                  if (p.receivedBy?.trim().isNotEmpty ?? false)
+                                    'by ${p.receivedBy!.trim()}',
+                                ].join(' • '),
+                                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                             Text(
                               CurrencyFormatter.format(p.amount),
@@ -387,6 +431,34 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         ),
                       );
                     }),
+                  ],
+                  // Notes & Terms — printed at the foot of the bill only
+                  // when the garage configured them.
+                  if (notesText.isNotEmpty || termsText.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    if (notesText.isNotEmpty) ...[
+                      Text(
+                        'Notes',
+                        style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        notesText,
+                        style: GoogleFonts.poppins(fontSize: 12, height: 1.4, color: isDark ? Colors.white70 : AppColors.textSecondary),
+                      ),
+                    ],
+                    if (termsText.isNotEmpty) ...[
+                      if (notesText.isNotEmpty) const SizedBox(height: 10),
+                      Text(
+                        'Terms & Conditions',
+                        style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        termsText,
+                        style: GoogleFonts.poppins(fontSize: 12, height: 1.4, color: isDark ? Colors.white70 : AppColors.textSecondary),
+                      ),
+                    ],
                   ],
                 ],
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -33,6 +34,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   final _phoneController = TextEditingController();
   final _whatsappController = TextEditingController();
   final _emailController = TextEditingController();
+  final _gstinController = TextEditingController();
   final _addressController = TextEditingController();
   final _notesController = TextEditingController();
 
@@ -59,6 +61,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       _whatsappController.text = c.whatsappNumber ?? '';
       _sameAsPhone = c.whatsappNumber == null || c.whatsappNumber == c.phone;
       _emailController.text = c.email ?? '';
+      _gstinController.text = c.gstin ?? '';
       _addressController.text = c.address ?? '';
       _notesController.text = c.notes ?? '';
       _hasVehicle = false;
@@ -71,6 +74,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     _phoneController.dispose();
     _whatsappController.dispose();
     _emailController.dispose();
+    _gstinController.dispose();
     _addressController.dispose();
     _notesController.dispose();
     _regNoController.dispose();
@@ -102,7 +106,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
             : (_whatsappController.text.trim().isEmpty ? null : _whatsappController.text.trim()),
         email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
         address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-        gstin: original.gstin,
+        gstin: _gstinController.text.trim().isEmpty ? null : _gstinController.text.trim(),
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         createdAt: original.createdAt,
       );
@@ -132,6 +136,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
           : (_whatsappController.text.trim().isEmpty ? null : _whatsappController.text.trim()),
       email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
       address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
+      gstin: _gstinController.text.trim().isEmpty ? null : _gstinController.text.trim(),
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 
@@ -290,6 +295,28 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                   labelText: 'Customer Address / Location',
                   hintText: 'e.g. Flat 101, Palm Residency, Mumbai',
                   prefixIcon: Icon(Icons.location_on_outlined),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // GSTIN (optional tax identity) — uppercase forced so stored
+              // values match the format printed on invoices.
+              TextFormField(
+                controller: _gstinController,
+                maxLength: 15,
+                textCapitalization: TextCapitalization.characters,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                  TextInputFormatter.withFunction(
+                    (oldValue, newValue) =>
+                        newValue.copyWith(text: newValue.text.toUpperCase()),
+                  ),
+                ],
+                decoration: const InputDecoration(
+                  counterText: '',
+                  labelText: 'GSTIN (Optional)',
+                  hintText: 'e.g. 27ABCDE1234F1Z5',
+                  prefixIcon: Icon(Icons.receipt_long_outlined),
                 ),
               ),
               const SizedBox(height: 28),

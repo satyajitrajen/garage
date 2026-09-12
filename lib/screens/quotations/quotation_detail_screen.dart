@@ -257,6 +257,18 @@ class QuotationDetailScreen extends StatelessWidget {
                               color: AppColors.primary,
                             ),
                           ),
+                          if (profile.tagline.trim().isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              profile.tagline.trim(),
+                              style: GoogleFonts.poppins(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 2),
                           Text(
                             'ESTIMATE / QUOTATION',
                             style: GoogleFonts.poppins(
@@ -287,6 +299,14 @@ class QuotationDetailScreen extends StatelessWidget {
                               color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
                             ),
                           ),
+                          if (profile.email.trim().isNotEmpty)
+                            Text(
+                              'Email: ${profile.email.trim()}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                              ),
+                            ),
                         ],
                       ),
                       Column(

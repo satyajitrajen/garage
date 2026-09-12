@@ -55,6 +55,33 @@ class GarageProvider extends ChangeNotifier {
   /// Re-fetches without toggling isLoading (pull-to-refresh keeps content).
   Future<void> refresh() => _fetchAll(showLoading: false);
 
+  /// Normalizes the config once at fetch time so form screens can trust the
+  /// invariants (option lists non-empty, default tax a member of the tax
+  /// options) without re-validating in every dropdown.
+  AppConfig _normalizeConfig(AppConfig config) {
+    final defaults = const AppConfig();
+    final taxOptions = config.taxPercentOptions.isNotEmpty
+        ? config.taxPercentOptions
+        : defaults.taxPercentOptions;
+    final validityOptions = config.quotationValidityOptions.isNotEmpty
+        ? config.quotationValidityOptions
+        : defaults.quotationValidityOptions;
+    final defaultTaxPercent = taxOptions.contains(config.defaultTaxPercent)
+        ? config.defaultTaxPercent
+        : taxOptions.first;
+    return AppConfig(
+      defaultTaxPercent: defaultTaxPercent,
+      taxPercentOptions: taxOptions,
+      invoiceDueDays: config.invoiceDueDays,
+      quotationValidityOptions: validityOptions,
+      workingDaysPerMonth: config.workingDaysPerMonth,
+      promisedDeliveryHours: config.promisedDeliveryHours,
+      invoiceNotes: config.invoiceNotes,
+      invoiceTerms: config.invoiceTerms,
+      defaultReceivedBy: config.defaultReceivedBy,
+    );
+  }
+
   Future<void> _fetchAll({required bool showLoading}) async {
     if (showLoading) {
       _isLoading = true;
@@ -77,7 +104,7 @@ class GarageProvider extends ChangeNotifier {
         _repo.fetchCatalog(),
       ]);
       _profile = results[0] as GarageProfile;
-      _config = results[1] as AppConfig;
+      _config = _normalizeConfig(results[1] as AppConfig);
       _customers = results[2] as List<Customer>;
       _vehicles = results[3] as List<Vehicle>;
       _staff = results[4] as List<Staff>;
