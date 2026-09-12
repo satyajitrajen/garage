@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/garage_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dimens.dart';
+import '../theme/app_palette.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'job_cards/job_cards_list_screen.dart';
 import 'customers/customers_list_screen.dart';
@@ -39,6 +41,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     final activeVehiclesCount = provider.activeVehiclesUnderMaintenanceCount;
     final pendingInvoicesCount = provider.invoices.where((i) => i.balanceDue > 0).length;
@@ -64,7 +67,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: palette.background,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
@@ -77,9 +80,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             height: 64,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: isDark
-                    ? AppColors.cardGradientDark
-                    : AppColors.bannerGradient,
+                colors: palette.bannerGradient,
                 stops: AppColors.bannerGradientStops,
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
@@ -89,13 +90,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.8),
                 width: 1.5,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFA7F3D0).withValues(alpha: isDark ? 0.2 : 0.45),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+              boxShadow: AppDimens.accentGlow(palette.paid),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -173,12 +168,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     vertical: isSelected ? 4 : 0,
                   ),
                   decoration: BoxDecoration(
+                    // Light theme: dark navy chip; dark theme: translucent
+                    // primary glass with an accent border (on-gradient design,
+                    // no single palette slot covers both treatments).
                     color: isSelected
-                        ? (isDark ? AppColors.primary.withValues(alpha: 0.3) : const Color(0xFF121726))
+                        ? (isDark
+                            ? context.palette.primary.withValues(alpha: 0.3)
+                            : context.palette.textPrimary)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     border: isSelected && isDark
-                        ? Border.all(color: AppColors.accent.withValues(alpha: 0.6), width: 1.2)
+                        ? Border.all(
+                            color: context.palette.accent.withValues(alpha: 0.6),
+                            width: 1.2)
                         : null,
                   ),
                   child: Stack(
@@ -188,8 +190,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         isSelected ? selectedIcon : icon,
                         size: 20,
                         color: isSelected
-                            ? (isDark ? AppColors.accent : Colors.white)
-                            : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                            ? (isDark ? context.palette.accent : Colors.white)
+                            : context.palette.textSecondary,
                       ),
                       if (badgeCount > 0)
                         Positioned(
@@ -203,7 +205,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                             ),
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: AppColors.pending,
+                              color: context.palette.pending,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -228,8 +230,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     fontSize: 10,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected
-                        ? (isDark ? Colors.white : const Color(0xFF0F172A))
-                        : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                        ? context.palette.textPrimary
+                        : context.palette.textSecondary,
                   ),
                 ),
               ],

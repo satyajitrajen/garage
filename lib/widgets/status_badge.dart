@@ -166,7 +166,9 @@ class StatusBadge extends StatelessWidget {
     ExpenseCategory category, {
     required AppPalette palette,
   }) {
-    final color = palette.categoryColors[category]!;
+    // Defensive fallback: if a future ExpenseCategory value is missing from
+    // the palette map, render muted instead of crashing on a null color.
+    final color = palette.categoryColors[category] ?? palette.textMuted;
     return StatusBadge(
       label: category.displayName,
       color: color,

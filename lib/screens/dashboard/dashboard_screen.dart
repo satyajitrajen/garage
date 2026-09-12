@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../models/invoice.dart';
 import '../../models/job_card.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
+import '../../widgets/section_header.dart';
+import '../../widgets/status_badge.dart';
 import '../customers/customers_list_screen.dart';
 import '../customers/add_customer_screen.dart';
 import '../vehicles/vehicle_selection_screen.dart';
@@ -27,13 +33,14 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     final today = DateTime.now();
     final activeJobs = provider.activeJobCards;
     final recentInvoices = provider.recentInvoices;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: palette.background,
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -41,8 +48,8 @@ class DashboardScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: AppColors.blueGradient,
+                gradient: LinearGradient(
+                  colors: palette.blueGradient,
                 ),
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -62,7 +69,7 @@ class DashboardScreen extends StatelessWidget {
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
-                      color: isDark ? Colors.white : AppColors.textPrimary,
+                      color: palette.textPrimary,
                     ),
                   ),
                   Text(
@@ -70,7 +77,7 @@ class DashboardScreen extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                      color: palette.textMuted,
                     ),
                   ),
                 ],
@@ -92,7 +99,7 @@ class DashboardScreen extends StatelessWidget {
             onPressed: () => provider.toggleTheme(),
           ),
           IconButton(
-            icon: const Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 22),
+            icon: Icon(Icons.flash_on_rounded, color: palette.primary, size: 22),
             tooltip: 'Quick Service Wizard',
             onPressed: () {
               Navigator.push(
@@ -110,11 +117,10 @@ class DashboardScreen extends StatelessWidget {
             await context.read<GarageProvider>().refresh();
           } catch (e) {
             if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(e.toString().replaceFirst('Exception: ', '')),
-                backgroundColor: AppColors.pending,
-              ),
+            showAppSnackBar(
+              context,
+              e.toString().replaceFirst('Exception: ', ''),
+              type: SnackBarType.error,
             );
           }
         },
@@ -133,21 +139,13 @@ class DashboardScreen extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: isDark
-                        ? AppColors.cardGradientDark
-                        : AppColors.bannerGradient,
+                    colors: palette.bannerGradient,
                     stops: AppColors.bannerGradientStops,
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFA7F3D0).withValues(alpha: isDark ? 0.25 : 0.4),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(AppDimens.radiusCard),
+                  boxShadow: AppDimens.accentGlow(palette.paid),
                 ),
                 padding: const EdgeInsets.only(top: 14, left: 12, right: 12, bottom: 12),
                 child: Column(
@@ -169,8 +167,8 @@ class DashboardScreen extends StatelessWidget {
                           children: [
                             Container(
                               padding: const EdgeInsets.all(3),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF0EA5E9),
+                              decoration: BoxDecoration(
+                                color: palette.accent,
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.check_rounded, color: Colors.white, size: 10),
@@ -181,7 +179,7 @@ class DashboardScreen extends StatelessWidget {
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                color: palette.textSecondary,
                                 letterSpacing: 0.4,
                               ),
                             ),
@@ -195,7 +193,7 @@ class DashboardScreen extends StatelessWidget {
                                 style: GoogleFonts.poppins(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF059669),
+                                  color: palette.ready,
                                   letterSpacing: 0.4,
                                 ),
                               ),
@@ -209,8 +207,8 @@ class DashboardScreen extends StatelessWidget {
                     // 4-Quadrant Metric Tiles (2x2 Grid)
                     Container(
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1A2234) : Colors.white,
-                        borderRadius: BorderRadius.circular(22),
+                        color: palette.card,
+                        borderRadius: BorderRadius.circular(AppDimens.radiusCard),
                       ),
                       padding: const EdgeInsets.all(12),
                       child: Column(
@@ -220,8 +218,8 @@ class DashboardScreen extends StatelessWidget {
                               Expanded(
                                 child: _buildKpiTile(
                                   icon: Icons.payments_rounded,
-                                  badgeBg: AppColors.badgeGreenBg,
-                                  iconColor: AppColors.badgeGreenIcon,
+                                  badgeBg: palette.badgeGreenBg,
+                                  iconColor: palette.badgeGreenIcon,
                                   value: CurrencyFormatter.format(provider.todayCollection),
                                   label: "TODAY'S COLLECTION",
                                   subtitle: "Month: ${CurrencyFormatter.formatCompact(provider.thisMonthRevenue)}",
@@ -231,15 +229,15 @@ class DashboardScreen extends StatelessWidget {
                                       MaterialPageRoute(builder: (_) => const InvoicesListScreen()),
                                     );
                                   },
-                                  isDark: isDark,
+                                  palette: palette,
                                 ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: _buildKpiTile(
                                   icon: Icons.warning_amber_rounded,
-                                  badgeBg: AppColors.badgeRedBg,
-                                  iconColor: AppColors.badgeRedIcon,
+                                  badgeBg: palette.badgeRedBg,
+                                  iconColor: palette.badgeRedIcon,
                                   value: CurrencyFormatter.format(provider.totalPendingPayments),
                                   label: 'PENDING DUES',
                                   subtitle: '${provider.invoices.where((i) => i.balanceDue > 0).length} unpaid bills',
@@ -249,7 +247,7 @@ class DashboardScreen extends StatelessWidget {
                                       MaterialPageRoute(builder: (_) => const InvoicesListScreen()),
                                     );
                                   },
-                                  isDark: isDark,
+                                  palette: palette,
                                 ),
                               ),
                             ],
@@ -260,8 +258,8 @@ class DashboardScreen extends StatelessWidget {
                               Expanded(
                                 child: _buildKpiTile(
                                   icon: Icons.car_repair_rounded,
-                                  badgeBg: AppColors.badgePurpleBg,
-                                  iconColor: AppColors.badgePurpleIcon,
+                                  badgeBg: palette.badgePurpleBg,
+                                  iconColor: palette.badgePurpleIcon,
                                   value: '${provider.activeVehiclesUnderMaintenanceCount}',
                                   label: 'VEHICLES IN BAY',
                                   subtitle: 'Under repair',
@@ -271,15 +269,15 @@ class DashboardScreen extends StatelessWidget {
                                       MaterialPageRoute(builder: (_) => const JobCardsListScreen()),
                                     );
                                   },
-                                  isDark: isDark,
+                                  palette: palette,
                                 ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: _buildKpiTile(
                                   icon: Icons.receipt_long_rounded,
-                                  badgeBg: AppColors.badgeOrangeBg,
-                                  iconColor: AppColors.badgeOrangeIcon,
+                                  badgeBg: palette.badgeOrangeBg,
+                                  iconColor: palette.badgeOrangeIcon,
                                   value: CurrencyFormatter.format(provider.todayExpenses),
                                   label: "TODAY'S EXPENSES",
                                   subtitle: "Month: ${CurrencyFormatter.formatCompact(provider.thisMonthExpenses)}",
@@ -289,7 +287,7 @@ class DashboardScreen extends StatelessWidget {
                                       MaterialPageRoute(builder: (_) => const ExpensesListScreen()),
                                     );
                                   },
-                                  isDark: isDark,
+                                  palette: palette,
                                 ),
                               ),
                             ],
@@ -309,29 +307,21 @@ class DashboardScreen extends StatelessWidget {
                             MaterialPageRoute(builder: (_) => const QuickServiceWizard()),
                           );
                         },
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusCard),
                         child: Ink(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: isDark
-                                  ? AppColors.cardGradientDark
-                                  : AppColors.bannerGradient,
+                              colors: palette.bannerGradient,
                               stops: AppColors.bannerGradientStops,
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
                             ),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(AppDimens.radiusCard),
                             border: Border.all(
                               color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.8),
                               width: 1.5,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFA7F3D0).withValues(alpha: isDark ? 0.2 : 0.4),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
+                            boxShadow: AppDimens.accentGlow(palette.paid),
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           child: Row(
@@ -341,7 +331,7 @@ class DashboardScreen extends StatelessWidget {
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF121726),
+                                  color: palette.textPrimary,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -360,7 +350,7 @@ class DashboardScreen extends StatelessWidget {
                                       style: GoogleFonts.poppins(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w700,
-                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                        color: palette.textPrimary,
                                       ),
                                     ),
                                     Text(
@@ -368,7 +358,7 @@ class DashboardScreen extends StatelessWidget {
                                       style: GoogleFonts.poppins(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
-                                        color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                                        color: palette.textSecondary,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -378,7 +368,7 @@ class DashboardScreen extends StatelessWidget {
                               ),
                               Icon(
                                 Icons.chevron_right_rounded,
-                                color: isDark ? Colors.white70 : const Color(0xFF334155),
+                                color: palette.textSecondary,
                                 size: 20,
                               ),
                             ],
@@ -402,7 +392,7 @@ class DashboardScreen extends StatelessWidget {
                       context,
                       label: '+ Job Card',
                       icon: Icons.add_task_rounded,
-                      color: AppColors.primary,
+                      color: palette.primary,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -420,7 +410,7 @@ class DashboardScreen extends StatelessWidget {
                       context,
                       label: '+ Customer',
                       icon: Icons.person_add_alt_1_rounded,
-                      color: AppColors.accent,
+                      color: palette.accent,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -433,7 +423,7 @@ class DashboardScreen extends StatelessWidget {
                       context,
                       label: '+ Estimate',
                       icon: Icons.request_quote_rounded,
-                      color: AppColors.badgePurpleIcon,
+                      color: palette.badgePurpleIcon,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -451,7 +441,7 @@ class DashboardScreen extends StatelessWidget {
                       context,
                       label: '+ Quick Bill',
                       icon: Icons.receipt_long_rounded,
-                      color: AppColors.paid,
+                      color: palette.paid,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -469,7 +459,7 @@ class DashboardScreen extends StatelessWidget {
                       context,
                       label: '+ Expense',
                       icon: Icons.account_balance_wallet_rounded,
-                      color: AppColors.pending,
+                      color: palette.pending,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -485,39 +475,15 @@ class DashboardScreen extends StatelessWidget {
               // -------------------------------------------------------------
               // 3. LIVE BAY ACTIVITY (ACTIVE FLOOR VEHICLES)
               // -------------------------------------------------------------
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Live Bay Activity',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const JobCardsListScreen()),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(50, 30),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(
-                      'View All (${activeJobs.length})',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ],
+              SectionHeader(
+                title: 'Live Bay Activity',
+                actionText: 'View All (${activeJobs.length})',
+                onActionTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const JobCardsListScreen()),
+                  );
+                },
               ),
               const SizedBox(height: 8),
 
@@ -526,17 +492,17 @@ class DashboardScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    color: palette.surface,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusCard),
                     border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.border,
+                      color: palette.border,
                     ),
                   ),
                   child: Center(
                     child: Text(
                       'All bays clear • No vehicles currently under repair',
                       style: GoogleFonts.poppins(
-                        color: AppColors.textMuted,
+                        color: palette.textMuted,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -551,19 +517,13 @@ class DashboardScreen extends StatelessWidget {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkSurface : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      color: palette.surface,
+                      borderRadius: BorderRadius.circular(AppDimens.radiusCard),
                       border: Border.all(
-                        color: isDark ? AppColors.borderDark : AppColors.border,
+                        color: palette.border,
                         width: 1,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                      boxShadow: AppDimens.cardShadow(palette.textPrimary),
                     ),
                     child: Material(
                       color: Colors.transparent,
@@ -574,7 +534,7 @@ class DashboardScreen extends StatelessWidget {
                             MaterialPageRoute(builder: (_) => JobCardDetailScreen(jobCardId: jc.id)),
                           );
                         },
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusCard),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           child: Row(
@@ -584,10 +544,10 @@ class DashboardScreen extends StatelessWidget {
                                 height: 34,
                                 decoration: BoxDecoration(
                                   color: jc.status == JobStatus.inProgress
-                                      ? AppColors.badgeBlueBg
+                                      ? palette.badgeBlueBg
                                       : jc.status == JobStatus.inspection
-                                          ? AppColors.badgeOrangeBg
-                                          : AppColors.badgeRedBg,
+                                          ? palette.badgeOrangeBg
+                                          : palette.badgeRedBg,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
@@ -597,10 +557,10 @@ class DashboardScreen extends StatelessWidget {
                                           ? Icons.hourglass_top_rounded
                                           : Icons.warning_rounded,
                                   color: jc.status == JobStatus.inProgress
-                                      ? AppColors.badgeBlueIcon
+                                      ? palette.badgeBlueIcon
                                       : jc.status == JobStatus.inspection
-                                          ? AppColors.badgeOrangeIcon
-                                          : AppColors.badgeRedIcon,
+                                          ? palette.badgeOrangeIcon
+                                          : palette.badgeRedIcon,
                                   size: 17,
                                 ),
                               ),
@@ -614,7 +574,7 @@ class DashboardScreen extends StatelessWidget {
                                       style: GoogleFonts.poppins(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w700,
-                                        color: isDark ? Colors.white : AppColors.textPrimary,
+                                        color: palette.textPrimary,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -627,7 +587,7 @@ class DashboardScreen extends StatelessWidget {
                                             '${customer?.name ?? ""} • In Bay',
                                             style: GoogleFonts.poppins(
                                               fontSize: 11.5,
-                                              color: const Color(0xFF94A3B8),
+                                              color: palette.textMuted,
                                               fontWeight: FontWeight.w500,
                                             ),
                                             maxLines: 1,
@@ -635,18 +595,7 @@ class DashboardScreen extends StatelessWidget {
                                           ),
                                         ),
                                         const SizedBox(width: 6),
-                                        Text(
-                                          '• ${jc.status.shortName}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w600,
-                                            color: jc.status == JobStatus.inProgress
-                                                ? AppColors.inProgress
-                                                : jc.status == JobStatus.readyForDelivery
-                                                    ? AppColors.paid
-                                                    : AppColors.pending,
-                                          ),
-                                        ),
+                                        StatusBadge.fromJobStatus(jc.status),
                                       ],
                                     ),
                                   ],
@@ -655,7 +604,7 @@ class DashboardScreen extends StatelessWidget {
                               const SizedBox(width: 8),
                               Icon(
                                 Icons.chevron_right_rounded,
-                                color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                                color: palette.textMuted,
                                 size: 20,
                               ),
                             ],
@@ -675,7 +624,7 @@ class DashboardScreen extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: palette.textSecondary,
                 ),
               ),
               const SizedBox(height: 10),
@@ -692,8 +641,8 @@ class DashboardScreen extends StatelessWidget {
                     title: 'Customers',
                     icon: Icons.people_alt_rounded,
                     count: '${provider.customers.length}',
-                    color: AppColors.accent,
-                    badgeBg: AppColors.badgeBlueBg,
+                    color: palette.accent,
+                    badgeBg: palette.badgeBlueBg,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersListScreen())),
                   ),
                   _buildModuleTile(
@@ -701,8 +650,8 @@ class DashboardScreen extends StatelessWidget {
                     title: 'Job Cards',
                     icon: Icons.assignment_rounded,
                     count: '${provider.activeVehiclesUnderMaintenanceCount}',
-                    color: AppColors.badgePurpleIcon,
-                    badgeBg: AppColors.badgePurpleBg,
+                    color: palette.badgePurpleIcon,
+                    badgeBg: palette.badgePurpleBg,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobCardsListScreen())),
                   ),
                   _buildModuleTile(
@@ -710,8 +659,8 @@ class DashboardScreen extends StatelessWidget {
                     title: 'Quotations',
                     icon: Icons.request_quote_rounded,
                     count: '${provider.quotations.length}',
-                    color: AppColors.badgeOrangeIcon,
-                    badgeBg: AppColors.badgeOrangeBg,
+                    color: palette.badgeOrangeIcon,
+                    badgeBg: palette.badgeOrangeBg,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QuotationsListScreen())),
                   ),
                   _buildModuleTile(
@@ -719,8 +668,8 @@ class DashboardScreen extends StatelessWidget {
                     title: 'Invoices',
                     icon: Icons.receipt_long_rounded,
                     count: '${provider.invoices.length}',
-                    color: AppColors.paid,
-                    badgeBg: AppColors.badgeGreenBg,
+                    color: palette.paid,
+                    badgeBg: palette.badgeGreenBg,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InvoicesListScreen())),
                   ),
                   _buildModuleTile(
@@ -728,8 +677,8 @@ class DashboardScreen extends StatelessWidget {
                     title: 'Expenses',
                     icon: Icons.account_balance_wallet_rounded,
                     count: '${provider.expenses.length}',
-                    color: AppColors.pending,
-                    badgeBg: AppColors.badgeRedBg,
+                    color: palette.pending,
+                    badgeBg: palette.badgeRedBg,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpensesListScreen())),
                   ),
                   _buildModuleTile(
@@ -737,8 +686,8 @@ class DashboardScreen extends StatelessWidget {
                     title: 'Staff Team',
                     icon: Icons.badge_rounded,
                     count: '${provider.staff.length}',
-                    color: const Color(0xFF0284C7),
-                    badgeBg: AppColors.badgeBlueBg,
+                    color: palette.primary,
+                    badgeBg: palette.badgeBlueBg,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StaffListScreen())),
                   ),
                 ],
@@ -748,59 +697,39 @@ class DashboardScreen extends StatelessWidget {
               // -------------------------------------------------------------
               // 5. FINANCIAL REVENUE BAR CHART (computed from real data)
               // -------------------------------------------------------------
-              ..._buildWeeklyRevenueExpenseChart(provider, isDark),
+              ..._buildWeeklyRevenueExpenseChart(provider, palette),
               const SizedBox(height: 24),
 
               // -------------------------------------------------------------
               // 6. RECENT COLLECTIONS & BILLS
               // -------------------------------------------------------------
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Recent Collections & Bills',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const InvoicesListScreen()),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(50, 30),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(
-                      'All Invoices',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ],
+              SectionHeader(
+                title: 'Recent Collections & Bills',
+                actionText: 'All Invoices',
+                onActionTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const InvoicesListScreen()),
+                  );
+                },
               ),
               const SizedBox(height: 8),
 
               ...recentInvoices.take(3).map((inv) {
                 final customer = provider.getCustomerById(inv.customerId);
                 final vehicle = provider.getVehicleById(inv.vehicleId);
+                // A cancelled invoice zeroes out its balance, so the paid/settled
+                // branch below must never claim it — check cancellation first.
+                final isCancelled = inv.status == InvoiceStatus.cancelled;
+                final hasDue = !isCancelled && inv.balanceDue > 0;
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    color: palette.surface,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusCard),
                     border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.border,
+                      color: palette.border,
                       width: 1,
                     ),
                   ),
@@ -816,12 +745,24 @@ class DashboardScreen extends StatelessWidget {
                       width: 34,
                       height: 34,
                       decoration: BoxDecoration(
-                        color: inv.balanceDue > 0 ? AppColors.badgeOrangeBg : AppColors.badgeGreenBg,
+                        color: isCancelled
+                            ? palette.badgeRedBg
+                            : hasDue
+                                ? palette.badgeOrangeBg
+                                : palette.badgeGreenBg,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
-                        inv.balanceDue > 0 ? Icons.timelapse_rounded : Icons.check_circle_rounded,
-                        color: inv.balanceDue > 0 ? AppColors.badgeOrangeIcon : AppColors.badgeGreenIcon,
+                        isCancelled
+                            ? Icons.cancel_outlined
+                            : hasDue
+                                ? Icons.timelapse_rounded
+                                : Icons.check_circle_rounded,
+                        color: isCancelled
+                            ? palette.cancelled
+                            : hasDue
+                                ? palette.badgeOrangeIcon
+                                : palette.badgeGreenIcon,
                         size: 18,
                       ),
                     ),
@@ -831,7 +772,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     subtitle: Text(
                       '${customer?.name ?? ""} • ${vehicle?.registrationNumber ?? ""}',
-                      style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF94A3B8)),
+                      style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -847,11 +788,15 @@ class DashboardScreen extends StatelessWidget {
                               style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 13.5),
                             ),
                             Text(
-                              inv.balanceDue > 0 ? 'Due' : 'Paid',
+                              isCancelled ? 'Cancelled' : hasDue ? 'Due' : 'Paid',
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: inv.balanceDue > 0 ? AppColors.pending : AppColors.paid,
+                                color: isCancelled
+                                    ? palette.cancelled
+                                    : hasDue
+                                        ? palette.pending
+                                        : palette.paid,
                               ),
                             ),
                             if (inv.isOverdue) ...[
@@ -859,7 +804,7 @@ class DashboardScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.pending,
+                                  color: palette.pending,
                                   borderRadius: BorderRadius.circular(5),
                                 ),
                                 child: Text(
@@ -877,7 +822,7 @@ class DashboardScreen extends StatelessWidget {
                         const SizedBox(width: 4),
                         Icon(
                           Icons.chevron_right_rounded,
-                          color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                          color: palette.textMuted,
                           size: 18,
                         ),
                       ],
@@ -901,20 +846,20 @@ class DashboardScreen extends StatelessWidget {
     required String label,
     required String subtitle,
     required VoidCallback onTap,
-    required bool isDark,
+    required AppPalette palette,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppDimens.radiusTile),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF131927) : const Color(0xFFF8FAFD),
-            borderRadius: BorderRadius.circular(16),
+            color: palette.surface,
+            borderRadius: BorderRadius.circular(AppDimens.radiusTile),
             border: Border.all(
-              color: isDark ? const Color(0xFF242E42) : const Color(0xFFF1F5F9),
+              color: palette.border,
               width: 1,
             ),
           ),
@@ -940,7 +885,7 @@ class DashboardScreen extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
+                        color: palette.textPrimary,
                         letterSpacing: -0.3,
                       ),
                       textAlign: TextAlign.end,
@@ -956,7 +901,7 @@ class DashboardScreen extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF94A3B8),
+                  color: palette.textMuted,
                   letterSpacing: 0.3,
                 ),
                 maxLines: 1,
@@ -968,7 +913,7 @@ class DashboardScreen extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                  color: palette.textSecondary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -989,8 +934,6 @@ class DashboardScreen extends StatelessWidget {
     required Color badgeBg,
     required VoidCallback onTap,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -998,10 +941,10 @@ class DashboardScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         child: Ink(
           decoration: BoxDecoration(
-            color: isDark ? AppColors.darkSurface : Colors.white,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: isDark ? AppColors.borderDark : AppColors.border,
+              color: context.palette.border,
             ),
           ),
           child: Padding(
@@ -1027,7 +970,7 @@ class DashboardScreen extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
+                        color: context.palette.textPrimary,
                       ),
                     ),
                   ],
@@ -1037,7 +980,7 @@ class DashboardScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : AppColors.textPrimary,
+                    color: context.palette.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1060,25 +1003,21 @@ class DashboardScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
+        // Deliberately a dark navy pill in BOTH themes (white icon + label on
+        // top); no single palette slot preserves that, so the literals stay.
         color: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppDimens.radiusCard),
         border: Border.all(
           color: isDark ? const Color(0xFF334155) : const Color(0xFF1E293B),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppDimens.cardShadow(context.palette.textPrimary),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppDimens.radiusCard),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Row(
@@ -1118,7 +1057,7 @@ class DashboardScreen extends StatelessWidget {
 
   /// Builds the Weekly Revenue vs Expenses chart using real payment/expense
   /// data bucketed by weekday for the current calendar week (Mon–Sun).
-  List<Widget> _buildWeeklyRevenueExpenseChart(GarageProvider provider, bool isDark) {
+  List<Widget> _buildWeeklyRevenueExpenseChart(GarageProvider provider, AppPalette palette) {
     final now = DateTime.now();
     // Monday of the current week (weekday: Mon=1 .. Sun=7).
     final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
@@ -1147,10 +1086,10 @@ class DashboardScreen extends StatelessWidget {
       Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white,
-          borderRadius: BorderRadius.circular(22),
+          color: palette.surface,
+          borderRadius: BorderRadius.circular(AppDimens.radiusCard),
           border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.border,
+            color: palette.border,
           ),
         ),
         child: Column(
@@ -1164,14 +1103,14 @@ class DashboardScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : AppColors.textPrimary,
+                    color: palette.textPrimary,
                   ),
                 ),
                 Row(
                   children: [
-                    _buildLegendItem('Income', AppColors.paid),
+                    _buildLegendItem('Income', palette.paid),
                     const SizedBox(width: 8),
-                    _buildLegendItem('Expense', AppColors.pending),
+                    _buildLegendItem('Expense', palette.pending),
                   ],
                 ),
               ],
@@ -1197,7 +1136,7 @@ class DashboardScreen extends StatelessWidget {
                               days[index],
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
-                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                                color: palette.textMuted,
                               ),
                             );
                           }
@@ -1212,7 +1151,14 @@ class DashboardScreen extends StatelessWidget {
                   gridData: const FlGridData(show: false),
                   borderData: FlBorderData(show: false),
                   barGroups: [
-                    for (var i = 0; i < 7; i++) _makeGroupData(i, weeklyRevenue[i], weeklyExpenses[i]),
+                    for (var i = 0; i < 7; i++)
+                      _makeGroupData(
+                        i,
+                        weeklyRevenue[i],
+                        weeklyExpenses[i],
+                        incomeColor: palette.paid,
+                        expenseColor: palette.pending,
+                      ),
                   ],
                 ),
               ),
@@ -1223,20 +1169,26 @@ class DashboardScreen extends StatelessWidget {
     ];
   }
 
-  BarChartGroupData _makeGroupData(int x, double y1, double y2) {
+  BarChartGroupData _makeGroupData(
+    int x,
+    double y1,
+    double y2, {
+    required Color incomeColor,
+    required Color expenseColor,
+  }) {
     return BarChartGroupData(
       barsSpace: 4,
       x: x,
       barRods: [
         BarChartRodData(
           toY: y1,
-          color: AppColors.paid,
+          color: incomeColor,
           width: 8,
           borderRadius: BorderRadius.circular(4),
         ),
         BarChartRodData(
           toY: y2,
-          color: AppColors.pending,
+          color: expenseColor,
           width: 8,
           borderRadius: BorderRadius.circular(4),
         ),

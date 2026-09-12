@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
 import '../../utils/currency_formatter.dart';
 import '../expenses/expenses_list_screen.dart';
 import '../expenses/add_expense_screen.dart';
@@ -21,9 +23,10 @@ class MoreMenuScreen extends StatelessWidget {
     final provider = Provider.of<GarageProvider>(context);
     final profile = provider.profile;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: palette.background,
       appBar: AppBar(
         title: Text(
           'More Options',
@@ -53,20 +56,12 @@ class MoreMenuScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: isDark
-                    ? AppColors.cardGradientDark
-                    : AppColors.cardGradient,
+                colors: palette.cardGradient,
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0EA5E9).withValues(alpha: isDark ? 0.25 : 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+              boxShadow: AppDimens.accentGlow(palette.accent),
             ),
             child: Row(
               children: [
@@ -74,8 +69,8 @@ class MoreMenuScreen extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: AppColors.blueGradient,
+                    gradient: LinearGradient(
+                      colors: palette.blueGradient,
                     ),
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -89,7 +84,7 @@ class MoreMenuScreen extends StatelessWidget {
                       Text(
                         profile.name,
                         style: GoogleFonts.poppins(
-                          color: isDark ? Colors.white : AppColors.textPrimary,
+                          color: palette.textPrimary,
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.2,
@@ -99,7 +94,7 @@ class MoreMenuScreen extends StatelessWidget {
                       Text(
                         'GSTIN: ${profile.gstin} • ${profile.city}',
                         style: GoogleFonts.poppins(
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          color: palette.textSecondary,
                           fontSize: 11.5,
                         ),
                       ),
@@ -126,9 +121,7 @@ class MoreMenuScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: isDark
-                        ? AppColors.cardGradientDark
-                        : AppColors.bannerGradient,
+                    colors: palette.bannerGradient,
                     stops: AppColors.bannerGradientStops,
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
@@ -138,13 +131,7 @@ class MoreMenuScreen extends StatelessWidget {
                     color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.8),
                     width: 1.5,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFA7F3D0).withValues(alpha: isDark ? 0.2 : 0.4),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+                  boxShadow: AppDimens.accentGlow(palette.paid),
                 ),
                 child: Row(
                   children: [
@@ -152,7 +139,7 @@ class MoreMenuScreen extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF121726),
+                        color: palette.textPrimary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
@@ -167,7 +154,7 @@ class MoreMenuScreen extends StatelessWidget {
                             style: GoogleFonts.poppins(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              color: palette.textPrimary,
                             ),
                           ),
                           Text(
@@ -175,7 +162,7 @@ class MoreMenuScreen extends StatelessWidget {
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                              color: palette.textSecondary,
                             ),
                           ),
                         ],
@@ -184,7 +171,7 @@ class MoreMenuScreen extends StatelessWidget {
                     Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
-                      color: isDark ? Colors.white70 : const Color(0xFF334155),
+                      color: palette.textSecondary,
                     ),
                   ],
                 ),
@@ -199,8 +186,8 @@ class MoreMenuScreen extends StatelessWidget {
           _buildMenuTile(
             context,
             icon: Icons.request_quote_rounded,
-            badgeBg: AppColors.badgeOrangeBg,
-            color: AppColors.badgeOrangeIcon,
+            badgeBg: palette.badgeOrangeBg,
+            color: palette.badgeOrangeIcon,
             title: 'Quotations / Estimates',
             subtitle: '${provider.quotations.length} pre-service cost estimates created',
             trailing: '${provider.quotations.length}',
@@ -216,8 +203,8 @@ class MoreMenuScreen extends StatelessWidget {
           _buildMenuTile(
             context,
             icon: Icons.account_balance_wallet_rounded,
-            badgeBg: AppColors.badgeRedBg,
-            color: AppColors.badgeRedIcon,
+            badgeBg: palette.badgeRedBg,
+            color: palette.badgeRedIcon,
             title: 'Garage Expenses',
             subtitle: "Today: ${CurrencyFormatter.format(provider.todayExpenses)} • Month: ${CurrencyFormatter.formatCompact(provider.thisMonthExpenses)}",
             trailing: '${provider.expenses.length}',
@@ -233,8 +220,8 @@ class MoreMenuScreen extends StatelessWidget {
           _buildMenuTile(
             context,
             icon: Icons.badge_rounded,
-            badgeBg: AppColors.badgeBlueBg,
-            color: AppColors.badgeBlueIcon,
+            badgeBg: palette.badgeBlueBg,
+            color: palette.badgeBlueIcon,
             title: 'Staff Directory & Roles',
             subtitle: '${provider.staff.length} team members (Mechanics, Electricians)',
             trailing: '${provider.staff.length}',
@@ -250,8 +237,8 @@ class MoreMenuScreen extends StatelessWidget {
           _buildMenuTile(
             context,
             icon: Icons.calendar_month_rounded,
-            badgeBg: AppColors.badgePurpleBg,
-            color: AppColors.badgePurpleIcon,
+            badgeBg: palette.badgePurpleBg,
+            color: palette.badgePurpleIcon,
             title: 'Attendance & Payroll Slips',
             subtitle: 'Daily attendance calendar & net salary calculator',
             onTap: () {
@@ -277,12 +264,12 @@ class MoreMenuScreen extends StatelessWidget {
                       children: [
                         Text('Select Staff Member', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 4),
-                        Text('Choose a member to view attendance calendar or salary slip', style: GoogleFonts.poppins(fontSize: 12.5, color: AppColors.textMuted)),
+                        Text('Choose a member to view attendance calendar or salary slip', style: GoogleFonts.poppins(fontSize: 12.5, color: palette.textMuted)),
                         const SizedBox(height: 16),
                         ...provider.staff.map((s) => ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                            child: Text(s.name.substring(0, 1).toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                            backgroundColor: palette.primary.withValues(alpha: 0.12),
+                            child: Text(s.name.substring(0, 1).toUpperCase(), style: TextStyle(fontWeight: FontWeight.bold, color: palette.primary)),
                           ),
                           title: Text(s.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                           subtitle: Text(s.role.displayName),
@@ -290,7 +277,7 @@ class MoreMenuScreen extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.calendar_month_rounded, color: AppColors.primary),
+                                icon: Icon(Icons.calendar_month_rounded, color: palette.primary),
                                 tooltip: 'Attendance',
                                 onPressed: () {
                                   Navigator.pop(ctx);
@@ -298,7 +285,7 @@ class MoreMenuScreen extends StatelessWidget {
                                 },
                               ),
                               IconButton(
-                                icon: const Icon(Icons.receipt_long_rounded, color: AppColors.accent),
+                                icon: Icon(Icons.receipt_long_rounded, color: palette.accent),
                                 tooltip: 'Salary Slip',
                                 onPressed: () {
                                   Navigator.pop(ctx);
@@ -322,10 +309,10 @@ class MoreMenuScreen extends StatelessWidget {
 
           Container(
             decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : Colors.white,
+              color: palette.surface,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.border,
+                color: palette.border,
                 width: 1,
               ),
             ),
@@ -336,12 +323,12 @@ class MoreMenuScreen extends StatelessWidget {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: AppColors.badgeBlueBg,
+                      color: palette.badgeBlueBg,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
                       provider.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                      color: AppColors.badgeBlueIcon,
+                      color: palette.badgeBlueIcon,
                       size: 18,
                     ),
                   ),
@@ -351,11 +338,11 @@ class MoreMenuScreen extends StatelessWidget {
                   ),
                   subtitle: Text(
                     provider.isDarkMode ? 'Dark slate theme enabled' : 'Light porcelain theme enabled',
-                    style: GoogleFonts.poppins(fontSize: 11.5, color: const Color(0xFF94A3B8)),
+                    style: GoogleFonts.poppins(fontSize: 11.5, color: palette.textMuted),
                   ),
                   value: provider.isDarkMode,
                   onChanged: (_) => provider.toggleTheme(),
-                  activeTrackColor: AppColors.accent,
+                  activeTrackColor: palette.accent,
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -363,10 +350,10 @@ class MoreMenuScreen extends StatelessWidget {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: AppColors.badgeGreenBg,
+                      color: palette.badgeGreenBg,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.add_circle_outline_rounded, color: AppColors.badgeGreenIcon, size: 18),
+                    child: Icon(Icons.add_circle_outline_rounded, color: palette.badgeGreenIcon, size: 18),
                   ),
                   title: Text(
                     'Quick Expense Entry',
@@ -374,7 +361,7 @@ class MoreMenuScreen extends StatelessWidget {
                   ),
                   subtitle: Text(
                     'Add workshop expense receipt',
-                    style: GoogleFonts.poppins(fontSize: 11.5, color: const Color(0xFF94A3B8)),
+                    style: GoogleFonts.poppins(fontSize: 11.5, color: palette.textMuted),
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded, size: 18),
                   onTap: () {
@@ -401,7 +388,7 @@ class MoreMenuScreen extends StatelessWidget {
         style: GoogleFonts.poppins(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFF94A3B8),
+          color: context.palette.textMuted,
           letterSpacing: 0.8,
         ),
       ),
@@ -418,14 +405,12 @@ class MoreMenuScreen extends StatelessWidget {
     String? trailing,
     required VoidCallback onTap,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.border,
+          color: context.palette.border,
           width: 1,
         ),
       ),
@@ -437,7 +422,7 @@ class MoreMenuScreen extends StatelessWidget {
           height: 36,
           decoration: BoxDecoration(
             color: badgeBg,
-            borderRadius: BorderRadius.circular(11),
+            borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
           ),
           child: Icon(icon, color: color, size: 18),
         ),
@@ -449,7 +434,7 @@ class MoreMenuScreen extends StatelessWidget {
           subtitle,
           style: GoogleFonts.poppins(
             fontSize: 11.5,
-            color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+            color: context.palette.textSecondary,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
