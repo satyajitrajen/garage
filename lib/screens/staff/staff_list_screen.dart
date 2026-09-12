@@ -25,37 +25,39 @@ class StaffListScreen extends StatelessWidget {
   }
 
   void _confirmDeleteStaff(BuildContext context, GarageProvider provider, Staff staff) {
-    final palette = context.palette;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Staff Member?'),
-        content: Text('Are you sure you want to remove ${staff.name} from the workshop team?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: palette.pending,
-              foregroundColor: Colors.white,
+      builder: (ctx) {
+        final palette = ctx.palette;
+        return AlertDialog(
+          title: const Text('Delete Staff Member?'),
+          content: Text('Are you sure you want to remove ${staff.name} from the workshop team?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
             ),
-            onPressed: () async {
-              await provider.deleteStaff(staff.id);
-              if (!ctx.mounted) return;
-              Navigator.pop(ctx);
-              if (!context.mounted) return;
-              showAppSnackBar(
-                context,
-                'Staff member ${staff.name} deleted',
-                type: SnackBarType.error,
-              );
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: palette.pending,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                await provider.deleteStaff(staff.id);
+                if (!ctx.mounted) return;
+                Navigator.pop(ctx);
+                if (!context.mounted) return;
+                showAppSnackBar(
+                  context,
+                  'Staff member ${staff.name} deleted',
+                  type: SnackBarType.error,
+                );
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
     );
   }
 

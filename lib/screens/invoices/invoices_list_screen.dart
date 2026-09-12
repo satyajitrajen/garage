@@ -125,9 +125,11 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
           // Tabs
           TabBar(
             controller: _tabController,
+            isScrollable: true,
             labelColor: palette.primary,
             unselectedLabelColor: palette.textMuted,
             indicatorColor: palette.primary,
+            tabAlignment: TabAlignment.start,
             labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
             tabs: const [
               Tab(text: 'All Invoices'),

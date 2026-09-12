@@ -49,38 +49,40 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
   }
 
   void _confirmDeleteExpense(GarageExpense exp) {
-    final palette = context.palette;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Expense?'),
-        content: Text('Are you sure you want to delete "${exp.title}" (${CurrencyFormatter.format(exp.amount)})?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: palette.pending,
-              foregroundColor: Colors.white,
+      builder: (ctx) {
+        final palette = ctx.palette;
+        return AlertDialog(
+          title: const Text('Delete Expense?'),
+          content: Text('Are you sure you want to delete "${exp.title}" (${CurrencyFormatter.format(exp.amount)})?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
             ),
-            onPressed: () async {
-              final provider = Provider.of<GarageProvider>(context, listen: false);
-              await provider.deleteExpense(exp.id);
-              if (!ctx.mounted) return;
-              Navigator.pop(ctx);
-              if (!mounted) return;
-              showAppSnackBar(
-                context,
-                'Expense "${exp.title}" deleted',
-                type: SnackBarType.error,
-              );
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: palette.pending,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final provider = Provider.of<GarageProvider>(context, listen: false);
+                await provider.deleteExpense(exp.id);
+                if (!ctx.mounted) return;
+                Navigator.pop(ctx);
+                if (!mounted) return;
+                showAppSnackBar(
+                  context,
+                  'Expense "${exp.title}" deleted',
+                  type: SnackBarType.error,
+                );
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
     );
   }
 
