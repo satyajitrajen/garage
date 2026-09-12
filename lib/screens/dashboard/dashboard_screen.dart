@@ -331,7 +331,9 @@ class DashboardScreen extends StatelessWidget {
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  color: palette.textPrimary,
+                                  // Deliberately a dark navy chip in BOTH themes (white bolt
+                                  // icon on top); no single palette slot preserves that.
+                                  color: const Color(0xFF121726),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
