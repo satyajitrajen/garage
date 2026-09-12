@@ -400,6 +400,9 @@ class GarageProvider extends ChangeNotifier {
     Quotation quote, {
     String? assignedStaffId,
   }) async {
+    if (quote.status != QuotationStatus.approved) {
+      throw Exception('Only approved estimates can be converted to a job card');
+    }
     final jobCard = JobCard(
       id: _uuid.v4(),
       jobCardNumber: generateJobCardNumber(),
@@ -415,9 +418,11 @@ class GarageProvider extends ChangeNotifier {
       supervisorNotes: 'Created directly from approved quotation ${quote.quotationNumber}',
     );
 
-    await addJobCard(jobCard);
+    // Store the repository-created job card (the cache already holds it) so
+    // callers see the persisted object, not a local pre-insert copy.
+    final created = await addJobCard(jobCard);
     await updateQuotationStatus(quote.id, QuotationStatus.converted);
-    return jobCard;
+    return created;
   }
 
   // -------------------------------------------------------------

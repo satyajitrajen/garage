@@ -120,11 +120,57 @@ void main() {
       );
       await provider.addQuotation(quote);
 
+      // Lifecycle guard: only approved estimates can be converted.
+      await provider.updateQuotationStatus(quote.id, QuotationStatus.approved);
+
       // Convert quotation to Job Card
-      final convertedJc = await provider.convertQuotationToJobCard(quote);
+      final convertedJc = await provider.convertQuotationToJobCard(
+          provider.quotations.firstWhere((q) => q.id == quote.id));
       expect(convertedJc.customerId, equals('c_1'));
       expect(convertedJc.items.length, equals(1));
       expect(provider.quotations.firstWhere((q) => q.id == quote.id).status, equals(QuotationStatus.converted));
+    });
+
+    test('quotation lifecycle: approve -> convert, decline, guard', () async {
+      // Seed data has no draft quotation, so create one (status defaults to
+      // draft) and drive it through the full lifecycle.
+      final draft = Quotation(
+        id: 'test_q_lifecycle',
+        quotationNumber: provider.generateQuotationNumber(),
+        customerId: 'c_1',
+        vehicleId: 'v_1',
+        kmReading: 35000,
+        items: [
+          MaintenanceItem(
+            id: 'lq_1',
+            name: 'Brake Pads Replacement',
+            category: ItemCategory.sparePart,
+            unitPrice: 1800.0,
+          ),
+        ],
+      );
+      await provider.addQuotation(draft);
+
+      await provider.updateQuotationStatus(draft.id, QuotationStatus.approved);
+      expect(provider.quotations.firstWhere((q) => q.id == draft.id).status,
+          QuotationStatus.approved);
+
+      final jobCard = await provider.convertQuotationToJobCard(
+          provider.quotations.firstWhere((q) => q.id == draft.id));
+      expect(jobCard.customerId, draft.customerId);
+      expect(provider.quotations.firstWhere((q) => q.id == draft.id).status,
+          QuotationStatus.converted);
+
+      // After declining, the quotation is no longer approved: the provider
+      // guard must reject conversion of anything that is not approved.
+      await provider.updateQuotationStatus(draft.id, QuotationStatus.rejected);
+      final stillDraft = provider.quotations.firstWhere(
+          (q) => q.status == QuotationStatus.draft,
+          orElse: () => draft);
+      expect(
+          () => provider.convertQuotationToJobCard(
+              stillDraft.copyWith(status: QuotationStatus.draft)),
+          throwsException);
     });
 
     test('Invoice Calculation & Payment Collection Flow', () async {

@@ -13,6 +13,7 @@ import '../../utils/quantity_formatter.dart';
 import '../../widgets/status_badge.dart';
 import '../job_cards/job_card_detail_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
+import 'create_quotation_screen.dart';
 
 class QuotationDetailScreen extends StatelessWidget {
   final String quotationId;
@@ -21,49 +22,164 @@ class QuotationDetailScreen extends StatelessWidget {
 
   Future<void> _convertJobCard(BuildContext context, Quotation quote) async {
     final provider = Provider.of<GarageProvider>(context, listen: false);
-    final jobCard = await provider.convertQuotationToJobCard(quote);
-    if (!context.mounted) return;
+    try {
+      final jobCard = await provider.convertQuotationToJobCard(quote);
+      if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Converted to Job Card #${jobCard.jobCardNumber}!'),
-        backgroundColor: AppColors.paid,
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Converted to Job Card #${jobCard.jobCardNumber}!'),
+          backgroundColor: AppColors.paid,
+        ),
+      );
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => JobCardDetailScreen(jobCardId: jobCard.id),
-      ),
-    );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => JobCardDetailScreen(jobCardId: jobCard.id),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.pending,
+        ),
+      );
+    }
   }
 
   Future<void> _convertInvoice(BuildContext context, Quotation quote) async {
     final provider = Provider.of<GarageProvider>(context, listen: false);
-    final invoice = await provider.addInvoice(
-      Invoice(
-        id: const Uuid().v4(),
-        invoiceNumber: provider.generateInvoiceNumber(),
-        customerId: quote.customerId,
-        vehicleId: quote.vehicleId,
-        kmReading: quote.kmReading,
-        items: quote.items,
-        discountAmount: quote.overallDiscount,
-        taxPercent: quote.taxPercent,
-        invoiceDate: DateTime.now(),
-      ),
-    );
+    try {
+      final invoice = await provider.addInvoice(
+        Invoice(
+          id: const Uuid().v4(),
+          invoiceNumber: provider.generateInvoiceNumber(),
+          customerId: quote.customerId,
+          vehicleId: quote.vehicleId,
+          kmReading: quote.kmReading,
+          items: quote.items,
+          discountAmount: quote.overallDiscount,
+          taxPercent: quote.taxPercent,
+          invoiceDate: DateTime.now(),
+        ),
+      );
 
-    await provider.updateQuotationStatus(quote.id, QuotationStatus.converted);
+      await provider.updateQuotationStatus(quote.id, QuotationStatus.converted);
 
-    if (!context.mounted) return;
-    Navigator.pushReplacement(
+      if (!context.mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => InvoicePreviewScreen(invoiceId: invoice.id),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.pending,
+        ),
+      );
+    }
+  }
+
+  Future<void> _editQuotation(BuildContext context, Quotation quote) async {
+    final provider = Provider.of<GarageProvider>(context, listen: false);
+    final customer = provider.getCustomerById(quote.customerId);
+    final vehicle = provider.getVehicleById(quote.vehicleId);
+    if (customer == null || vehicle == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Customer or vehicle for this estimate no longer exists'),
+          backgroundColor: AppColors.pending,
+        ),
+      );
+      return;
+    }
+    await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => InvoicePreviewScreen(invoiceId: invoice.id),
+        builder: (_) => CreateQuotationScreen(
+          customer: customer,
+          vehicle: vehicle,
+          existing: quote,
+        ),
       ),
     );
+    // The quotation is re-read from the provider on every build, so the
+    // notifyListeners() fired by updateQuotation refreshes this screen.
+  }
+
+  Future<void> _approveQuotation(BuildContext context, Quotation quote) async {
+    final provider = Provider.of<GarageProvider>(context, listen: false);
+    try {
+      await provider.updateQuotationStatus(quote.id, QuotationStatus.approved);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Estimate #${quote.quotationNumber} approved'),
+          backgroundColor: AppColors.paid,
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.pending,
+        ),
+      );
+    }
+  }
+
+  Future<void> _declineQuotation(BuildContext context, Quotation quote) async {
+    final provider = Provider.of<GarageProvider>(context, listen: false);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Decline Estimate?'),
+        content: Text(
+            'Mark estimate #${quote.quotationNumber} as declined by the customer? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Keep Estimate'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.pending,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: const Text('Decline'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await provider.updateQuotationStatus(quote.id, QuotationStatus.rejected);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Estimate #${quote.quotationNumber} declined'),
+          backgroundColor: AppColors.pending,
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.pending,
+        ),
+      );
+    }
   }
 
   @override
@@ -82,12 +198,6 @@ class QuotationDetailScreen extends StatelessWidget {
     final vehicle = provider.getVehicleById(quote.vehicleId);
     final profile = provider.profile;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Conversion is only allowed while the estimate is still open
-    // (draft/sent/approved). Already-converted or rejected estimates must
-    // not spawn duplicate job cards / invoices.
-    final canConvert = quote.status == QuotationStatus.draft ||
-        quote.status == QuotationStatus.sent ||
-        quote.status == QuotationStatus.approved;
 
     return Scaffold(
       appBar: AppBar(
@@ -334,8 +444,10 @@ class QuotationDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Conversion Actions
-            if (canConvert)
+            // Lifecycle Actions: approved estimates can be converted; open
+            // estimates (draft/sent) can still be edited, approved or
+            // declined; converted/rejected estimates are locked.
+            if (quote.status == QuotationStatus.approved)
               Row(
                 children: [
                   Expanded(
@@ -357,6 +469,47 @@ class QuotationDetailScreen extends StatelessWidget {
                       label: const Text('Direct Invoice'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else if (quote.status == QuotationStatus.draft ||
+                quote.status == QuotationStatus.sent)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _editQuotation(context, quote),
+                      icon: const Icon(Icons.edit_rounded, size: 18),
+                      label: const Text('Edit'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _approveQuotation(context, quote),
+                      icon: const Icon(Icons.check_circle_rounded, size: 18),
+                      label: const Text('Approve'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: AppColors.paid,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _declineQuotation(context, quote),
+                      icon: const Icon(Icons.block_rounded, size: 18),
+                      label: const Text('Decline'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        foregroundColor: AppColors.pending,
                       ),
                     ),
                   ),

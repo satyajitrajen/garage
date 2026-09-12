@@ -16,10 +16,15 @@ class CreateQuotationScreen extends StatefulWidget {
   final Customer customer;
   final Vehicle vehicle;
 
+  /// Non-null puts the screen in edit mode: fields are prefilled from this
+  /// quotation and saving updates it (number, status and timestamps kept).
+  final Quotation? existing;
+
   const CreateQuotationScreen({
     super.key,
     required this.customer,
     required this.vehicle,
+    this.existing,
   });
 
   @override
@@ -37,6 +42,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
   double _taxPercent = 0.0;
   bool _isSaving = false;
 
+  bool get _isEditing => widget.existing != null;
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +51,24 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     _taxPercent = config.defaultTaxPercent;
     _validityDays = config.quotationValidityOptions.first;
     _kmController.text = widget.vehicle.currentKm.toString();
+
+    // Edit mode: prefill everything from the quotation being edited.
+    final existing = widget.existing;
+    if (existing != null) {
+      _kmController.text = existing.kmReading.toString();
+      _discountController.text = existing.overallDiscount == 0
+          ? '0'
+          : existing.overallDiscount.toStringAsFixed(2);
+      _notesController.text = existing.notes ?? '';
+      _items.addAll(existing.items.map((item) => item.copyWith()));
+      // Dropdowns assert when their initial value is not among the options.
+      _validityDays = config.quotationValidityOptions.contains(existing.validityDays)
+          ? existing.validityDays
+          : config.quotationValidityOptions.first;
+      _taxPercent = config.taxPercentOptions.contains(existing.taxPercent)
+          ? existing.taxPercent
+          : config.defaultTaxPercent;
+    }
   }
 
   @override
@@ -98,36 +123,85 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
     setState(() => _isSaving = true);
 
-    final quote = Quotation(
-      id: const Uuid().v4(),
-      quotationNumber: provider.generateQuotationNumber(),
-      customerId: widget.customer.id,
-      vehicleId: widget.vehicle.id,
-      kmReading: int.tryParse(_kmController.text.trim()) ?? widget.vehicle.currentKm,
-      items: _items,
-      overallDiscount: discount,
-      taxPercent: _taxPercent,
-      validityDays: _validityDays,
-      status: QuotationStatus.sent,
-      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-    );
+    final notes = _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
+    final km = int.tryParse(_kmController.text.trim()) ?? widget.vehicle.currentKm;
 
-    await provider.addQuotation(quote);
-    if (!mounted) return;
+    try {
+      if (_isEditing) {
+        // Edit mode: rebuild from the existing quotation so the quotation
+        // number, status and timestamps stay untouched.
+        final existing = widget.existing!;
+        final edited = Quotation(
+          id: existing.id,
+          quotationNumber: existing.quotationNumber,
+          customerId: existing.customerId,
+          vehicleId: existing.vehicleId,
+          kmReading: int.tryParse(_kmController.text.trim()) ?? existing.kmReading,
+          items: _items,
+          overallDiscount: discount,
+          taxPercent: _taxPercent,
+          validityDays: _validityDays,
+          status: existing.status,
+          notes: notes,
+          createdAt: existing.createdAt,
+          validUntil: existing.validUntil,
+        );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Estimate #${quote.quotationNumber} saved successfully!'),
-        backgroundColor: AppColors.paid,
-      ),
-    );
+        await provider.updateQuotation(edited);
+        if (!mounted) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => QuotationDetailScreen(quotationId: quote.id),
-      ),
-    );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Estimate #${existing.quotationNumber} updated successfully!'),
+            backgroundColor: AppColors.paid,
+          ),
+        );
+
+        Navigator.pop(context);
+      } else {
+        final quote = Quotation(
+          id: const Uuid().v4(),
+          // Quotation numbers are generated only for new estimates.
+          quotationNumber: provider.generateQuotationNumber(),
+          customerId: widget.customer.id,
+          vehicleId: widget.vehicle.id,
+          kmReading: km,
+          items: _items,
+          overallDiscount: discount,
+          taxPercent: _taxPercent,
+          validityDays: _validityDays,
+          status: QuotationStatus.sent,
+          notes: notes,
+        );
+
+        await provider.addQuotation(quote);
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Estimate #${quote.quotationNumber} saved successfully!'),
+            backgroundColor: AppColors.paid,
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => QuotationDetailScreen(quotationId: quote.id),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.pending,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -145,7 +219,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Quotation / Estimate', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(_isEditing ? 'Edit Estimate' : 'Create Quotation / Estimate', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
@@ -384,7 +458,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _saveQuotation,
                   icon: const Icon(Icons.check_circle_outline_rounded),
-                  label: const Text('Save & Send Estimate'),
+                  label: Text(_isEditing ? 'Save Changes' : 'Save & Send Estimate'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
