@@ -6,6 +6,6 @@ void main() {
     await tester.pumpWidget(const NexoryGarageApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Nexory Garage'), findsWidgets);
+    expect(find.text('Nexory Garage & Body Shop'), findsWidgets);
   });
 }

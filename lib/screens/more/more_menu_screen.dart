@@ -19,6 +19,7 @@ class MoreMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
+    final profile = provider.profile;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -86,7 +87,7 @@ class MoreMenuScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nexory Garage & Body Shop',
+                        profile.name,
                         style: GoogleFonts.poppins(
                           color: isDark ? Colors.white : AppColors.textPrimary,
                           fontSize: 15,
@@ -96,7 +97,7 @@ class MoreMenuScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'GSTIN: 27AAAAA0000A1Z5 • Mumbai, MH',
+                        'GSTIN: ${profile.gstin} • ${profile.city}',
                         style: GoogleFonts.poppins(
                           color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                           fontSize: 11.5,

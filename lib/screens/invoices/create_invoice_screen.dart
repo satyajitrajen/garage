@@ -33,12 +33,13 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   final _notesController = TextEditingController();
 
   final List<MaintenanceItem> _items = [];
-  double _taxPercent = 18.0;
+  double _taxPercent = 0.0;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    _taxPercent = context.read<GarageProvider>().config.defaultTaxPercent;
     _kmController.text = widget.vehicle.currentKm.toString();
   }
 
@@ -104,7 +105,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       discountAmount: discount,
       taxPercent: _taxPercent,
       invoiceDate: DateTime.now(),
-      dueDate: DateTime.now().add(const Duration(days: 7)),
+      dueDate: DateTime.now().add(Duration(days: provider.config.invoiceDueDays)),
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 
@@ -129,6 +130,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final config = context.read<GarageProvider>().config;
 
     final partsSubtotal = _items.where((i) => !i.isLabour).fold(0.0, (sum, i) => sum + i.taxableAmount);
     final labourSubtotal = _items.where((i) => i.isLabour).fold(0.0, (sum, i) => sum + i.taxableAmount);
@@ -238,7 +240,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                      subtitle: Text('${item.quantity} ${item.unit} @ ₹${item.unitPrice}'),
+                      subtitle: Text('${item.quantity} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}'),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppColors.primary),
@@ -255,13 +257,16 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                     child: DropdownButtonFormField<double>(
                       initialValue: _taxPercent,
                       decoration: const InputDecoration(labelText: 'GST Tax Rate'),
-                      items: const [
-                        DropdownMenuItem(value: 0.0, child: Text('0% (Exempt)')),
-                        DropdownMenuItem(value: 18.0, child: Text('18% GST (9+9)')),
-                        DropdownMenuItem(value: 12.0, child: Text('12% GST (6+6)')),
-                        DropdownMenuItem(value: 28.0, child: Text('28% GST (14+14)')),
-                      ],
-                      onChanged: (val) => setState(() => _taxPercent = val ?? 18.0),
+                      items: config.taxPercentOptions.map((rate) {
+                        return DropdownMenuItem(
+                          value: rate,
+                          child: Text(rate > 0
+                              ? '${rate.toStringAsFixed(0)}% (CGST ${(rate / 2).toStringAsFixed(1)}% + SGST ${(rate / 2).toStringAsFixed(1)}%)'
+                              : '${rate.toStringAsFixed(0)}%'),
+                        );
+                      }).toList(),
+                      onChanged: (val) =>
+                          setState(() => _taxPercent = val ?? config.defaultTaxPercent),
                     ),
                   ),
                   const SizedBox(width: 12),

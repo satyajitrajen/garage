@@ -51,6 +51,19 @@ extension JobStatusExtension on JobStatus {
 }
 
 class JobCard {
+  /// Default vehicle inspection checklist applied to new job cards. Single
+  /// source used both as the constructor default and by the create form.
+  static const Map<String, bool> defaultChecklist = {
+    'Engine Oil Level': true,
+    'Brake System': true,
+    'Coolant & Fluids': true,
+    'Battery & Terminals': true,
+    'Tyres & Pressure': true,
+    'AC & Heating': true,
+    'Lights & Horn': true,
+    'Body Scratches Checked': true,
+  };
+
   final String id;
   final String jobCardNumber; // e.g. JC-1001
   final String customerId;
@@ -85,16 +98,7 @@ class JobCard {
     List<MaintenanceItem>? items,
     this.estimatedCostNote,
     this.supervisorNotes,
-  })  : inspectionChecklist = inspectionChecklist ?? {
-          'Engine Oil Level': true,
-          'Brake System': true,
-          'Coolant & Fluids': true,
-          'Battery & Terminals': true,
-          'Tyres & Pressure': true,
-          'AC & Heating': true,
-          'Lights & Horn': true,
-          'Body Scratches Checked': true,
-        },
+  })  : inspectionChecklist = inspectionChecklist ?? defaultChecklist,
         createdAt = createdAt ?? DateTime.now(),
         items = items ?? [];
 

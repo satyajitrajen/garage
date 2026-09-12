@@ -122,9 +122,9 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
         kmReading: int.tryParse(_kmController.text.trim()) ?? _selectedVehicle!.currentKm,
         items: List.from(_selectedItems),
         discountAmount: discount,
-        taxPercent: 18.0,
+        taxPercent: provider.config.defaultTaxPercent,
         invoiceDate: DateTime.now(),
-        notes: 'Quick Service counter bill generated via Nexory Wizard',
+        notes: 'Quick Service counter bill',
       );
 
       await provider.addInvoice(invoice);
@@ -408,7 +408,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     final subtotal = _selectedItems.fold(0.0, (sum, i) => sum + i.totalAmount);
     final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
     final taxable = (subtotal - discount).clamp(0.0, double.infinity);
-    final tax = taxable * 0.18;
+    final taxRate = provider.config.defaultTaxPercent / 100;
+    final tax = taxable * taxRate;
     final netGrandTotal = taxable + tax;
 
     return Padding(
@@ -496,7 +497,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                       return Card(
                         child: ListTile(
                           title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                          subtitle: Text('${item.quantity} ${item.unit} x ₹${item.unitPrice}'),
+                          subtitle: Text('${item.quantity} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -532,7 +533,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                       Text('Subtotal: ${CurrencyFormatter.format(subtotal)}', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted)),
                       if (discount > 0)
                         Text('Discount: -${CurrencyFormatter.format(discount)}', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.paid, fontWeight: FontWeight.w600)),
-                      Text('Tax (18%): ${CurrencyFormatter.format(tax)}', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted)),
+                      Text('Tax (${provider.config.defaultTaxPercent.toStringAsFixed(0)}%): ${CurrencyFormatter.format(tax)}', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted)),
                     ],
                   ),
                   const SizedBox(height: 8),

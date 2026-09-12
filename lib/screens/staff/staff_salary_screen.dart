@@ -59,7 +59,7 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Salary advance of ₹${amount.toInt()} recorded for ${widget.staff.name}!'),
+        content: Text('Salary advance of ${CurrencyFormatter.format(amount)} recorded for ${widget.staff.name}!'),
         backgroundColor: AppColors.paid,
       ),
     );
@@ -227,7 +227,7 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                   if (totalAdvances > 0)
                     _buildSalaryLine('Salary Advances Deducted', '- ${CurrencyFormatter.format(totalAdvances)}', isDark, isDeduction: true),
                   if (absentDeduction == 0 && halfDayDeduction == 0 && totalAdvances == 0)
-                    _buildSalaryLine('No deductions this month', '₹0', isDark),
+                    _buildSalaryLine('No deductions this month', CurrencyFormatter.format(0), isDark),
 
                   const Divider(height: 24),
                   Row(

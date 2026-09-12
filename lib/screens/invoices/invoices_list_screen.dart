@@ -346,7 +346,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                             const Icon(Icons.check_circle_rounded, size: 13, color: AppColors.paid),
                             const SizedBox(width: 4),
                             Text(
-                              'Paid via ${inv.payments.isNotEmpty ? inv.payments.last.mode.shortName : "Cash"}',
+                              'Paid via ${inv.payments.isEmpty ? '—' : inv.payments.last.mode.shortName}',
                               style: GoogleFonts.poppins(fontSize: 11.5, color: AppColors.paid, fontWeight: FontWeight.w600),
                             ),
                           ],

@@ -30,6 +30,7 @@ class InvoicePreviewScreen extends StatelessWidget {
 
     final customer = provider.getCustomerById(invoice.customerId);
     final vehicle = provider.getVehicleById(invoice.vehicleId);
+    final profile = provider.profile;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -95,7 +96,7 @@ class InvoicePreviewScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Nexory Garage',
+                            profile.name,
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
@@ -113,7 +114,21 @@ class InvoicePreviewScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'GSTIN: 27AABCA1234F1Z8',
+                            'GSTIN: ${profile.gstin}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                            ),
+                          ),
+                          Text(
+                            '${profile.addressLine}, ${profile.city}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                            ),
+                          ),
+                          Text(
+                            'Phone: ${profile.phone}',
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,

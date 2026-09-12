@@ -9,6 +9,7 @@ import '../../models/maintenance_item.dart';
 import '../../models/staff.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import 'job_card_detail_screen.dart';
@@ -37,23 +38,20 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
   final List<MaintenanceItem> _selectedItems = [];
   String? _assignedStaffId;
   String _fuelLevel = '1/2';
-  DateTime _promisedDate = DateTime.now().add(const Duration(hours: 6));
+  late DateTime _promisedDate;
   bool _isSaving = false;
 
-  final Map<String, bool> _inspectionChecklist = {
-    'Engine Oil & Level': true,
-    'Brake Fluid & System': true,
-    'Coolant / Radiator': true,
-    'Battery & Terminals': true,
-    'Tyres & Pressure': true,
-    'AC & Cabin Cooling': true,
-    'All Lights & Horn': true,
-    'Body Scratches Checked': true,
-  };
+  // Single source: the model's default inspection checklist (mutable copy so
+  // the form checkboxes can be toggled).
+  final Map<String, bool> _inspectionChecklist =
+      Map<String, bool>.from(JobCard.defaultChecklist);
 
   @override
   void initState() {
     super.initState();
+    _promisedDate = DateTime.now().add(
+      Duration(hours: context.read<GarageProvider>().config.promisedDeliveryHours),
+    );
     _kmController.text = widget.vehicle.currentKm.toString();
   }
 
@@ -453,9 +451,9 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     child: ListTile(
                       dense: true,
                       title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                      subtitle: Text('${item.quantity} x ₹${item.unitPrice}'),
+                      subtitle: Text('${item.quantity} x ${CurrencyFormatter.format(item.unitPrice)}'),
                       trailing: Text(
-                        '₹${item.totalAmount.toStringAsFixed(0)}',
+                        CurrencyFormatter.format(item.totalAmount),
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppColors.primary),
                       ),
                     ),

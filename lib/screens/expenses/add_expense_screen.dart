@@ -6,6 +6,7 @@ import '../../models/expense.dart';
 import '../../models/payment.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 
 class AddExpenseScreen extends StatefulWidget {
@@ -69,7 +70,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Expense of ₹${amount.toInt()} recorded!'),
+        content: Text('Expense of ${CurrencyFormatter.format(amount)} recorded!'),
         backgroundColor: AppColors.paid,
       ),
     );
@@ -212,7 +213,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [PaymentMode.cash, PaymentMode.upi, PaymentMode.card, PaymentMode.bankTransfer].map((mode) {
+                children: PaymentMode.values.map((mode) {
                   final isSelected = _paymentMode == mode;
                   return ChoiceChip(
                     label: Text(mode.displayName),

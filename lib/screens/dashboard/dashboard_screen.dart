@@ -49,28 +49,32 @@ class DashboardScreen extends StatelessWidget {
               child: const Icon(Icons.car_repair_rounded, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Nexory Garage',
-                  style: GoogleFonts.poppins(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                    color: isDark ? Colors.white : AppColors.textPrimary,
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    provider.profile.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                      color: isDark ? Colors.white : AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                Text(
-                  AppDateFormatter.formatDayDate(today),
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                  Text(
+                    AppDateFormatter.formatDayDate(today),
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -168,13 +172,19 @@ class DashboardScreen extends StatelessWidget {
                                 letterSpacing: 0.4,
                               ),
                             ),
-                            Text(
-                              'Operational & Peak Flow',
-                              style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF059669),
-                                letterSpacing: 0.4,
+                            Flexible(
+                              child: Text(
+                                activeJobs.isEmpty
+                                    ? 'All clear — no vehicles in workshop'
+                                    : '${activeJobs.length} vehicle(s) in workshop',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF059669),
+                                  letterSpacing: 0.4,
+                                ),
                               ),
                             ),
                           ],

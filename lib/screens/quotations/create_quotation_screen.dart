@@ -34,12 +34,15 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
   final List<MaintenanceItem> _items = [];
   int _validityDays = 7;
-  double _taxPercent = 18.0;
+  double _taxPercent = 0.0;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    final config = context.read<GarageProvider>().config;
+    _taxPercent = config.defaultTaxPercent;
+    _validityDays = config.quotationValidityOptions.first;
     _kmController.text = widget.vehicle.currentKm.toString();
   }
 
@@ -130,6 +133,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final config = context.read<GarageProvider>().config;
 
     final partsSubtotal = _items.where((i) => !i.isLabour).fold(0.0, (sum, i) => sum + i.taxableAmount);
     final labourSubtotal = _items.where((i) => i.isLabour).fold(0.0, (sum, i) => sum + i.taxableAmount);
@@ -245,7 +249,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                      subtitle: Text('${item.quantity} ${item.unit} @ ₹${item.unitPrice}'),
+                      subtitle: Text('${item.quantity} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}'),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppColors.primary),
@@ -262,12 +266,14 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     child: DropdownButtonFormField<int>(
                       initialValue: _validityDays,
                       decoration: const InputDecoration(labelText: 'Quote Validity'),
-                      items: const [
-                        DropdownMenuItem(value: 7, child: Text('7 Days')),
-                        DropdownMenuItem(value: 15, child: Text('15 Days')),
-                        DropdownMenuItem(value: 30, child: Text('30 Days')),
-                      ],
-                      onChanged: (val) => setState(() => _validityDays = val ?? 7),
+                      items: config.quotationValidityOptions
+                          .map((days) => DropdownMenuItem(
+                                value: days,
+                                child: Text('$days Days'),
+                              ))
+                          .toList(),
+                      onChanged: (val) => setState(
+                          () => _validityDays = val ?? config.quotationValidityOptions.first),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -275,13 +281,16 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     child: DropdownButtonFormField<double>(
                       initialValue: _taxPercent,
                       decoration: const InputDecoration(labelText: 'Tax Rate'),
-                      items: const [
-                        DropdownMenuItem(value: 0.0, child: Text('0% (No Tax)')),
-                        DropdownMenuItem(value: 18.0, child: Text('18% GST')),
-                        DropdownMenuItem(value: 12.0, child: Text('12% GST')),
-                        DropdownMenuItem(value: 28.0, child: Text('28% GST')),
-                      ],
-                      onChanged: (val) => setState(() => _taxPercent = val ?? 18.0),
+                      items: config.taxPercentOptions.map((rate) {
+                        return DropdownMenuItem(
+                          value: rate,
+                          child: Text(rate > 0
+                              ? '${rate.toStringAsFixed(0)}% (CGST ${(rate / 2).toStringAsFixed(1)}% + SGST ${(rate / 2).toStringAsFixed(1)}%)'
+                              : '${rate.toStringAsFixed(0)}%'),
+                        );
+                      }).toList(),
+                      onChanged: (val) =>
+                          setState(() => _taxPercent = val ?? config.defaultTaxPercent),
                     ),
                   ),
                 ],

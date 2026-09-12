@@ -80,6 +80,7 @@ class QuotationDetailScreen extends StatelessWidget {
 
     final customer = provider.getCustomerById(quote.customerId);
     final vehicle = provider.getVehicleById(quote.vehicleId);
+    final profile = provider.profile;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // Conversion is only allowed while the estimate is still open
     // (draft/sent/approved). Already-converted or rejected estimates must
@@ -139,7 +140,7 @@ class QuotationDetailScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Nexory Garage',
+                            profile.name,
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
@@ -153,6 +154,27 @@ class QuotationDetailScreen extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.2,
                               color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                            ),
+                          ),
+                          Text(
+                            'GSTIN: ${profile.gstin}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                            ),
+                          ),
+                          Text(
+                            '${profile.addressLine}, ${profile.city}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                            ),
+                          ),
+                          Text(
+                            'Phone: ${profile.phone}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
                             ),
                           ),
                         ],

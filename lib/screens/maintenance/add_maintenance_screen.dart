@@ -123,7 +123,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
       quantity: qty,
       unit: _customUnitController.text.trim().isEmpty ? 'Pcs' : _customUnitController.text.trim(),
       discountPercent: discount,
-      taxPercent: 18.0,
+      taxPercent: context.read<GarageProvider>().config.defaultTaxPercent,
       isLabour: _customIsLabour || _customCategory == ItemCategory.labour,
     );
 
@@ -505,13 +505,13 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
             indicatorColor: AppColors.primary,
             tabAlignment: TabAlignment.start,
             labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
-            tabs: const [
-              Tab(text: 'All Items'),
-              Tab(text: 'Spare Parts'),
-              Tab(text: 'Labour & Services'),
-              Tab(text: 'Oils & Fluids'),
-              Tab(text: 'Tyres & Battery'),
-              Tab(text: 'Transport / Misc'),
+            tabs: [
+              const Tab(text: 'All Items'),
+              Tab(text: ItemCategory.sparePart.displayName),
+              Tab(text: ItemCategory.labour.displayName),
+              Tab(text: ItemCategory.fluids.displayName),
+              Tab(text: ItemCategory.tyresBattery.displayName),
+              Tab(text: ItemCategory.transportMisc.displayName),
             ],
           ),
 

@@ -344,7 +344,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                                     style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w600),
                                   ),
                                   Text(
-                                    '${item.quantity} ${item.unit} x ₹${item.unitPrice}',
+                                    '${item.quantity} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}',
                                     style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted),
                                   ),
                                 ],
