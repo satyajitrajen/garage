@@ -373,6 +373,14 @@ class GarageProvider extends ChangeNotifier {
         firstNumber: 1001,
       );
 
+  Quotation? getQuotationById(String id) {
+    try {
+      return _quotations.firstWhere((q) => q.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<Quotation> addQuotation(Quotation quote) async {
     final created = await _repo.createQuotation(quote);
     _quotations.insert(0, created);

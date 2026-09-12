@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../models/staff.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/date_formatter.dart';
 import 'staff_salary_screen.dart';
 
@@ -42,12 +44,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
     final today = DateTime(now.year, now.month, now.day);
     final day = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
     if (day.isAfter(today)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Attendance cannot be marked for a future date'),
-          backgroundColor: AppColors.pending,
-        ),
-      );
+      showAppSnackBar(context, 'Attendance cannot be marked for a future date', type: SnackBarType.error);
       return;
     }
 
@@ -59,19 +56,17 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
     );
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Marked ${status.displayName} on ${AppDateFormatter.formatDayDate(_selectedDate)}'),
-        duration: const Duration(milliseconds: 1000),
-        backgroundColor: AppColors.paid,
-      ),
+    showAppSnackBar(
+      context,
+      'Marked ${status.displayName} on ${AppDateFormatter.formatDayDate(_selectedDate)}',
+      type: SnackBarType.success,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     final salarySummary = provider.calculateMonthlySalarySummary(
       widget.staff.id,
@@ -111,11 +106,9 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                ),
+                color: palette.card,
+                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                border: Border.all(color: palette.border),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -129,7 +122,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : AppColors.textPrimary,
+                      color: palette.textPrimary,
                     ),
                   ),
                   IconButton(
@@ -144,13 +137,13 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
             // Monthly Summary KPI Grid
             Row(
               children: [
-                _buildSummaryBadge('Present', '${salarySummary["presentDays"] ?? 0}', AppColors.present, isDark),
+                _buildSummaryBadge('Present', '${salarySummary["presentDays"] ?? 0}', palette.present),
                 const SizedBox(width: 8),
-                _buildSummaryBadge('Half Day', '${salarySummary["halfDays"] ?? 0}', AppColors.halfDay, isDark),
+                _buildSummaryBadge('Half Day', '${salarySummary["halfDays"] ?? 0}', palette.halfDay),
                 const SizedBox(width: 8),
-                _buildSummaryBadge('Absent', '${salarySummary["absentDays"] ?? 0}', AppColors.absent, isDark),
+                _buildSummaryBadge('Absent', '${salarySummary["absentDays"] ?? 0}', palette.absent),
                 const SizedBox(width: 8),
-                _buildSummaryBadge('Leaves', '${salarySummary["leaveDays"] ?? 0}', AppColors.leave, isDark),
+                _buildSummaryBadge('Leaves', '${salarySummary["leaveDays"] ?? 0}', palette.leave),
               ],
             ),
             const SizedBox(height: 16),
@@ -159,11 +152,9 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                ),
+                color: palette.card,
+                borderRadius: BorderRadius.circular(AppDimens.radiusCard),
+                border: Border.all(color: palette.border),
               ),
               child: Column(
                 children: [
@@ -180,7 +171,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
-                            color: isSunday ? AppColors.pending : AppColors.textMuted,
+                            color: isSunday ? palette.pending : palette.textMuted,
                           ),
                         ),
                       );
@@ -216,16 +207,16 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                       if (record != null) {
                         switch (record.status) {
                           case AttendanceStatus.present:
-                            dotColor = AppColors.present;
+                            dotColor = palette.present;
                             break;
                           case AttendanceStatus.halfDay:
-                            dotColor = AppColors.halfDay;
+                            dotColor = palette.halfDay;
                             break;
                           case AttendanceStatus.absent:
-                            dotColor = AppColors.absent;
+                            dotColor = palette.absent;
                             break;
                           case AttendanceStatus.leave:
-                            dotColor = AppColors.leave;
+                            dotColor = palette.leave;
                             break;
                         }
                       }
@@ -238,15 +229,11 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                         child: Container(
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppColors.primary.withOpacity(0.2)
-                                : (isSunday
-                                    ? (isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9))
-                                    : Colors.transparent),
+                                ? palette.primary.withOpacity(0.2)
+                                : (isSunday ? palette.cardAlt : Colors.transparent),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                              color: isSelected ? palette.primary : palette.border,
                               width: isSelected ? 2 : 1,
                             ),
                           ),
@@ -258,9 +245,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 13,
                                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                  color: isSunday
-                                      ? AppColors.pending
-                                      : (isDark ? Colors.white : AppColors.textPrimary),
+                                  color: isSunday ? palette.pending : palette.textPrimary,
                                 ),
                               ),
                               if (dotColor != null) ...[
@@ -289,11 +274,9 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                ),
+                color: palette.card,
+                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                border: Border.all(color: palette.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,7 +292,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.12),
+                            color: palette.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -317,7 +300,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
+                              color: palette.primary,
                             ),
                           ),
                         ),
@@ -329,7 +312,10 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () => _markAttendance(AttendanceStatus.present),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.present),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: palette.present,
+                            foregroundColor: palette.onPrimary,
+                          ),
                           child: const Text('Present'),
                         ),
                       ),
@@ -337,7 +323,10 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () => _markAttendance(AttendanceStatus.halfDay),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.halfDay),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: palette.halfDay,
+                            foregroundColor: palette.onPrimary,
+                          ),
                           child: const Text('Half Day'),
                         ),
                       ),
@@ -349,7 +338,10 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () => _markAttendance(AttendanceStatus.absent),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.absent),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: palette.absent,
+                            foregroundColor: palette.onPrimary,
+                          ),
                           child: const Text('Absent'),
                         ),
                       ),
@@ -357,7 +349,10 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () => _markAttendance(AttendanceStatus.leave),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.leave),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: palette.leave,
+                            foregroundColor: palette.onPrimary,
+                          ),
                           child: const Text('Paid Leave'),
                         ),
                       ),
@@ -373,13 +368,13 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
     );
   }
 
-  Widget _buildSummaryBadge(String label, String count, Color color, bool isDark) {
+  Widget _buildSummaryBadge(String label, String count, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
           border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
@@ -398,7 +393,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : AppColors.textPrimary,
+                color: context.palette.textPrimary,
               ),
             ),
           ],

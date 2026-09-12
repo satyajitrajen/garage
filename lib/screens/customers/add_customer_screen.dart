@@ -6,7 +6,8 @@ import 'package:uuid/uuid.dart';
 import '../../models/customer.dart';
 import '../../models/vehicle.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../job_cards/create_job_card_screen.dart';
 import '../quotations/create_quotation_screen.dart';
 
@@ -114,11 +115,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       await provider.updateCustomer(updatedCustomer);
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Customer ${updatedCustomer.name} updated successfully!'),
-          backgroundColor: AppColors.paid,
-        ),
+      showAppSnackBar(
+        context,
+        'Customer ${updatedCustomer.name} updated successfully!',
+        type: SnackBarType.success,
       );
 
       Navigator.pop(context, updatedCustomer);
@@ -161,11 +161,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       if (!mounted) return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Customer ${newCustomer.name} added successfully!'),
-        backgroundColor: AppColors.paid,
-      ),
+    showAppSnackBar(
+      context,
+      'Customer ${newCustomer.name} added successfully!',
+      type: SnackBarType.success,
     );
 
     if (startJob && newVehicle != null) {
@@ -195,7 +194,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Scaffold(
       appBar: AppBar(
@@ -225,10 +224,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
               TextFormField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Customer Full Name *',
                   hintText: 'e.g. Ramesh Patel',
-                  prefixIcon: Icon(Icons.person_rounded, color: AppColors.primary),
+                  prefixIcon: Icon(Icons.person_rounded, color: palette.primary),
                 ),
                 validator: (val) =>
                     val == null || val.trim().isEmpty ? 'Customer name is required' : null,
@@ -239,10 +238,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Mobile Number *',
                   hintText: 'e.g. +91 98765 43210',
-                  prefixIcon: Icon(Icons.phone_android_rounded, color: AppColors.primary),
+                  prefixIcon: Icon(Icons.phone_android_rounded, color: palette.primary),
                 ),
                 validator: (val) =>
                     val == null || val.trim().isEmpty ? 'Mobile number is required' : null,
@@ -254,7 +253,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 value: _sameAsPhone,
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
-                activeColor: AppColors.primary,
+                activeColor: palette.primary,
                 title: Text(
                   'WhatsApp number is same as Mobile',
                   style: GoogleFonts.poppins(fontSize: 13.5),
@@ -267,10 +266,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 TextFormField(
                   controller: _whatsappController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'WhatsApp Number',
                     hintText: 'e.g. +91 98765 43210',
-                    prefixIcon: Icon(Icons.chat_bubble_outline_rounded, color: AppColors.paid),
+                    prefixIcon: Icon(Icons.chat_bubble_outline_rounded, color: palette.paid),
                   ),
                 ),
               ],
@@ -335,7 +334,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                     ),
                     Switch.adaptive(
                       value: _hasVehicle,
-                      activeTrackColor: AppColors.primary,
+                      activeTrackColor: palette.primary,
                       onChanged: (v) => setState(() => _hasVehicle = v),
                     ),
                   ],
@@ -348,10 +347,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 TextFormField(
                   controller: _regNoController,
                   textCapitalization: TextCapitalization.characters,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Vehicle Registration Number *',
                     hintText: 'e.g. DL 01 AB 1234 / MH 02 CZ 4421',
-                    prefixIcon: Icon(Icons.pin_rounded, color: AppColors.primary),
+                    prefixIcon: Icon(Icons.pin_rounded, color: palette.primary),
                   ),
                   validator: (val) {
                     if (_hasVehicle && (val == null || val.trim().isEmpty)) {
@@ -403,10 +402,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                       child: TextFormField(
                         controller: _kmController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Current KM Reading *',
                           hintText: 'e.g. 45000',
-                          prefixIcon: Icon(Icons.speed_rounded, color: AppColors.primary),
+                          prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
                         ),
                         validator: (val) => _hasVehicle && (val == null || val.trim().isEmpty)
                             ? 'KM is required'
@@ -433,7 +432,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                    color: palette.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -445,11 +444,11 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                     return ChoiceChip(
                       label: Text(fuel.displayName),
                       selected: isSelected,
-                      selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                      selectedColor: palette.primary.withValues(alpha: 0.15),
                       labelStyle: TextStyle(
                         color: isSelected
-                            ? AppColors.primary
-                            : (isDark ? Colors.white : AppColors.textPrimary),
+                            ? palette.primary
+                            : palette.textPrimary,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       ),
                       onSelected: (selected) {
@@ -510,7 +509,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                     onPressed: () => _handleSave(),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: palette.primary,
+                      foregroundColor: palette.onPrimary,
                     ),
                     child: const Text('Update Customer Details'),
                   ),
@@ -524,7 +524,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                     label: const Text('Save & Start Job Card'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: palette.primary,
+                      foregroundColor: palette.onPrimary,
                     ),
                   ),
                 ),
@@ -547,10 +548,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                         onPressed: () => _handleSave(),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(
-                            color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
-                          ),
-                          foregroundColor: isDark ? Colors.white : AppColors.textPrimary,
+                          side: BorderSide(color: palette.border),
+                          foregroundColor: palette.textPrimary,
                         ),
                         child: const Text('Save Customer Only'),
                       ),
@@ -578,17 +577,16 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   }
 
   Widget _buildSectionTitle(BuildContext context, {required String title, required IconData icon}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
-        Icon(icon, color: AppColors.primary, size: 22),
+        Icon(icon, color: context.palette.primary, size: 22),
         const SizedBox(width: 8),
         Text(
           title,
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : AppColors.textPrimary,
+            color: context.palette.textPrimary,
           ),
         ),
       ],

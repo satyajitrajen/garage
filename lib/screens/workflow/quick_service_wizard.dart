@@ -6,13 +6,16 @@ import '../../models/vehicle.dart';
 import '../../models/maintenance_item.dart';
 import '../../models/invoice.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../customers/add_customer_screen.dart';
 import '../vehicles/add_vehicle_dialog.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
 import '../payments/payment_collection_screen.dart';
+import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
 
 class QuickServiceWizard extends StatefulWidget {
@@ -91,8 +94,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       }
 
       if (_selectedItems.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please add at least one work item or spare part')),
+        showAppSnackBar(
+          context,
+          'Please add at least one work item or spare part',
+          type: SnackBarType.info,
         );
         return;
       }
@@ -100,15 +105,15 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       final provider = Provider.of<GarageProvider>(context, listen: false);
       final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
       if (discount < 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Discount cannot be negative')),
-        );
+        showAppSnackBar(context, 'Discount cannot be negative', type: SnackBarType.info);
         return;
       }
       final gross = _selectedItems.fold(0.0, (sum, i) => sum + i.totalAmount);
       if (discount > gross) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Discount cannot exceed subtotal of ${CurrencyFormatter.format(gross)}')),
+        showAppSnackBar(
+          context,
+          'Discount cannot exceed subtotal of ${CurrencyFormatter.format(gross)}',
+          type: SnackBarType.info,
         );
         return;
       }
@@ -131,11 +136,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: AppColors.pending,
-        ),
+      showAppSnackBar(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: SnackBarType.error,
       );
     } finally {
       _isGeneratingBill = false;
@@ -145,7 +149,6 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return PopScope(
       canPop: _currentStep == 0,
@@ -173,7 +176,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
             // Step Progress Indicator
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              color: context.palette.cardAlt,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -190,7 +193,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
 
           // Step Body
           Expanded(
-            child: _buildCurrentStepView(provider, isDark),
+            child: _buildCurrentStepView(provider),
           ),
         ],
       ),
@@ -199,6 +202,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
 }
 
   Widget _buildStepIndicator(int stepIndex, String title, IconData icon) {
+    final palette = context.palette;
     final isActive = _currentStep >= stepIndex;
     final isCurrent = _currentStep == stepIndex;
 
@@ -206,11 +210,13 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       children: [
         CircleAvatar(
           radius: 16,
-          backgroundColor: isActive ? AppColors.primary : const Color(0xFF94A3B8),
+          // Filled with a palette slot in both states, so the foreground
+          // follows onPrimary (white in light, dark navy in dark mode).
+          backgroundColor: isActive ? palette.primary : palette.textMuted,
           child: Icon(
             isCurrent ? icon : (isActive ? Icons.check_rounded : icon),
             size: 16,
-            color: Colors.white,
+            color: palette.onPrimary,
           ),
         ),
         const SizedBox(height: 4),
@@ -219,7 +225,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           style: GoogleFonts.poppins(
             fontSize: 11,
             fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-            color: isActive ? AppColors.primary : const Color(0xFF94A3B8),
+            color: isActive ? palette.primary : palette.textMuted,
           ),
         ),
       ],
@@ -232,28 +238,29 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       child: Container(
         height: 2,
         margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-        color: isActive ? AppColors.primary : const Color(0xFFCBD5E1),
+        color: isActive ? context.palette.primary : context.palette.border,
       ),
     );
   }
 
-  Widget _buildCurrentStepView(GarageProvider provider, bool isDark) {
+  Widget _buildCurrentStepView(GarageProvider provider) {
     switch (_currentStep) {
       case 0:
-        return _buildSelectCustomerStep(provider, isDark);
+        return _buildSelectCustomerStep(provider);
       case 1:
-        return _buildSelectVehicleStep(provider, isDark);
+        return _buildSelectVehicleStep(provider);
       case 2:
-        return _buildAddItemsStep(provider, isDark);
+        return _buildAddItemsStep(provider);
       case 3:
-        return _buildBillAndPayStep(provider, isDark);
+        return _buildBillAndPayStep(provider);
       default:
         return const SizedBox.shrink();
     }
   }
 
   // STEP 1: SELECT OR ADD CUSTOMER
-  Widget _buildSelectCustomerStep(GarageProvider provider, bool isDark) {
+  Widget _buildSelectCustomerStep(GarageProvider provider) {
+    final palette = context.palette;
     final filteredCustomers = provider.customers.where((c) {
       if (_searchQuery.isEmpty) return true;
       final query = _searchQuery.toLowerCase();
@@ -310,15 +317,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
         ),
         Expanded(
           child: filteredCustomers.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.person_search_rounded, size: 48, color: AppColors.textMuted),
-                      const SizedBox(height: 12),
-                      Text('No matching customers found', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                    ],
-                  ),
+              ? const EmptyStateWidget(
+                  icon: Icons.person_search_rounded,
+                  title: 'No matching customers found',
+                  description: 'Try searching a different name or phone number',
                 )
               : ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -332,12 +334,12 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                       child: ListTile(
                         onTap: () => _onCustomerSelected(c),
                         leading: CircleAvatar(
-                          backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                          child: Text(c.name.substring(0, 1).toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                          backgroundColor: palette.primary.withValues(alpha: 0.12),
+                          child: Text(c.name.substring(0, 1).toUpperCase(), style: TextStyle(fontWeight: FontWeight.bold, color: palette.primary)),
                         ),
                         title: Text(c.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
                         subtitle: Text('${c.phone} • ${vehicles.length} Vehicles'),
-                        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textMuted),
+                        trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: palette.textMuted),
                       ),
                     );
                   },
@@ -348,7 +350,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
   }
 
   // STEP 2: SELECT OR ADD VEHICLE
-  Widget _buildSelectVehicleStep(GarageProvider provider, bool isDark) {
+  Widget _buildSelectVehicleStep(GarageProvider provider) {
+    final palette = context.palette;
     final vehicles = provider.getVehiclesForCustomer(_selectedCustomer!.id);
 
     return Column(
@@ -362,7 +365,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Step 2: Choose Vehicle', style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700)),
-                  Text('For ${_selectedCustomer!.name}', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                  Text('For ${_selectedCustomer!.name}', style: GoogleFonts.poppins(fontSize: 13, color: palette.primary, fontWeight: FontWeight.w600)),
                 ],
               ),
               ElevatedButton.icon(
@@ -391,12 +394,12 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                   onTap: () => _onVehicleSelected(v),
                   leading: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.directions_car_rounded, color: AppColors.primary),
+                    decoration: BoxDecoration(color: palette.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                    child: Icon(Icons.directions_car_rounded, color: palette.primary),
                   ),
                   title: Text(v.registrationNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                   subtitle: Text('${v.displayName} • ${v.currentKm} KM • ${v.fuelType.displayName}'),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textMuted),
+                  trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: palette.textMuted),
                 ),
               );
             },
@@ -407,7 +410,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
   }
 
   // STEP 3: ADD ITEMS & PARTS
-  Widget _buildAddItemsStep(GarageProvider provider, bool isDark) {
+  Widget _buildAddItemsStep(GarageProvider provider) {
+    final palette = context.palette;
     final subtotal = _selectedItems.fold(0.0, (sum, i) => sum + i.totalAmount);
     final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
     final taxable = (subtotal - discount).clamp(0.0, double.infinity);
@@ -427,7 +431,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Step 3: Work Items', style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700)),
-                  Text('${_selectedVehicle!.registrationNumber} (${_selectedVehicle!.displayName})', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.primary)),
+                  Text('${_selectedVehicle!.registrationNumber} (${_selectedVehicle!.displayName})', style: GoogleFonts.poppins(fontSize: 13, color: palette.primary)),
                 ],
               ),
               ElevatedButton.icon(
@@ -443,9 +447,9 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              color: palette.card,
+              borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
+              border: Border.all(color: palette.border),
             ),
             child: Row(
               children: [
@@ -480,17 +484,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
 
           Expanded(
             child: _selectedItems.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.build_circle_outlined, size: 48, color: AppColors.textMuted),
-                        const SizedBox(height: 12),
-                        Text('No items added yet', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 4),
-                        const Text('Tap "Add Items" to choose oil, filters, labour, etc.'),
-                      ],
-                    ),
+                ? const EmptyStateWidget(
+                    icon: Icons.build_circle_outlined,
+                    title: 'No items added yet',
+                    description: 'Tap "Add Items" to choose oil, filters, labour, etc.',
                   )
                 : ListView.separated(
                     itemCount: _selectedItems.length,
@@ -504,10 +501,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(CurrencyFormatter.format(item.totalAmount), style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppColors.primary)),
+                              Text(CurrencyFormatter.format(item.totalAmount), style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary)),
                               const SizedBox(width: 8),
                               IconButton(
-                                icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.pending),
+                                icon: Icon(Icons.delete_outline_rounded, size: 18, color: palette.pending),
                                 onPressed: () => setState(() => _selectedItems.removeAt(index)),
                               ),
                             ],
@@ -523,9 +520,9 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                color: palette.card,
+                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                border: Border.all(color: palette.border),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -533,10 +530,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Subtotal: ${CurrencyFormatter.format(subtotal)}', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted)),
+                      Text('Subtotal: ${CurrencyFormatter.format(subtotal)}', style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted)),
                       if (discount > 0)
-                        Text('Discount: -${CurrencyFormatter.format(discount)}', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.paid, fontWeight: FontWeight.w600)),
-                      Text('Tax (${provider.config.defaultTaxPercent.toStringAsFixed(0)}%): ${CurrencyFormatter.format(tax)}', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted)),
+                        Text('Discount: -${CurrencyFormatter.format(discount)}', style: GoogleFonts.poppins(fontSize: 12, color: palette.paid, fontWeight: FontWeight.w600)),
+                      Text('Tax (${provider.config.defaultTaxPercent.toStringAsFixed(0)}%): ${CurrencyFormatter.format(tax)}', style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -546,8 +543,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Net Bill Total:', style: GoogleFonts.poppins(fontSize: 12.5, color: AppColors.textMuted)),
-                          Text(CurrencyFormatter.format(netGrandTotal), style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                          Text('Net Bill Total:', style: GoogleFonts.poppins(fontSize: 12.5, color: palette.textMuted)),
+                          Text(CurrencyFormatter.format(netGrandTotal), style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w900, color: palette.primary)),
                         ],
                       ),
                       GradientButton(
@@ -568,7 +565,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
   }
 
   // STEP 4: BILL PREVIEW & PAYMENT TRIGGER
-  Widget _buildBillAndPayStep(GarageProvider provider, bool isDark) {
+  Widget _buildBillAndPayStep(GarageProvider provider) {
+    final palette = context.palette;
     if (_generatedInvoice == null) return const SizedBox.shrink();
 
     final inv = provider.getInvoiceById(_generatedInvoice!.id) ?? _generatedInvoice!;
@@ -582,10 +580,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.paid.withValues(alpha: 0.12),
+              color: palette.paid.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.check_circle_rounded, color: AppColors.paid, size: 64),
+            child: Icon(Icons.check_circle_rounded, color: palette.paid, size: 64),
           ),
           const SizedBox(height: 16),
           Text(
@@ -595,19 +593,19 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           const SizedBox(height: 6),
           Text(
             'Invoice #${inv.invoiceNumber}',
-            style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.primary),
+            style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: palette.primary),
           ),
           if (job != null) ...[
             const SizedBox(height: 6),
             Text(
               'Job Card #${job.jobCardNumber} • Marked Delivered',
-              style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.paid),
+              style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: palette.paid),
             ),
           ],
           const SizedBox(height: 6),
           Text(
             'Total Amount: ${CurrencyFormatter.format(inv.grandTotal)} • Pending Due: ${CurrencyFormatter.format(inv.balanceDue)}',
-            style: GoogleFonts.poppins(fontSize: 14, color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+            style: GoogleFonts.poppins(fontSize: 14, color: palette.textSecondary),
           ),
           const SizedBox(height: 28),
 

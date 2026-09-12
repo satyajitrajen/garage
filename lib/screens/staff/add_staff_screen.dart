@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/staff.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 
 class AddStaffScreen extends StatefulWidget {
   final Staff? staffToEdit;
@@ -66,8 +67,10 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
       );
       await provider.updateStaff(updated);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Staff ${updated.name} updated!'), backgroundColor: AppColors.paid),
+      showAppSnackBar(
+        context,
+        'Staff ${updated.name} updated!',
+        type: SnackBarType.success,
       );
     } else {
       final newStaff = Staff(
@@ -81,8 +84,10 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
       );
       await provider.addStaff(newStaff);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Employee ${newStaff.name} added to team!'), backgroundColor: AppColors.paid),
+      showAppSnackBar(
+        context,
+        'Employee ${newStaff.name} added to team!',
+        type: SnackBarType.success,
       );
     }
 
@@ -91,6 +96,8 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -108,10 +115,10 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               TextFormField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Staff Full Name *',
                   hintText: 'e.g. Ramesh Sharma',
-                  prefixIcon: Icon(Icons.person_rounded, color: AppColors.primary),
+                  prefixIcon: Icon(Icons.person_rounded, color: palette.primary),
                 ),
                 validator: (val) => val == null || val.trim().isEmpty ? 'Name is required' : null,
               ),
@@ -120,10 +127,10 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Phone Number *',
                   hintText: 'e.g. +91 98765 43210',
-                  prefixIcon: Icon(Icons.phone_rounded, color: AppColors.primary),
+                  prefixIcon: Icon(Icons.phone_rounded, color: palette.primary),
                 ),
                 validator: (val) => val == null || val.trim().isEmpty ? 'Phone is required' : null,
               ),
@@ -132,9 +139,9 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               // Role Dropdown
               DropdownButtonFormField<StaffRole>(
                 initialValue: _selectedRole,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Staff Role / Skill *',
-                  prefixIcon: Icon(Icons.badge_rounded, color: AppColors.primary),
+                  prefixIcon: Icon(Icons.badge_rounded, color: palette.primary),
                 ),
                 items: StaffRole.values.map((role) {
                   return DropdownMenuItem(
@@ -151,10 +158,10 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                 controller: _salaryController,
                 keyboardType: TextInputType.number,
                 style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Monthly Base Salary (₹) *',
                   hintText: 'e.g. 24000',
-                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.primary),
+                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.primary),
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return 'Enter salary';

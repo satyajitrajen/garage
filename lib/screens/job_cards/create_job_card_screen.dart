@@ -8,7 +8,9 @@ import '../../models/job_card.dart';
 import '../../models/maintenance_item.dart';
 import '../../models/staff.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../maintenance/add_maintenance_screen.dart';
@@ -35,7 +37,9 @@ class CreateJobCardScreen extends StatefulWidget {
     this.vehicle,
     this.existing,
     this.itemsLocked = false,
-  });
+    // Debug-only guard: a NEW job card always needs a customer AND vehicle —
+    // the read-only summary banner and the save path both rely on them.
+  }) : assert(existing != null || (customer != null && vehicle != null));
 
   @override
   State<CreateJobCardScreen> createState() => _CreateJobCardScreenState();
@@ -164,8 +168,10 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
     // Latch: a fast double-tap on Save must not create two job cards.
     if (_isSaving) return;
     if (_complaints.isEmpty && _complaintController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add at least one customer complaint or service requirement')),
+      showAppSnackBar(
+        context,
+        'Please add at least one customer complaint or service requirement',
+        type: SnackBarType.info,
       );
       return;
     }
@@ -178,10 +184,16 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
     }
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
-    final existing = widget.existing;
+    // Edit path: resolve the freshest record at save time — widget.existing
+    // was captured at construction and the job card's identity/status fields
+    // (id, number, status, timestamps) may have moved on since. Items follow
+    // the same fresh record so the T16 lock semantics operate on one object.
+    final JobCard? existing = widget.existing == null
+        ? null
+        : (provider.getJobCardById(widget.existing!.id) ?? widget.existing);
     // Rebuilt explicitly (not copyWith) so fields the form does not edit —
-    // id, jobCardNumber, status, createdAt, completedAt — carry over exactly
-    // as before on the edit path, the same approach the quotation edit uses.
+    // id, jobCardNumber, status, createdAt, completedAt — carry over from the
+    // fresh record on the edit path, the same approach the quotation edit uses.
     final jobCard = JobCard(
       id: existing?.id ?? const Uuid().v4(),
       // Numbers are generated only for new job cards.
@@ -214,11 +226,10 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
         await provider.updateJobCard(jobCard);
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Job Card ${jobCard.jobCardNumber} updated successfully!'),
-            backgroundColor: AppColors.paid,
-          ),
+        showAppSnackBar(
+          context,
+          'Job Card ${jobCard.jobCardNumber} updated successfully!',
+          type: SnackBarType.success,
         );
 
         Navigator.pop(context);
@@ -226,11 +237,10 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
         await provider.addJobCard(jobCard);
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Job Card ${jobCard.jobCardNumber} created successfully!'),
-            backgroundColor: AppColors.paid,
-          ),
+        showAppSnackBar(
+          context,
+          'Job Card ${jobCard.jobCardNumber} created successfully!',
+          type: SnackBarType.success,
         );
 
         Navigator.pushReplacement(
@@ -242,11 +252,10 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: AppColors.pending,
-        ),
+      showAppSnackBar(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: SnackBarType.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -256,7 +265,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     // Edit mode: the customer/vehicle are locked, so they are resolved from
     // the provider by the job card's ids and shown read-only below.
@@ -281,21 +290,19 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                  ),
+                  color: palette.card,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                  border: Border.all(color: palette.border),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
+                        color: palette.primary.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
                       ),
-                      child: const Icon(Icons.car_repair_rounded, color: AppColors.primary, size: 26),
+                      child: Icon(Icons.car_repair_rounded, color: palette.primary, size: 26),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -315,7 +322,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                             '${vehicle?.displayName ?? '—'} • ${customer?.name ?? '—'}',
                             style: GoogleFonts.poppins(
                               fontSize: 13.5,
-                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                              color: palette.textSecondary,
                             ),
                           ),
                           if (_isEditing) ...[
@@ -324,7 +331,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                               '${widget.existing!.jobCardNumber} • customer & vehicle locked',
                               style: GoogleFonts.poppins(
                                 fontSize: 11.5,
-                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                                color: palette.textMuted,
                               ),
                             ),
                           ],
@@ -332,8 +339,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                       ),
                     ),
                     if (_isEditing)
-                      Icon(Icons.lock_rounded, size: 18,
-                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted),
+                      Icon(Icons.lock_rounded, size: 18, color: palette.textMuted),
                   ],
                 ),
               ),
@@ -346,9 +352,9 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     child: TextFormField(
                       controller: _kmController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Current KM *',
-                        prefixIcon: Icon(Icons.speed_rounded, color: AppColors.primary),
+                        prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
                       ),
                     ),
                   ),
@@ -356,9 +362,9 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       initialValue: _fuelLevel,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Fuel Gauge',
-                        prefixIcon: Icon(Icons.local_gas_station_rounded, color: AppColors.primary),
+                        prefixIcon: Icon(Icons.local_gas_station_rounded, color: palette.primary),
                       ),
                       items: const [
                         DropdownMenuItem(value: 'Empty', child: Text('Empty / Reserve')),
@@ -380,9 +386,9 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       initialValue: _assignedStaffId,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Assign Mechanic',
-                        prefixIcon: Icon(Icons.person_pin_rounded, color: AppColors.primary),
+                        prefixIcon: Icon(Icons.person_pin_rounded, color: palette.primary),
                       ),
                       hint: const Text('Select Mechanic'),
                       items: provider.staff
@@ -402,22 +408,20 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               // Promised Delivery Date & Time
               InkWell(
                 onTap: _pickPromisedDate,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                    ),
+                    color: palette.card,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
+                    border: Border.all(color: palette.border),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.access_time_rounded, color: AppColors.primary, size: 20),
+                          Icon(Icons.access_time_rounded, color: palette.primary, size: 20),
                           const SizedBox(width: 10),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,7 +430,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                                 'Promised Delivery Time',
                                 style: GoogleFonts.poppins(
                                   fontSize: 11.5,
-                                  color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                                  color: palette.textMuted,
                                 ),
                               ),
                               Text(
@@ -440,7 +444,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                           ),
                         ],
                       ),
-                      const Icon(Icons.edit_calendar_rounded, size: 18, color: AppColors.primary),
+                      Icon(Icons.edit_calendar_rounded, size: 18, color: palette.primary),
                     ],
                   ),
                 ),
@@ -468,7 +472,10 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                   IconButton.filled(
                     onPressed: _addComplaint,
                     icon: const Icon(Icons.add_rounded),
-                    style: IconButton.styleFrom(backgroundColor: AppColors.primary),
+                    style: IconButton.styleFrom(
+                      backgroundColor: palette.primary,
+                      foregroundColor: palette.onPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -479,12 +486,12 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     margin: const EdgeInsets.only(bottom: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.08),
+                      color: palette.primary.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.arrow_right_rounded, color: AppColors.primary),
+                        Icon(Icons.arrow_right_rounded, color: palette.primary),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -494,7 +501,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                         ),
                         GestureDetector(
                           onTap: () => setState(() => _complaints.removeAt(entry.key)),
-                          child: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+                          child: Icon(Icons.close_rounded, size: 16, color: palette.textMuted),
                         ),
                       ],
                     ),
@@ -512,11 +519,9 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                  ),
+                  color: palette.card,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                  border: Border.all(color: palette.border),
                 ),
                 child: Column(
                   children: _inspectionChecklist.keys.map((key) {
@@ -524,7 +529,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     return CheckboxListTile(
                       value: checked,
                       title: Text(key, style: GoogleFonts.poppins(fontSize: 13.5)),
-                      activeColor: AppColors.paid,
+                      activeColor: palette.paid,
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       onChanged: (val) {
@@ -571,7 +576,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                       subtitle: Text('${item.quantity} x ${CurrencyFormatter.format(item.unitPrice)}'),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppColors.primary),
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary),
                       ),
                     ),
                   );
@@ -593,10 +598,10 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               // Estimated Cost Note
               TextFormField(
                 controller: _estCostController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Est. cost note (optional)',
                   hintText: 'e.g. Approx 4,000 depending on parts availability',
-                  prefixIcon: Icon(Icons.request_quote_rounded, color: AppColors.primary),
+                  prefixIcon: Icon(Icons.request_quote_rounded, color: palette.primary),
                 ),
               ),
               const SizedBox(height: 32),

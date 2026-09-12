@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../../models/customer.dart';
 import '../../models/vehicle.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../job_cards/create_job_card_screen.dart';
@@ -88,11 +90,10 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
       setState(() {
         _selectedVehicle = newVehicle;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Added vehicle ${newVehicle.registrationNumber}'),
-          backgroundColor: AppColors.paid,
-        ),
+      showAppSnackBar(
+        context,
+        'Added vehicle ${newVehicle.registrationNumber}',
+        type: SnackBarType.success,
       );
     }
   }
@@ -101,7 +102,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
     final vehicles = provider.getVehiclesForCustomer(widget.customer.id);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Scaffold(
       appBar: AppBar(
@@ -109,11 +110,11 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
         actions: [
           TextButton.icon(
             onPressed: _openAddVehicleDialog,
-            icon: const Icon(Icons.add_rounded, color: AppColors.primary),
+            icon: Icon(Icons.add_rounded, color: palette.primary),
             label: Text(
               'Add Vehicle',
               style: GoogleFonts.poppins(
-                color: AppColors.primary,
+                color: palette.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -126,18 +127,18 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: palette.card,
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: AppColors.primary.withOpacity(0.12),
+                  backgroundColor: palette.primary.withOpacity(0.12),
                   child: Text(
                     widget.customer.name.substring(0, 1).toUpperCase(),
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: palette.primary,
                     ),
                   ),
                 ),
@@ -151,26 +152,26 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : AppColors.textPrimary,
+                          color: palette.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(Icons.phone_rounded, size: 14, color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted),
+                          Icon(Icons.phone_rounded, size: 14, color: palette.textMuted),
                           const SizedBox(width: 4),
                           Text(
                             widget.customer.phone,
                             style: GoogleFonts.poppins(
                               fontSize: 13,
-                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                              color: palette.textSecondary,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                              color: palette.cardAlt,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -178,7 +179,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white : AppColors.textPrimary,
+                                color: palette.textPrimary,
                               ),
                             ),
                           ),
@@ -216,25 +217,17 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                           setState(() => _selectedVehicle = vehicle);
                           _proceedWithVehicle(vehicle);
                         },
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            color: palette.card,
+                            borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                             border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                              color: isSelected ? palette.primary : palette.border,
                               width: isSelected ? 2 : 1,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            boxShadow: AppDimens.cardShadow(palette.textPrimary),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,13 +239,14 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                      color: palette.background,
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: AppColors.primary.withOpacity(0.5), width: 1.2),
+                                      border: Border.all(color: palette.primary.withOpacity(0.5), width: 1.2),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        // Indian flag navy band — deliberate theme-invariant literal.
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                                           decoration: BoxDecoration(
@@ -271,7 +265,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                             fontSize: 14,
                                             fontWeight: FontWeight.w800,
                                             letterSpacing: 0.8,
-                                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                            color: palette.textPrimary,
                                           ),
                                         ),
                                       ],
@@ -281,7 +275,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withOpacity(0.1),
+                                      color: palette.primary.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
@@ -289,7 +283,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.primary,
+                                        color: palette.primary,
                                       ),
                                     ),
                                   ),
@@ -301,43 +295,43 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  color: isDark ? Colors.white : AppColors.textPrimary,
+                                  color: palette.textPrimary,
                                 ),
                               ),
                               const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  Icon(Icons.speed_rounded, size: 15, color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted),
+                                  Icon(Icons.speed_rounded, size: 15, color: palette.textMuted),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${vehicle.currentKm.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} KM',
                                     style: GoogleFonts.poppins(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
-                                      color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                                      color: palette.textSecondary,
                                     ),
                                   ),
                                   if (vehicle.year != null) ...[
                                     const SizedBox(width: 12),
-                                    Icon(Icons.calendar_today_rounded, size: 14, color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted),
+                                    Icon(Icons.calendar_today_rounded, size: 14, color: palette.textMuted),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${vehicle.year} Model',
                                       style: GoogleFonts.poppins(
                                         fontSize: 13,
-                                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                                        color: palette.textSecondary,
                                       ),
                                     ),
                                   ],
                                   if (vehicle.color != null) ...[
                                     const SizedBox(width: 12),
-                                    Icon(Icons.palette_outlined, size: 14, color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted),
+                                    Icon(Icons.palette_outlined, size: 14, color: palette.textMuted),
                                     const SizedBox(width: 4),
                                     Text(
                                       vehicle.color!,
                                       style: GoogleFonts.poppins(
                                         fontSize: 13,
-                                        color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                                        color: palette.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -349,7 +343,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                   'Last serviced: ${AppDateFormatter.formatDate(vehicle.lastServiceDate!)} (${serviceHistory.length} total visits)',
                                   style: GoogleFonts.poppins(
                                     fontSize: 12,
-                                    color: AppColors.paid,
+                                    color: palette.paid,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -363,11 +357,11 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                     style: GoogleFonts.poppins(
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.primary,
+                                      color: palette.primary,
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.primary),
+                                  Icon(Icons.arrow_forward_rounded, size: 16, color: palette.primary),
                                 ],
                               ),
                             ],

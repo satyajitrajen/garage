@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/maintenance_item.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/quantity_formatter.dart';
 import '../../widgets/search_bar_widget.dart';
@@ -74,20 +76,12 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
       });
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Added "${item.name}"'),
-        duration: const Duration(milliseconds: 1000),
-        backgroundColor: AppColors.paid,
-      ),
-    );
+    showAppSnackBar(context, 'Added "${item.name}"', type: SnackBarType.success);
   }
 
   void _addCustomItem() {
     if (_customNameController.text.trim().isEmpty || _customPriceController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter item name and price')),
-      );
+      showAppSnackBar(context, 'Please enter item name and price', type: SnackBarType.info);
       return;
     }
 
@@ -97,21 +91,15 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
 
     // Validate inputs so bad line items can't corrupt invoice totals.
     if (price <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Price must be greater than zero')),
-      );
+      showAppSnackBar(context, 'Price must be greater than zero', type: SnackBarType.info);
       return;
     }
     if (qty <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Quantity must be greater than zero')),
-      );
+      showAppSnackBar(context, 'Quantity must be greater than zero', type: SnackBarType.info);
       return;
     }
     if (discount < 0 || discount > 100) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Discount must be between 0 and 100 percent')),
-      );
+      showAppSnackBar(context, 'Discount must be between 0 and 100 percent', type: SnackBarType.error);
       return;
     }
 
@@ -137,26 +125,25 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
     _customDiscountController.text = '0';
 
     Navigator.pop(context); // Close bottom sheet
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Custom item added!'), backgroundColor: AppColors.paid),
-    );
+    showAppSnackBar(context, 'Custom item added!', type: SnackBarType.success);
   }
 
   void _showAddCustomItemSheet() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusSheet)),
       ),
-      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      backgroundColor: context.palette.surface,
       builder: (ctx) => SafeArea(
         top: false,
         child: StatefulBuilder(
           builder: (context, setSheetState) {
+            // Palette is captured inside the builder so a theme flip while
+            // the sheet is open re-reads it (stale-capture guard).
+            final palette = context.palette;
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).viewInsets.bottom + 24,
@@ -254,7 +241,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         return ChoiceChip(
                           label: Text(cat.displayName),
                           selected: isSelected,
-                          selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                          selectedColor: palette.primary.withValues(alpha: 0.15),
                           onSelected: (selected) {
                             if (selected) {
                               setSheetState(() {
@@ -270,7 +257,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     CheckboxListTile(
                       value: _customIsLabour,
                       contentPadding: EdgeInsets.zero,
-                      activeColor: AppColors.primary,
+                      activeColor: palette.primary,
                       title: Text(
                         'Count as Labour / Service Charge',
                         style: GoogleFonts.poppins(fontSize: 14),
@@ -314,7 +301,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     final partsSubtotal = _currentItems
         .where((i) => !i.isLabour)
@@ -330,11 +317,11 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
         actions: [
           TextButton.icon(
             onPressed: _showAddCustomItemSheet,
-            icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary),
+            icon: Icon(Icons.add_circle_outline_rounded, color: palette.primary),
             label: Text(
               'Custom Item',
               style: GoogleFonts.poppins(
-                color: AppColors.primary,
+                color: palette.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -348,7 +335,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
           // ---------------------------------------------------------
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: palette.card,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -360,7 +347,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
+                        color: palette.textPrimary,
                       ),
                     ),
                     if (_currentItems.isNotEmpty)
@@ -375,7 +362,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                           'Clear All',
                           style: GoogleFonts.poppins(
                             fontSize: 12.5,
-                            color: AppColors.pending,
+                            color: palette.pending,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -396,12 +383,12 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                           width: 200,
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(12),
+                            color: palette.background,
+                            borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
                             border: Border.all(
                               color: item.isLabour
-                                  ? AppColors.inProgress.withOpacity(0.4)
-                                  : AppColors.primary.withOpacity(0.4),
+                                  ? palette.inProgress.withOpacity(0.4)
+                                  : palette.primary.withOpacity(0.4),
                             ),
                           ),
                           child: Column(
@@ -424,7 +411,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                   ),
                                   GestureDetector(
                                     onTap: () => setState(() => _currentItems.removeAt(index)),
-                                    child: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+                                    child: Icon(Icons.close_rounded, size: 16, color: palette.textMuted),
                                   ),
                                 ],
                               ),
@@ -436,7 +423,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                     style: GoogleFonts.poppins(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w800,
-                                      color: AppColors.primary,
+                                      color: palette.primary,
                                     ),
                                   ),
                                   Row(
@@ -446,7 +433,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                         child: Container(
                                           padding: const EdgeInsets.all(3),
                                           decoration: BoxDecoration(
-                                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                            color: palette.cardAlt,
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: const Icon(Icons.remove, size: 12),
@@ -464,7 +451,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                         child: Container(
                                           padding: const EdgeInsets.all(3),
                                           decoration: BoxDecoration(
-                                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                            color: palette.cardAlt,
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: const Icon(Icons.add, size: 12),
@@ -500,9 +487,9 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
-            indicatorColor: AppColors.primary,
+            labelColor: palette.primary,
+            unselectedLabelColor: palette.textMuted,
+            indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
             labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
             tabs: [
@@ -534,14 +521,8 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, -4),
-                ),
-              ],
+              color: palette.card,
+              boxShadow: AppDimens.cardShadow(palette.textPrimary),
             ),
             child: SafeArea(
               child: Row(
@@ -557,7 +538,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                               'Parts: ${CurrencyFormatter.format(partsSubtotal)}',
                               style: GoogleFonts.poppins(
                                 fontSize: 11.5,
-                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                                color: palette.textSecondary,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -565,7 +546,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                               'Labour: ${CurrencyFormatter.format(labourSubtotal)}',
                               style: GoogleFonts.poppins(
                                 fontSize: 11.5,
-                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                                color: palette.textSecondary,
                               ),
                             ),
                           ],
@@ -576,7 +557,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                           style: GoogleFonts.poppins(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
+                            color: palette.primary,
                           ),
                         ),
                       ],
@@ -602,6 +583,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
   }
 
   Widget _buildCatalogueList(List<MaintenanceItem> allCatalog, ItemCategory? filterCat) {
+    final palette = context.palette;
     final filtered = allCatalog.where((item) {
       if (filterCat != null && item.category != filterCat) return false;
       if (_searchQuery.isNotEmpty) {
@@ -617,7 +599,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
       return Center(
         child: Text(
           'No items found in this category',
-          style: GoogleFonts.poppins(color: AppColors.textMuted),
+          style: GoogleFonts.poppins(color: context.palette.textMuted),
         ),
       );
     }
@@ -635,11 +617,11 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: CircleAvatar(
               backgroundColor: item.isLabour
-                  ? AppColors.inProgress.withOpacity(0.12)
-                  : AppColors.primary.withOpacity(0.12),
+                  ? palette.inProgress.withOpacity(0.12)
+                  : palette.primary.withOpacity(0.12),
               child: Icon(
                 item.isLabour ? Icons.build_rounded : Icons.precision_manufacturing_rounded,
-                color: item.isLabour ? AppColors.inProgress : AppColors.primary,
+                color: item.isLabour ? palette.inProgress : palette.primary,
                 size: 20,
               ),
             ),
@@ -651,13 +633,13 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
               children: [
                 Text(
                   item.category.displayName,
-                  style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted),
+                  style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
                 ),
                 if (item.partNumber != null) ...[
                   const SizedBox(width: 8),
                   Text(
                     '• ${item.partNumber}',
-                    style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted),
+                    style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
                   ),
                 ],
               ],
@@ -674,12 +656,12 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: palette.primary,
                       ),
                     ),
                     Text(
                       'per ${item.unit}',
-                      style: GoogleFonts.poppins(fontSize: 11, color: AppColors.textMuted),
+                      style: GoogleFonts.poppins(fontSize: 11, color: palette.textMuted),
                     ),
                   ],
                 ),

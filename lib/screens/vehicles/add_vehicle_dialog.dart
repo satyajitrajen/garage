@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/vehicle.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_palette.dart';
 
 class AddVehicleDialog extends StatefulWidget {
   final String customerId;
@@ -115,14 +115,13 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-      child: Container(
+    // Plain AlertDialog: the theme's dialogTheme supplies the background
+    // (palette surface) and card-radius shape in both modes.
+    return AlertDialog(
+      content: Container(
         constraints: const BoxConstraints(maxWidth: 500),
-        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -138,7 +137,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                       style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
+                        color: palette.textPrimary,
                       ),
                     ),
                     IconButton(
@@ -153,10 +152,10 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                 TextFormField(
                   controller: _regNoController,
                   textCapitalization: TextCapitalization.characters,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Registration Number *',
                     hintText: 'e.g. MH 12 AB 1234',
-                    prefixIcon: Icon(Icons.pin_rounded, color: AppColors.primary),
+                    prefixIcon: Icon(Icons.pin_rounded, color: palette.primary),
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) return 'Registration number is required';
@@ -228,7 +227,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                    color: palette.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -240,9 +239,9 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                     return ChoiceChip(
                       label: Text(fuel.displayName),
                       selected: isSelected,
-                      selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                      selectedColor: palette.primary.withValues(alpha: 0.15),
                       labelStyle: TextStyle(
-                        color: isSelected ? AppColors.primary : (isDark ? Colors.white : AppColors.textPrimary),
+                        color: isSelected ? palette.primary : palette.textPrimary,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       ),
                       onSelected: (selected) {
@@ -260,10 +259,10 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                       child: TextFormField(
                         controller: _kmController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Current KM Reading *',
                           hintText: 'e.g. 35000',
-                          prefixIcon: Icon(Icons.speed_rounded, color: AppColors.primary),
+                          prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
                         ),
                         validator: (val) => val == null || val.trim().isEmpty ? 'KM is required' : null,
                       ),

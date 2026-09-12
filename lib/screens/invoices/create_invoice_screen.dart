@@ -7,8 +7,11 @@ import '../../models/vehicle.dart';
 import '../../models/invoice.dart';
 import '../../models/maintenance_item.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
+import '../../widgets/empty_state_widget.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import 'invoice_preview_screen.dart';
 
@@ -74,8 +77,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     // Latch: a fast double-tap on Save must not create two invoices.
     if (_isSaving) return;
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add at least one item or labour charge to generate bill')),
+      showAppSnackBar(
+        context,
+        'Please add at least one item or labour charge to generate bill',
+        type: SnackBarType.info,
       );
       return;
     }
@@ -84,11 +89,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
     final gross = _items.fold(0.0, (sum, i) => sum + i.taxableAmount);
     if (discount < 0 || discount > gross) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Discount must be between 0 and ${CurrencyFormatter.format(gross)}'),
-          backgroundColor: AppColors.pending,
-        ),
+      showAppSnackBar(
+        context,
+        'Discount must be between 0 and ${CurrencyFormatter.format(gross)}',
+        type: SnackBarType.error,
       );
       return;
     }
@@ -112,11 +116,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     await provider.addInvoice(invoice);
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Invoice #${invoice.invoiceNumber} created successfully!'),
-        backgroundColor: AppColors.paid,
-      ),
+    showAppSnackBar(
+      context,
+      'Invoice #${invoice.invoiceNumber} created successfully!',
+      type: SnackBarType.success,
     );
 
     Navigator.pushReplacement(
@@ -129,7 +132,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
     final config = context.read<GarageProvider>().config;
 
     final partsSubtotal = _items.where((i) => !i.isLabour).fold(0.0, (sum, i) => sum + i.taxableAmount);
@@ -155,21 +158,19 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                  ),
+                  color: palette.card,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                  border: Border.all(color: palette.border),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
+                        color: palette.primary.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
                       ),
-                      child: const Icon(Icons.receipt_long_rounded, color: AppColors.primary, size: 26),
+                      child: Icon(Icons.receipt_long_rounded, color: palette.primary, size: 26),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -185,7 +186,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                             '${widget.vehicle.displayName} (${widget.vehicle.registrationNumber})',
                             style: GoogleFonts.poppins(
                               fontSize: 13.5,
-                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                              color: palette.textSecondary,
                             ),
                           ),
                         ],
@@ -214,25 +215,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               const SizedBox(height: 12),
 
               if (_items.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      const Icon(Icons.shopping_bag_outlined, size: 40, color: AppColors.textMuted),
-                      const SizedBox(height: 10),
-                      Text('No items in bill yet', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
-                      const SizedBox(height: 4),
-                      Text('Add services, spare parts or oils to create bill', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted)),
-                    ],
-                  ),
+                const EmptyStateWidget(
+                  icon: Icons.shopping_bag_outlined,
+                  title: 'No items in bill yet',
+                  description: 'Add services, spare parts or oils to create bill',
                 )
               else
                 ..._items.map((item) {
@@ -243,7 +229,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                       subtitle: Text('${item.quantity} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}'),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppColors.primary),
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary),
                       ),
                     ),
                   );
@@ -311,23 +297,21 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                  ),
+                  color: palette.card,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                  border: Border.all(color: palette.border),
                 ),
                 child: Column(
                   children: [
-                    _buildRow('Parts Total:', CurrencyFormatter.format(partsSubtotal), isDark),
+                    _buildRow('Parts Total:', CurrencyFormatter.format(partsSubtotal), palette),
                     const SizedBox(height: 4),
-                    _buildRow('Labour Total:', CurrencyFormatter.format(labourSubtotal), isDark),
+                    _buildRow('Labour Total:', CurrencyFormatter.format(labourSubtotal), palette),
                     const SizedBox(height: 4),
                     if (discount > 0) ...[
-                      _buildRow('Discount:', '- ${CurrencyFormatter.format(discount)}', isDark, color: AppColors.paid),
+                      _buildRow('Discount:', '- ${CurrencyFormatter.format(discount)}', palette, color: palette.paid),
                       const SizedBox(height: 4),
                     ],
-                    _buildRow('GST Taxes (${_taxPercent.toInt()}%):', CurrencyFormatter.format(taxAmount), isDark),
+                    _buildRow('GST Taxes (${_taxPercent.toInt()}%):', CurrencyFormatter.format(taxAmount), palette),
                     const Divider(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -338,7 +322,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                           style: GoogleFonts.poppins(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
-                            color: AppColors.primary,
+                            color: palette.primary,
                           ),
                         ),
                       ],
@@ -368,18 +352,18 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     );
   }
 
-  Widget _buildRow(String label, String value, bool isDark, {Color? color}) {
+  Widget _buildRow(String label, String value, AppPalette palette, {Color? color}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.poppins(fontSize: 13, color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+            style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary),
           ),
         ),
         const SizedBox(width: 8),
-        Text(value, style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w600, color: color ?? (isDark ? Colors.white : AppColors.textPrimary))),
+        Text(value, style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
       ],
     );
   }

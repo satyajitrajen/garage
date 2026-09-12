@@ -5,7 +5,9 @@ import 'package:uuid/uuid.dart';
 import '../../models/expense.dart';
 import '../../models/payment.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 
@@ -67,6 +69,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
+    // The picker can outlive this State (theme flip pops the route).
+    if (!mounted) return;
     if (date != null) {
       setState(() => _expenseDate = date);
     }
@@ -104,11 +108,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         await provider.updateExpense(edited);
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Expense "${edited.title}" updated!'),
-            backgroundColor: AppColors.paid,
-          ),
+        showAppSnackBar(
+          context,
+          'Expense "${edited.title}" updated!',
+          type: SnackBarType.success,
         );
 
         Navigator.pop(context, edited);
@@ -127,22 +130,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         await provider.addExpense(expense);
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Expense of ${CurrencyFormatter.format(amount)} recorded!'),
-            backgroundColor: AppColors.paid,
-          ),
+        showAppSnackBar(
+          context,
+          'Expense of ${CurrencyFormatter.format(amount)} recorded!',
+          type: SnackBarType.success,
         );
 
         Navigator.pop(context, expense);
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: AppColors.pending,
-        ),
+      showAppSnackBar(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: SnackBarType.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -151,7 +152,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Scaffold(
       appBar: AppBar(
@@ -176,12 +177,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 children: ExpenseCategory.values.map((cat) {
                   final isSelected = _category == cat;
                   return ChoiceChip(
-                    avatar: Icon(cat.icon, size: 16, color: isSelected ? Colors.white : AppColors.primary),
+                    avatar: Icon(cat.icon, size: 16, color: isSelected ? palette.onPrimary : palette.primary),
                     label: Text(cat.displayName),
                     selected: isSelected,
-                    selectedColor: AppColors.primary,
+                    selectedColor: palette.primary,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : (isDark ? Colors.white : AppColors.textPrimary),
+                      color: isSelected ? palette.onPrimary : palette.textPrimary,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       fontSize: 13,
                     ),
@@ -203,10 +204,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // Title / Description
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Expense Title / Description *',
                   hintText: 'e.g. Brake cleaner sprays / Monthly electricity',
-                  prefixIcon: Icon(Icons.edit_note_rounded, color: AppColors.primary),
+                  prefixIcon: Icon(Icons.edit_note_rounded, color: palette.primary),
                 ),
                 validator: (val) => val == null || val.trim().isEmpty ? 'Enter description' : null,
               ),
@@ -217,9 +218,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 controller: _amountController,
                 keyboardType: TextInputType.number,
                 style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Amount Spent (₹) *',
-                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: AppColors.primary),
+                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.primary),
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return 'Enter amount';
@@ -233,22 +234,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // Date Picker
               InkWell(
                 onTap: _pickDate,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                    ),
+                    color: palette.card,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
+                    border: Border.all(color: palette.border),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 20),
+                          Icon(Icons.calendar_month_rounded, color: palette.primary, size: 20),
                           const SizedBox(width: 10),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +256,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 'Expense Date',
                                 style: GoogleFonts.poppins(
                                   fontSize: 11.5,
-                                  color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                                  color: palette.textMuted,
                                 ),
                               ),
                               Text(
@@ -268,7 +267,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           ),
                         ],
                       ),
-                      const Icon(Icons.edit_calendar_rounded, size: 18, color: AppColors.primary),
+                      Icon(Icons.edit_calendar_rounded, size: 18, color: palette.primary),
                     ],
                   ),
                 ),
@@ -289,9 +288,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   return ChoiceChip(
                     label: Text(mode.displayName),
                     selected: isSelected,
-                    selectedColor: AppColors.primary,
+                    selectedColor: palette.primary,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : (isDark ? Colors.white : AppColors.textPrimary),
+                      color: isSelected ? palette.onPrimary : palette.textPrimary,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     ),
                     onSelected: (selected) {
