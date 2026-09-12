@@ -39,13 +39,14 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
       // the items editor was open; copying onto a stale snapshot would
       // silently revert those changes.
       final fresh = provider.getJobCardById(jobCard.id) ?? jobCard;
-      provider.updateJobCard(fresh.copyWith(items: updatedItems));
+      await provider.updateJobCard(fresh.copyWith(items: updatedItems));
     }
   }
 
-  void _changeStatus(JobCard jobCard, JobStatus newStatus) {
+  Future<void> _changeStatus(JobCard jobCard, JobStatus newStatus) async {
     final provider = Provider.of<GarageProvider>(context, listen: false);
-    provider.updateJobStatus(jobCard.id, newStatus);
+    await provider.updateJobStatus(jobCard.id, newStatus);
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Status changed to ${newStatus.displayName}'),

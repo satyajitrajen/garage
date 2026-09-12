@@ -62,7 +62,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
     super.dispose();
   }
 
-  void _saveVehicle() {
+  Future<void> _saveVehicle() async {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
@@ -89,7 +89,8 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
         lastServiceDate: original.lastServiceDate,
       );
 
-      provider.updateVehicle(updated);
+      await provider.updateVehicle(updated);
+      if (!mounted) return;
       Navigator.pop(context, updated);
       return;
     }
@@ -107,7 +108,8 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
       color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
     );
 
-    provider.addVehicle(newVehicle);
+    await provider.addVehicle(newVehicle);
+    if (!mounted) return;
     Navigator.pop(context, newVehicle);
   }
 

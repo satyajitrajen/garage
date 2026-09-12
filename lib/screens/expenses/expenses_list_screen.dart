@@ -50,10 +50,12 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.pending),
-            onPressed: () {
+            onPressed: () async {
               final provider = Provider.of<GarageProvider>(context, listen: false);
-              provider.deleteExpense(exp.id);
+              await provider.deleteExpense(exp.id);
+              if (!ctx.mounted) return;
               Navigator.pop(ctx);
+              if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Expense "${exp.title}" deleted'),

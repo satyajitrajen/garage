@@ -114,7 +114,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
     }
   }
 
-  void _saveJobCard() {
+  Future<void> _saveJobCard() async {
     // Latch: a fast double-tap on Save must not create two job cards.
     if (_isSaving) return;
     if (_complaints.isEmpty && _complaintController.text.trim().isEmpty) {
@@ -148,7 +148,8 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
       supervisorNotes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 
-    provider.addJobCard(jobCard);
+    await provider.addJobCard(jobCard);
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

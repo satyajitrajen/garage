@@ -35,8 +35,9 @@ class StaffListScreen extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.pending),
-            onPressed: () {
-              provider.deleteStaff(staff.id);
+            onPressed: () async {
+              await provider.deleteStaff(staff.id);
+              if (!context.mounted) return;
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -116,8 +117,9 @@ class StaffListScreen extends StatelessWidget {
                   ),
                 ),
                 GradientButton(
-                  onPressed: () {
-                    provider.markAllPresentToday();
+                  onPressed: () async {
+                    await provider.markAllPresentToday();
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Marked all active staff as Present today!'),

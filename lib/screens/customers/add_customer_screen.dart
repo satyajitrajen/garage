@@ -83,7 +83,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     super.dispose();
   }
 
-  void _handleSave({bool startJob = false, bool createQuote = false}) {
+  Future<void> _handleSave({bool startJob = false, bool createQuote = false}) async {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
@@ -107,7 +107,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         createdAt: original.createdAt,
       );
 
-      provider.updateCustomer(updatedCustomer);
+      await provider.updateCustomer(updatedCustomer);
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -134,7 +135,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 
-    provider.addCustomer(newCustomer);
+    await provider.addCustomer(newCustomer);
+    if (!mounted) return;
 
     Vehicle? newVehicle;
     if (_hasVehicle && _regNoController.text.trim().isNotEmpty) {
@@ -150,7 +152,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         currentKm: int.tryParse(_kmController.text.trim()) ?? 0,
         color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
       );
-      provider.addVehicle(newVehicle);
+      await provider.addVehicle(newVehicle);
+      if (!mounted) return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(

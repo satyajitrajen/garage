@@ -69,7 +69,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     }
   }
 
-  void _saveInvoice() {
+  Future<void> _saveInvoice() async {
     // Latch: a fast double-tap on Save must not create two invoices.
     if (_isSaving) return;
     if (_items.isEmpty) {
@@ -108,7 +108,8 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 
-    provider.addInvoice(invoice);
+    await provider.addInvoice(invoice);
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

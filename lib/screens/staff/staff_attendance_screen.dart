@@ -37,7 +37,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
     setState(() => _currentMonth = target);
   }
 
-  void _markAttendance(AttendanceStatus status) {
+  Future<void> _markAttendance(AttendanceStatus status) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final day = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
@@ -52,11 +52,12 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
     }
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
-    provider.markAttendance(
+    await provider.markAttendance(
       staffId: widget.staff.id,
       date: _selectedDate,
       status: status,
     );
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

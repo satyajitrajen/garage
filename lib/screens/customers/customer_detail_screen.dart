@@ -130,8 +130,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.pending),
-            onPressed: () {
-              provider.deleteVehicle(vehicle.id);
+            onPressed: () async {
+              await provider.deleteVehicle(vehicle.id);
+              if (!context.mounted) return;
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

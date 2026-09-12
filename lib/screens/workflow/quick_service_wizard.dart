@@ -78,7 +78,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     }
   }
 
-  void _generateFinalBill() {
+  Future<void> _generateFinalBill() async {
     // Guard: never generate a second invoice for the same service.
     if (_generatedInvoice != null) {
       setState(() => _currentStep = 3);
@@ -121,7 +121,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       notes: 'Quick Service counter bill generated via Nexory Wizard',
     );
 
-    provider.addInvoice(invoice);
+    await provider.addInvoice(invoice);
+    if (!mounted) return;
 
     setState(() {
       _generatedInvoice = invoice;

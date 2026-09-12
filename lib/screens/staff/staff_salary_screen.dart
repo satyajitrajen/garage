@@ -36,7 +36,7 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
     super.dispose();
   }
 
-  void _giveAdvance() {
+  Future<void> _giveAdvance() async {
     final amount = double.tryParse(_advanceAmountController.text.trim()) ?? 0.0;
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -46,11 +46,12 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
     }
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
-    provider.addSalaryAdvance(
+    await provider.addSalaryAdvance(
       staffId: widget.staff.id,
       amount: amount,
       reason: _advanceReasonController.text.trim().isEmpty ? null : _advanceReasonController.text.trim(),
     );
+    if (!mounted) return;
 
     _advanceAmountController.clear();
     _advanceReasonController.clear();
@@ -315,15 +316,16 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
+                onPressed: () async {
                   final provider = Provider.of<GarageProvider>(context, listen: false);
                   final now = DateTime.now();
-                  provider.disburseSalary(
+                  await provider.disburseSalary(
                     staffId: widget.staff.id,
                     month: now.month,
                     year: now.year,
                     netPayable: netPayable,
                   );
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Salary of ${CurrencyFormatter.format(netPayable)} disbursed & recorded as expense for ${widget.staff.name}!'),

@@ -49,7 +49,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
     super.dispose();
   }
 
-  void _saveStaff() {
+  Future<void> _saveStaff() async {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
@@ -64,7 +64,8 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
         role: _selectedRole,
         address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
       );
-      provider.updateStaff(updated);
+      await provider.updateStaff(updated);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Staff ${updated.name} updated!'), backgroundColor: AppColors.paid),
       );
@@ -78,7 +79,8 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
         role: _selectedRole,
         address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
       );
-      provider.addStaff(newStaff);
+      await provider.addStaff(newStaff);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Employee ${newStaff.name} added to team!'), backgroundColor: AppColors.paid),
       );

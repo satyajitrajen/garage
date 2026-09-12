@@ -70,7 +70,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     }
   }
 
-  void _saveQuotation() {
+  Future<void> _saveQuotation() async {
     // Latch: a fast double-tap on Save must not create two quotations.
     if (_isSaving) return;
     if (_items.isEmpty) {
@@ -109,7 +109,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 
-    provider.addQuotation(quote);
+    await provider.addQuotation(quote);
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
