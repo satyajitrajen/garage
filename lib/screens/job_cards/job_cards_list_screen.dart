@@ -3,7 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../models/job_card.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
@@ -64,7 +65,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Scaffold(
       appBar: AppBar(
@@ -98,9 +99,9 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
-            indicatorColor: AppColors.primary,
+            labelColor: palette.primary,
+            unselectedLabelColor: palette.textMuted,
+            indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
             labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
             tabs: const [
@@ -118,7 +119,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
             child: TabBarView(
               controller: _tabController,
               children: _tabFilters.map((filterStatus) {
-                return _buildJobCardList(provider, filterStatus, isDark);
+                return _buildJobCardList(provider, filterStatus);
               }).toList(),
             ),
           ),
@@ -127,7 +128,8 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
     );
   }
 
-  Widget _buildJobCardList(GarageProvider provider, JobStatus? filterStatus, bool isDark) {
+  Widget _buildJobCardList(GarageProvider provider, JobStatus? filterStatus) {
+    final palette = context.palette;
     final filtered = provider.jobCards.where((jc) {
       if (filterStatus != null && jc.status != filterStatus) return false;
 
@@ -175,9 +177,9 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                 MaterialPageRoute(builder: (_) => JobCardDetailScreen(jobCardId: jc.id)),
               );
             },
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppDimens.radiusTile),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppDimens.paddingCard),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -189,7 +191,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                         style: GoogleFonts.poppins(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.accent,
+                          color: palette.accent,
                         ),
                       ),
                       StatusBadge.fromJobStatus(jc.status),
@@ -209,7 +211,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.2,
-                                color: isDark ? Colors.white : AppColors.textPrimary,
+                                color: palette.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -217,7 +219,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                               '${vehicle?.displayName ?? ""} • ${customer?.name ?? ""}',
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                                color: palette.textSecondary,
                               ),
                             ),
                           ],
@@ -232,12 +234,12 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                               style: GoogleFonts.poppins(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w800,
-                                color: isDark ? Colors.white : AppColors.textPrimary,
+                                color: palette.textPrimary,
                               ),
                             ),
                             Text(
                               '${jc.items.length} items',
-                              style: GoogleFonts.poppins(fontSize: 11, color: AppColors.textMuted),
+                              style: GoogleFonts.poppins(fontSize: 11, color: palette.textMuted),
                             ),
                           ],
                         ),
@@ -251,27 +253,27 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.person_outline_rounded, size: 13, color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted),
+                          Icon(Icons.person_outline_rounded, size: 13, color: palette.textMuted),
                           const SizedBox(width: 4),
                           Text(
                             staff?.name ?? 'Unassigned',
                             style: GoogleFonts.poppins(
                               fontSize: 11.5,
-                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                              color: palette.textSecondary,
                             ),
                           ),
                         ],
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.access_time_rounded, size: 13, color: AppColors.accent),
+                          Icon(Icons.access_time_rounded, size: 13, color: palette.accent),
                           const SizedBox(width: 4),
                           Text(
                             AppDateFormatter.formatRelative(jc.promisedDeliveryDate),
                             style: GoogleFonts.poppins(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.accent,
+                              color: palette.accent,
                             ),
                           ),
                         ],

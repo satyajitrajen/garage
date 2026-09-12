@@ -3,7 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../models/quotation.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
@@ -28,7 +29,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
   String _searchQuery = '';
 
   final List<QuotationStatus?> _tabFilters = [
-    null,
+    null, // All
     QuotationStatus.sent,
     QuotationStatus.approved,
     QuotationStatus.converted,
@@ -63,7 +64,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Scaffold(
       appBar: AppBar(
@@ -94,9 +95,9 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
-            indicatorColor: AppColors.primary,
+            labelColor: palette.primary,
+            unselectedLabelColor: palette.textMuted,
+            indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
             labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
             tabs: const [
@@ -111,7 +112,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
             child: TabBarView(
               controller: _tabController,
               children: _tabFilters.map((filter) {
-                return _buildQuotationsList(provider, filter, isDark);
+                return _buildQuotationsList(provider, filter);
               }).toList(),
             ),
           ),
@@ -120,7 +121,8 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
     );
   }
 
-  Widget _buildQuotationsList(GarageProvider provider, QuotationStatus? filter, bool isDark) {
+  Widget _buildQuotationsList(GarageProvider provider, QuotationStatus? filter) {
+    final palette = context.palette;
     final filtered = provider.quotations.where((q) {
       if (filter != null && q.status != filter) return false;
 
@@ -167,9 +169,9 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                 MaterialPageRoute(builder: (_) => QuotationDetailScreen(quotationId: quote.id)),
               );
             },
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppDimens.radiusTile),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppDimens.paddingCard),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -181,7 +183,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                         style: GoogleFonts.poppins(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.accent,
+                          color: palette.accent,
                         ),
                       ),
                       StatusBadge.fromQuotationStatus(quote.status),
@@ -199,7 +201,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                             style: GoogleFonts.poppins(
                               fontSize: 14.5,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : AppColors.textPrimary,
+                              color: palette.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -207,7 +209,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                             '${vehicle?.registrationNumber ?? ""} • ${vehicle?.displayName ?? ""}',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                              color: palette.textSecondary,
                             ),
                           ),
                         ],
@@ -220,12 +222,12 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                             style: GoogleFonts.poppins(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : AppColors.textPrimary,
+                              color: palette.textPrimary,
                             ),
                           ),
                           Text(
                             '${quote.items.length} items',
-                            style: GoogleFonts.poppins(fontSize: 11, color: AppColors.textMuted),
+                            style: GoogleFonts.poppins(fontSize: 11, color: palette.textMuted),
                           ),
                         ],
                       ),
@@ -239,11 +241,11 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                     children: [
                       Text(
                         'Created: ${AppDateFormatter.formatDate(quote.createdAt)}',
-                        style: GoogleFonts.poppins(fontSize: 11.5, color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted),
+                        style: GoogleFonts.poppins(fontSize: 11.5, color: palette.textMuted),
                       ),
                       Text(
                         'Valid: ${quote.validityDays} Days',
-                        style: GoogleFonts.poppins(fontSize: 11.5, color: AppColors.accent, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.poppins(fontSize: 11.5, color: palette.accent, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),

@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../models/staff.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
@@ -23,6 +25,7 @@ class StaffListScreen extends StatelessWidget {
   }
 
   void _confirmDeleteStaff(BuildContext context, GarageProvider provider, Staff staff) {
+    final palette = context.palette;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -34,17 +37,19 @@ class StaffListScreen extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.pending),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: palette.pending,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               await provider.deleteStaff(staff.id);
               if (!ctx.mounted) return;
               Navigator.pop(ctx);
               if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Staff member ${staff.name} deleted'),
-                  backgroundColor: AppColors.pending,
-                ),
+              showAppSnackBar(
+                context,
+                'Staff member ${staff.name} deleted',
+                type: SnackBarType.error,
               );
             },
             child: const Text('Delete'),
@@ -58,13 +63,13 @@ class StaffListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
     final staffMembers = provider.staff;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
     final today = DateTime.now();
 
     final totalMonthlyPayroll = staffMembers.fold<double>(0, (sum, s) => sum + s.monthlySalary);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: palette.background,
       appBar: AppBar(
         title: Text(
           'Staff & Technicians',
@@ -76,7 +81,7 @@ class StaffListScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_add_rounded, color: AppColors.accent, size: 22),
+            icon: Icon(Icons.person_add_rounded, color: palette.accent, size: 22),
             tooltip: 'Add Staff Member',
             onPressed: () => _openAddStaff(context),
           ),
@@ -92,7 +97,9 @@ class StaffListScreen extends StatelessWidget {
           // Top Staff & Attendance Actions Strip
           Container(
             padding: const EdgeInsets.all(16),
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            // Alt-surface strip: cardAlt is exactly the old light value
+            // (0xFFF1F5F9) with a matching dark-mode alt surface.
+            color: palette.cardAlt,
             child: Row(
               children: [
                 Expanded(
@@ -103,7 +110,7 @@ class StaffListScreen extends StatelessWidget {
                         'Total Team (${staffMembers.length})',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                          color: palette.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -121,11 +128,10 @@ class StaffListScreen extends StatelessWidget {
                   onPressed: () async {
                     await provider.markAllPresentToday();
                     if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Marked all active staff as Present today!'),
-                        backgroundColor: AppColors.paid,
-                      ),
+                    showAppSnackBar(
+                      context,
+                      'Marked all active staff as Present today!',
+                      type: SnackBarType.success,
                     );
                   },
                   icon: const Icon(Icons.done_all_rounded, size: 16),
@@ -167,9 +173,9 @@ class StaffListScreen extends StatelessWidget {
                               ),
                             );
                           },
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                           child: Padding(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(AppDimens.paddingCard),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -178,13 +184,13 @@ class StaffListScreen extends StatelessWidget {
                                   children: [
                                     CircleAvatar(
                                       radius: 24,
-                                      backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                                      backgroundColor: palette.primary.withValues(alpha: 0.15),
                                       child: Text(
                                         staff.name.substring(0, 1).toUpperCase(),
                                         style: GoogleFonts.poppins(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w800,
-                                          color: AppColors.primary,
+                                          color: palette.primary,
                                         ),
                                       ),
                                     ),
@@ -198,14 +204,14 @@ class StaffListScreen extends StatelessWidget {
                                             style: GoogleFonts.poppins(
                                               fontSize: 16.5,
                                               fontWeight: FontWeight.w700,
-                                              color: isDark ? Colors.white : AppColors.textPrimary,
+                                              color: palette.textPrimary,
                                             ),
                                           ),
                                           const SizedBox(height: 2),
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: AppColors.accent.withValues(alpha: 0.12),
+                                              color: palette.accent.withValues(alpha: 0.12),
                                               borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: Text(
@@ -213,7 +219,7 @@ class StaffListScreen extends StatelessWidget {
                                               style: GoogleFonts.poppins(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w600,
-                                                color: AppColors.accent,
+                                                color: palette.accent,
                                               ),
                                             ),
                                           ),
@@ -228,12 +234,12 @@ class StaffListScreen extends StatelessWidget {
                                           style: GoogleFonts.poppins(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w800,
-                                            color: isDark ? Colors.white : AppColors.textPrimary,
+                                            color: palette.textPrimary,
                                           ),
                                         ),
                                         Text(
                                           'per month',
-                                          style: GoogleFonts.poppins(fontSize: 10.5, color: AppColors.textMuted),
+                                          style: GoogleFonts.poppins(fontSize: 10.5, color: palette.textMuted),
                                         ),
                                       ],
                                     ),
@@ -248,7 +254,7 @@ class StaffListScreen extends StatelessWidget {
                                   children: [
                                     Row(
                                       children: [
-                                        Icon(Icons.assignment_turned_in_rounded, size: 14, color: AppColors.inProgress),
+                                        Icon(Icons.assignment_turned_in_rounded, size: 14, color: palette.inProgress),
                                         const SizedBox(width: 4),
                                         Text(
                                           '$activeJobsCount Active Jobs',
@@ -258,11 +264,11 @@ class StaffListScreen extends StatelessWidget {
                                     ),
                                     Row(
                                       children: [
-                                        Text('Today: ', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted)),
+                                        Text('Today: ', style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted)),
                                         if (todayAttendance != null)
                                           StatusBadge.fromAttendanceStatus(todayAttendance.status)
                                         else
-                                          Text('Not Marked', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.pending, fontWeight: FontWeight.w600)),
+                                          Text('Not Marked', style: GoogleFonts.poppins(fontSize: 12, color: palette.pending, fontWeight: FontWeight.w600)),
                                       ],
                                     ),
                                   ],
@@ -275,7 +281,10 @@ class StaffListScreen extends StatelessWidget {
                                   children: [
                                     Row(
                                       children: [
+                                        // padding 12 keeps the default >=48dp tap
+                                        // target explicit; icon visual unchanged.
                                         IconButton(
+                                          padding: const EdgeInsets.all(12),
                                           icon: const Icon(Icons.edit_outlined, size: 18),
                                           tooltip: 'Edit Staff Details',
                                           onPressed: () {
@@ -288,7 +297,8 @@ class StaffListScreen extends StatelessWidget {
                                           },
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.pending),
+                                          padding: const EdgeInsets.all(12),
+                                          icon: Icon(Icons.delete_outline_rounded, size: 18, color: palette.pending),
                                           tooltip: 'Delete Staff',
                                           onPressed: () => _confirmDeleteStaff(context, provider, staff),
                                         ),

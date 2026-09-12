@@ -3,7 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../models/customer.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
 import '../../utils/contact_actions.dart';
 import '../../utils/currency_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
@@ -62,10 +63,10 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
     final customers = provider.searchCustomers(_searchQuery);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: palette.background,
       appBar: AppBar(
         title: Text(
           widget.isSelectionMode ? 'Select Customer' : 'Customers',
@@ -77,7 +78,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_add_rounded, color: AppColors.accent, size: 22),
+            icon: Icon(Icons.person_add_rounded, color: palette.accent, size: 22),
             tooltip: 'Add Customer',
             onPressed: () {
               Navigator.push(
@@ -121,14 +122,14 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                    color: palette.textSecondary,
                   ),
                 ),
                 Text(
                   'Tap to select / view',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: AppColors.primary,
+                    color: palette.primary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -166,7 +167,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                       return Card(
                         child: InkWell(
                           onTap: () => _onCustomerSelected(customer),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                           child: Padding(
                             padding: const EdgeInsets.all(14),
                             child: Row(
@@ -174,13 +175,13 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                               children: [
                                 CircleAvatar(
                                   radius: 24,
-                                  backgroundColor: AppColors.primary.withOpacity(0.12),
+                                  backgroundColor: palette.primary.withOpacity(0.12),
                                   child: Text(
                                     customer.name.substring(0, 1).toUpperCase(),
                                     style: GoogleFonts.poppins(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.primary,
+                                      color: palette.primary,
                                     ),
                                   ),
                                 ),
@@ -194,7 +195,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                         style: GoogleFonts.poppins(
                                           fontSize: 14.5,
                                           fontWeight: FontWeight.w700,
-                                          color: isDark ? Colors.white : AppColors.textPrimary,
+                                          color: palette.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 3),
@@ -203,14 +204,14 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                           Icon(
                                             Icons.phone_rounded,
                                             size: 13,
-                                            color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                                            color: palette.textMuted,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
                                             customer.phone,
                                             style: GoogleFonts.poppins(
                                               fontSize: 12,
-                                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                                              color: palette.textSecondary,
                                             ),
                                           ),
                                         ],
@@ -224,20 +225,23 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                                             decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                              // Neutral chip on a white card: cardAlt is exactly
+                                              // the old light value (0xFFF1F5F9) with a matching
+                                              // dark-mode alt surface.
+                                              color: palette.cardAlt,
                                               borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                const Icon(Icons.directions_car_rounded, size: 12, color: AppColors.accent),
+                                                Icon(Icons.directions_car_rounded, size: 12, color: palette.accent),
                                                 const SizedBox(width: 4),
                                                 Text(
                                                   '${vehicles.length} ${vehicles.length == 1 ? "Vehicle" : "Vehicles"}',
                                                   style: GoogleFonts.poppins(
                                                     fontSize: 10.5,
                                                     fontWeight: FontWeight.w600,
-                                                    color: isDark ? Colors.white : const Color(0xFF334155),
+                                                    color: palette.textSecondary,
                                                   ),
                                                 ),
                                               ],
@@ -247,7 +251,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                              Container(
                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                                                decoration: BoxDecoration(
-                                                 color: AppColors.accent.withValues(alpha: 0.10),
+                                                 color: palette.accent.withValues(alpha: 0.10),
                                                  borderRadius: BorderRadius.circular(8),
                                                ),
                                                child: Text(
@@ -255,7 +259,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                                  style: GoogleFonts.poppins(
                                                    fontSize: 10.5,
                                                    fontWeight: FontWeight.w700,
-                                                   color: AppColors.accent,
+                                                   color: palette.accent,
                                                  ),
                                                ),
                                              ),
@@ -272,7 +276,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                        Container(
                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                          decoration: BoxDecoration(
-                                           color: AppColors.pending.withValues(alpha: 0.12),
+                                           color: palette.pending.withValues(alpha: 0.12),
                                            borderRadius: BorderRadius.circular(6),
                                          ),
                                          child: Text(
@@ -280,7 +284,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                            style: GoogleFonts.poppins(
                                              fontSize: 11,
                                              fontWeight: FontWeight.w700,
-                                             color: AppColors.pending,
+                                             color: palette.pending,
                                            ),
                                          ),
                                        ),
@@ -289,7 +293,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                        mainAxisSize: MainAxisSize.min,
                                        children: [
                                          IconButton(
-                                           icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.paid, size: 20),
+                                           icon: Icon(Icons.chat_bubble_outline_rounded, color: palette.paid, size: 20),
                                            tooltip: 'WhatsApp',
                                            onPressed: () {
                                              ContactActions.whatsapp(
@@ -300,7 +304,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                              );
                                            },
                                          ),
-                                         const Icon(Icons.chevron_right_rounded, size: 22, color: AppColors.textMuted),
+                                         Icon(Icons.chevron_right_rounded, size: 22, color: palette.textMuted),
                                        ],
                                      ),
                                    ],

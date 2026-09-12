@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_palette.dart';
 
 class SectionHeader extends StatelessWidget {
   final String title;
@@ -20,7 +20,7 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -35,7 +35,7 @@ class SectionHeader extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : AppColors.textPrimary,
+                  color: palette.textPrimary,
                   letterSpacing: -0.2,
                 ),
               ),
@@ -46,7 +46,7 @@ class SectionHeader extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                    color: palette.textSecondary,
                   ),
                 ),
               ],
@@ -71,11 +71,11 @@ class SectionHeader extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.accent,
+                    color: palette.accent,
                   ),
                 ),
                 const SizedBox(width: 2),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: AppColors.accent),
+                Icon(Icons.arrow_forward_ios_rounded, size: 10, color: palette.accent),
               ],
             ),
           ),

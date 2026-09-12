@@ -5,11 +5,15 @@ import '../../models/expense.dart';
 import '../../models/payment.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
 import '../../widgets/search_bar_widget.dart';
+import '../../widgets/status_badge.dart';
 import 'add_expense_screen.dart';
 
 class ExpensesListScreen extends StatefulWidget {
@@ -45,6 +49,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
   }
 
   void _confirmDeleteExpense(GarageExpense exp) {
+    final palette = context.palette;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -56,18 +61,20 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.pending),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: palette.pending,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               final provider = Provider.of<GarageProvider>(context, listen: false);
               await provider.deleteExpense(exp.id);
               if (!ctx.mounted) return;
               Navigator.pop(ctx);
               if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Expense "${exp.title}" deleted'),
-                  backgroundColor: AppColors.pending,
-                ),
+              showAppSnackBar(
+                context,
+                'Expense "${exp.title}" deleted',
+                type: SnackBarType.error,
               );
             },
             child: const Text('Delete'),
@@ -91,10 +98,13 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
       }
       return true;
     }).toList();
+    final palette = context.palette;
+    // isDark only tunes the white banner border's alpha, matching the
+    // dashboard's quick-action banner; no palette slot encodes that pair.
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: palette.background,
       appBar: AppBar(
         title: Text(
           'Garage Expenses',
@@ -106,7 +116,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.accent, size: 22),
+            icon: Icon(Icons.add_circle_outline_rounded, color: palette.accent, size: 22),
             tooltip: 'Add Expense',
             onPressed: _openAddExpense,
           ),
@@ -122,28 +132,20 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
           // Monthly vs Today KPI Card (Exact User Gradient)
           Container(
             margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppDimens.paddingCard),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: isDark
-                    ? AppColors.cardGradientDark
-                    : AppColors.bannerGradient,
+                colors: palette.bannerGradient,
                 stops: AppColors.bannerGradientStops,
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppDimens.radiusCard),
               border: Border.all(
                 color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.8),
                 width: 1.5,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFA7F3D0).withValues(alpha: isDark ? 0.15 : 0.35),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              boxShadow: AppDimens.accentGlow(palette.paid),
             ),
             child: Row(
               children: [
@@ -154,7 +156,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                       Text(
                         'This Month Expenses',
                         style: GoogleFonts.poppins(
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                          color: palette.textSecondary,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
                         ),
@@ -165,16 +167,19 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          color: palette.textPrimary,
                         ),
                       ),
                     ],
                   ),
                 ),
+                // Vertical hairline: kept as a sized Container because a
+                // Divider is horizontal and a VerticalDivider stretches to
+                // the full row height (visual change).
                 Container(
                   height: 36,
                   width: 1,
-                  color: isDark ? const Color(0xFF334155) : Colors.white.withValues(alpha: 0.8),
+                  color: palette.divider,
                 ),
                 Expanded(
                   child: Padding(
@@ -185,7 +190,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                         Text(
                           'Today\'s Expenses',
                           style: GoogleFonts.poppins(
-                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                            color: palette.textSecondary,
                             fontSize: 11.5,
                             fontWeight: FontWeight.w500,
                           ),
@@ -196,7 +201,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                           style: GoogleFonts.poppins(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            color: palette.textPrimary,
                           ),
                         ),
                       ],
@@ -227,9 +232,9 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                 FilterChip(
                   label: const Text('All Categories'),
                   selected: _selectedCategory == null,
-                  selectedColor: AppColors.primary.withOpacity(0.15),
+                  selectedColor: palette.primary.withOpacity(0.15),
                   labelStyle: TextStyle(
-                    color: _selectedCategory == null ? AppColors.primary : (isDark ? Colors.white : AppColors.textPrimary),
+                    color: _selectedCategory == null ? palette.primary : palette.textPrimary,
                     fontWeight: _selectedCategory == null ? FontWeight.w700 : FontWeight.w500,
                   ),
                   onSelected: (_) => setState(() => _selectedCategory = null),
@@ -239,12 +244,12 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                   return Padding(
                     padding: const EdgeInsets.only(left: 8),
                     child: FilterChip(
-                      avatar: Icon(cat.icon, size: 14, color: isSelected ? AppColors.primary : AppColors.textMuted),
+                      avatar: Icon(cat.icon, size: 14, color: isSelected ? palette.primary : palette.textMuted),
                       label: Text(cat.displayName),
                       selected: isSelected,
-                      selectedColor: AppColors.primary.withOpacity(0.15),
+                      selectedColor: palette.primary.withOpacity(0.15),
                       labelStyle: TextStyle(
-                        color: isSelected ? AppColors.primary : (isDark ? Colors.white : AppColors.textPrimary),
+                        color: isSelected ? palette.primary : palette.textPrimary,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       ),
                       onSelected: (selected) {
@@ -276,6 +281,10 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final exp = expenses[index];
+                      // Per-category accent from the palette map (same source
+                      // as StatusBadge.forExpenseCategory) — replaces the old
+                      // all-orange badge mapping.
+                      final categoryColor = palette.categoryColors[exp.category];
 
                       return Card(
                         child: Padding(
@@ -286,10 +295,14 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  color: AppColors.badgeOrangeBg,
+                                  color: categoryColor?.withValues(alpha: 0.12) ?? palette.badgeOrangeBg,
                                   borderRadius: BorderRadius.circular(11),
                                 ),
-                                child: Icon(exp.category.icon, color: AppColors.badgeOrangeIcon, size: 18),
+                                child: Icon(
+                                  exp.category.icon,
+                                  color: categoryColor ?? palette.badgeOrangeIcon,
+                                  size: 18,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -301,22 +314,16 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 14.5,
                                         fontWeight: FontWeight.w700,
-                                        color: isDark ? Colors.white : AppColors.textPrimary,
+                                        color: palette.textPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
                                     Row(
                                       children: [
-                                        Text(
-                                          exp.category.displayName,
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
-                                          ),
-                                        ),
+                                        StatusBadge.forExpenseCategory(exp.category, palette: palette),
                                         if (exp.vendorName != null) ...[
                                           const SizedBox(width: 6),
-                                          Text('• ${exp.vendorName!}', style: GoogleFonts.poppins(fontSize: 11.5, color: AppColors.textMuted)),
+                                          Text(exp.vendorName!, style: GoogleFonts.poppins(fontSize: 11.5, color: palette.textMuted)),
                                         ],
                                       ],
                                     ),
@@ -325,13 +332,15 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                       children: [
                                         Text(
                                           AppDateFormatter.formatDate(exp.expenseDate),
-                                          style: GoogleFonts.poppins(fontSize: 11, color: AppColors.textMuted),
+                                          style: GoogleFonts.poppins(fontSize: 11, color: palette.textMuted),
                                         ),
                                         const SizedBox(width: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                            // Neutral chip on a white card: cardAlt is
+                                            // exactly the old light value (0xFFF1F5F9).
+                                            color: palette.cardAlt,
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
@@ -354,27 +363,26 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800,
-                                      color: AppColors.pending,
+                                      color: palette.pending,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
+                                      // padding 12 + default 48dp constraints keep
+                                      // the icon visual at 18 while the tap target
+                                      // stays >= 44px.
                                       IconButton(
-                                        visualDensity: VisualDensity.compact,
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                        icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.textMuted),
+                                        padding: const EdgeInsets.all(12),
+                                        icon: Icon(Icons.edit_outlined, size: 18, color: palette.textMuted),
                                         tooltip: 'Edit Expense',
                                         onPressed: () => _openEditExpense(exp),
                                       ),
                                       const SizedBox(width: 12),
                                       IconButton(
-                                        visualDensity: VisualDensity.compact,
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                        icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.textMuted),
+                                        padding: const EdgeInsets.all(12),
+                                        icon: Icon(Icons.delete_outline_rounded, size: 18, color: palette.textMuted),
                                         tooltip: 'Delete Expense',
                                         onPressed: () => _confirmDeleteExpense(exp),
                                       ),

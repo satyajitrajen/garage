@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import '../../models/invoice.dart';
 import '../../models/payment.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
@@ -34,6 +35,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
     InvoiceStatus.paid,
     InvoiceStatus.partial,
     InvoiceStatus.pending,
+    InvoiceStatus.cancelled,
   ];
 
   @override
@@ -64,7 +66,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     final totalInvoiced = provider.invoices
         .where((inv) => inv.status != InvoiceStatus.cancelled)
@@ -93,14 +95,19 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
           // Top Summary KPI Strip
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            // Alt-surface strip: cardAlt is exactly the old light value
+            // (0xFFF1F5F9) with a matching dark-mode alt surface.
+            color: palette.cardAlt,
             child: Row(
               children: [
-                _buildKpiItem('Total Invoiced', CurrencyFormatter.format(totalInvoiced), isDark, null),
-                Container(height: 24, width: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
-                _buildKpiItem('Collected', CurrencyFormatter.format(totalCollected), isDark, AppColors.paid),
-                Container(height: 24, width: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
-                _buildKpiItem('Pending Dues', CurrencyFormatter.format(totalPending), isDark, AppColors.pending),
+                _buildKpiItem('Total Invoiced', CurrencyFormatter.format(totalInvoiced), null),
+                // Vertical hairlines: kept as sized Containers because a
+                // Divider is horizontal and a VerticalDivider stretches to
+                // the full row height (visual change).
+                Container(height: 24, width: 1, color: palette.textMuted),
+                _buildKpiItem('Collected', CurrencyFormatter.format(totalCollected), palette.paid),
+                Container(height: 24, width: 1, color: palette.textMuted),
+                _buildKpiItem('Pending Dues', CurrencyFormatter.format(totalPending), palette.pending),
               ],
             ),
           ),
@@ -118,15 +125,16 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
           // Tabs
           TabBar(
             controller: _tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
-            indicatorColor: AppColors.primary,
+            labelColor: palette.primary,
+            unselectedLabelColor: palette.textMuted,
+            indicatorColor: palette.primary,
             labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
             tabs: const [
               Tab(text: 'All Invoices'),
               Tab(text: 'Paid'),
               Tab(text: 'Partial'),
               Tab(text: 'Pending'),
+              Tab(text: 'Cancelled'),
             ],
           ),
 
@@ -135,7 +143,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             child: TabBarView(
               controller: _tabController,
               children: _tabFilters.map((filter) {
-                return _buildInvoicesList(provider, filter, isDark);
+                return _buildInvoicesList(provider, filter);
               }).toList(),
             ),
           ),
@@ -144,7 +152,8 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
     );
   }
 
-  Widget _buildKpiItem(String label, String value, bool isDark, Color? color) {
+  Widget _buildKpiItem(String label, String value, Color? color) {
+    final palette = context.palette;
     return Expanded(
       child: Column(
         children: [
@@ -152,7 +161,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             label,
             style: GoogleFonts.poppins(
               fontSize: 11,
-              color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+              color: palette.textSecondary,
             ),
           ),
           const SizedBox(height: 2),
@@ -161,7 +170,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w800,
-              color: color ?? (isDark ? Colors.white : AppColors.textPrimary),
+              color: color ?? palette.textPrimary,
             ),
           ),
         ],
@@ -169,7 +178,8 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
     );
   }
 
-  Widget _buildInvoicesList(GarageProvider provider, InvoiceStatus? filter, bool isDark) {
+  Widget _buildInvoicesList(GarageProvider provider, InvoiceStatus? filter) {
+    final palette = context.palette;
     final filtered = provider.invoices.where((inv) {
       if (filter != null && inv.status != filter) return false;
 
@@ -216,9 +226,9 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                 MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoiceId: inv.id)),
               );
             },
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppDimens.radiusTile),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppDimens.paddingCard),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -230,7 +240,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                         style: GoogleFonts.poppins(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.accent,
+                          color: palette.accent,
                         ),
                       ),
                       Row(
@@ -240,7 +250,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: AppColors.pending,
+                                color: palette.pending,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -273,7 +283,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                               style: GoogleFonts.poppins(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
-                                color: isDark ? Colors.white : AppColors.textPrimary,
+                                color: palette.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -281,7 +291,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                               '${vehicle?.registrationNumber ?? ""} • ${vehicle?.displayName ?? ""}',
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                                color: palette.textSecondary,
                               ),
                             ),
                           ],
@@ -295,7 +305,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                             style: GoogleFonts.poppins(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : AppColors.textPrimary,
+                              color: palette.textPrimary,
                             ),
                           ),
                           if (inv.balanceDue > 0)
@@ -304,7 +314,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                               style: GoogleFonts.poppins(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.pending,
+                                color: palette.pending,
                               ),
                             )
                           else
@@ -313,7 +323,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                               style: GoogleFonts.poppins(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.paid,
+                                color: palette.paid,
                               ),
                             ),
                         ],
@@ -328,7 +338,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                     children: [
                       Text(
                         AppDateFormatter.formatDate(inv.invoiceDate),
-                        style: GoogleFonts.poppins(fontSize: 11.5, color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted),
+                        style: GoogleFonts.poppins(fontSize: 11.5, color: palette.textMuted),
                       ),
                       if (inv.balanceDue > 0)
                         InkWell(
@@ -344,21 +354,21 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: AppColors.paid.withValues(alpha: 0.12),
+                              color: palette.paid.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppColors.paid.withValues(alpha: 0.3)),
+                              border: Border.all(color: palette.paid.withValues(alpha: 0.3)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.payment_rounded, size: 13, color: AppColors.paid),
+                                Icon(Icons.payment_rounded, size: 13, color: palette.paid),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Collect',
                                   style: GoogleFonts.poppins(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.paid,
+                                    color: palette.paid,
                                   ),
                                 ),
                               ],
@@ -368,11 +378,11 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                       else
                         Row(
                           children: [
-                            const Icon(Icons.check_circle_rounded, size: 13, color: AppColors.paid),
+                            Icon(Icons.check_circle_rounded, size: 13, color: palette.paid),
                             const SizedBox(width: 4),
                             Text(
                               'Paid via ${inv.payments.isEmpty ? '—' : inv.payments.last.mode.shortName}',
-                              style: GoogleFonts.poppins(fontSize: 11.5, color: AppColors.paid, fontWeight: FontWeight.w600),
+                              style: GoogleFonts.poppins(fontSize: 11.5, color: palette.paid, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
