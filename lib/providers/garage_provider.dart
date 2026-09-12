@@ -91,7 +91,9 @@ class GarageProvider extends ChangeNotifier {
       _payments = [for (final inv in _invoices) ...inv.payments];
       _loadError = null;
     } catch (e) {
-      _loadError = e.toString();
+      if (showLoading) {
+        _loadError = e.toString();
+      }
       if (!showLoading) return; // refresh failure: keep old data on screen
     } finally {
       _isLoading = false;
