@@ -66,7 +66,9 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
     final provider = Provider.of<GarageProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final totalInvoiced = provider.invoices.fold(0.0, (sum, inv) => sum + inv.grandTotal);
+    final totalInvoiced = provider.invoices
+        .where((inv) => inv.status != InvoiceStatus.cancelled)
+        .fold(0.0, (sum, inv) => sum + inv.grandTotal);
     final totalCollected = provider.invoices.fold(0.0, (sum, inv) => sum + inv.totalPaidAmount);
     final totalPending = provider.totalPendingPayments;
 

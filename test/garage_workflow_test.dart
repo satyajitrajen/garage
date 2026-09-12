@@ -258,16 +258,33 @@ void main() {
     });
 
     test('invoice cancel: unpaid invoice becomes cancelled, paid cannot cancel', () async {
-      final provider = GarageProvider(MockGarageRepository());
-      await provider.load();
       final unpaid = provider.invoices.firstWhere((i) => i.totalPaidAmount == 0);
+      // Capture BEFORE cancelling: balanceDue reads 0 once cancelled.
+      final before = provider.totalPendingPayments;
+      final unpaidDue = unpaid.balanceDue;
+
       await provider.cancelInvoice(unpaid.id);
-      expect(unpaid.copyWith(cancelledAt: DateTime.now()).status, InvoiceStatus.cancelled);
-      expect(
-          provider.invoices.firstWhere((i) => i.id == unpaid.id).status,
+
+      // Repo/cache round-trip: cancellation persisted on the provider copy.
+      expect(provider.invoices.firstWhere((i) => i.id == unpaid.id).cancelledAt,
+          isNotNull);
+      expect(provider.invoices.firstWhere((i) => i.id == unpaid.id).status,
           InvoiceStatus.cancelled);
-      expect(provider.totalPendingPayments,
-          isNot(contains(equals(unpaid.balanceDue)))); // excluded from analytics
+      // Cancelled invoice drops out of pending-payment analytics.
+      expect(provider.totalPendingPayments, closeTo(before - unpaidDue, 0.01));
+
+      // Cancelled invoices reject payments entirely (guard fires before the
+      // amount guard, so any positive amount exercises it).
+      expect(
+        () => provider.recordPayment(
+          invoiceId: unpaid.id,
+          amount: unpaidDue,
+          mode: PaymentMode.upi,
+        ),
+        throwsException,
+      );
+
+      // Invoices with recorded payments cannot be cancelled.
       final paid = provider.invoices.firstWhere((i) => i.totalPaidAmount > 0);
       expect(() => provider.cancelInvoice(paid.id), throwsException);
     });
