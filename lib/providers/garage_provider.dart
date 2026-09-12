@@ -400,7 +400,12 @@ class GarageProvider extends ChangeNotifier {
     Quotation quote, {
     String? assignedStaffId,
   }) async {
-    if (quote.status != QuotationStatus.approved) {
+    // Defense-in-depth: validate the CURRENT quotation in the cache rather
+    // than trusting the passed object's status, which a caller may have
+    // mutated locally or allowed to go stale.
+    final currentIndex = _quotations.indexWhere((q) => q.id == quote.id);
+    if (currentIndex == -1 ||
+        _quotations[currentIndex].status != QuotationStatus.approved) {
       throw Exception('Only approved estimates can be converted to a job card');
     }
     final jobCard = JobCard(
@@ -490,6 +495,55 @@ class GarageProvider extends ChangeNotifier {
     );
 
     return addInvoice(invoice);
+  }
+
+  /// Quick Service counter flow in one call: opens a walk-in job card,
+  /// bills it, and optionally records an advance payment. Used by the
+  /// Quick Service wizard so a counter sale cannot leave a job card and
+  /// invoice out of sync.
+  Future<Invoice> quickServiceCheckout({
+    required String customerId,
+    required String vehicleId,
+    required int kmReading,
+    required List<MaintenanceItem> items,
+    double discount = 0,
+    double? taxPercent,
+    double paymentAmount = 0,
+    PaymentMode paymentMode = PaymentMode.cash,
+  }) async {
+    if (items.isEmpty) throw Exception('Add at least one service item');
+    final jobCard = await addJobCard(JobCard(
+      id: _uuid.v4(),
+      jobCardNumber: generateJobCardNumber(),
+      customerId: customerId,
+      vehicleId: vehicleId,
+      customerComplaints: const ['Quick service walk-in'],
+      kmReading: kmReading,
+      status: JobStatus.inProgress,
+      promisedDeliveryDate:
+          DateTime.now().add(Duration(hours: config.promisedDeliveryHours)),
+      items: List.of(items),
+      supervisorNotes: 'Created via Quick Service wizard',
+    ));
+    // addInvoice marks the job delivered as a side effect (invoice is tied
+    // to the job card), so the counter sale is closed out in one pass.
+    final invoice = await createInvoiceFromJobCard(
+      jobCard,
+      discount: discount,
+      taxPercent: taxPercent,
+      notes: 'Quick Service counter bill',
+    );
+    if (paymentAmount > 0) {
+      await recordPayment(
+        invoiceId: invoice.id,
+        amount: paymentAmount,
+        mode: paymentMode,
+      );
+      // recordPayment replaces the invoice object in cache; hand back the
+      // paid version so callers see the payment reflected.
+      return getInvoiceById(invoice.id) ?? invoice;
+    }
+    return invoice;
   }
 
   /// Cancels an unpaid invoice. Invoices with recorded payments are blocked

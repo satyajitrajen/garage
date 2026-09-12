@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 import '../../models/customer.dart';
 import '../../models/vehicle.dart';
 import '../../models/maintenance_item.dart';
@@ -114,26 +113,30 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
         return;
       }
 
-      final invoice = Invoice(
-        id: const Uuid().v4(),
-        invoiceNumber: provider.generateInvoiceNumber(),
+      // Full counter flow in one call: opens the walk-in job card, bills it
+      // (tax stays config-driven inside the provider) and auto-delivers the
+      // job. Payment, if any, is recorded afterwards from the success step.
+      final invoice = await provider.quickServiceCheckout(
         customerId: _selectedCustomer!.id,
         vehicleId: _selectedVehicle!.id,
         kmReading: int.tryParse(_kmController.text.trim()) ?? _selectedVehicle!.currentKm,
-        items: List.from(_selectedItems),
-        discountAmount: discount,
-        taxPercent: provider.config.defaultTaxPercent,
-        invoiceDate: DateTime.now(),
-        notes: 'Quick Service counter bill',
+        items: List.of(_selectedItems),
+        discount: discount,
       );
-
-      await provider.addInvoice(invoice);
       if (!mounted) return;
 
       setState(() {
         _generatedInvoice = invoice;
         _currentStep = 3;
       });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.pending,
+        ),
+      );
     } finally {
       _isGeneratingBill = false;
     }
@@ -569,6 +572,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     if (_generatedInvoice == null) return const SizedBox.shrink();
 
     final inv = provider.getInvoiceById(_generatedInvoice!.id) ?? _generatedInvoice!;
+    final job = inv.jobCardId == null ? null : provider.getJobCardById(inv.jobCardId!);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -585,7 +589,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Quick Bill Generated!',
+            'Job Card & Bill Generated!',
             style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
@@ -593,6 +597,13 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
             'Invoice #${inv.invoiceNumber}',
             style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.primary),
           ),
+          if (job != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Job Card #${job.jobCardNumber} • Marked Delivered',
+              style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.paid),
+            ),
+          ],
           const SizedBox(height: 6),
           Text(
             'Total Amount: ${CurrencyFormatter.format(inv.grandTotal)} • Pending Due: ${CurrencyFormatter.format(inv.balanceDue)}',

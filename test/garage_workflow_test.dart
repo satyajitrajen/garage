@@ -354,5 +354,37 @@ void main() {
       final paid = provider.invoices.firstWhere((i) => i.totalPaidAmount > 0);
       expect(() => provider.cancelInvoice(paid.id), throwsException);
     });
+
+    test('quick service checkout creates job card, invoice, payment; job delivered', () async {
+      final vehicle = provider.vehicles.first;
+      final jobCountBefore = provider.jobCards.length;
+      final invoice = await provider.quickServiceCheckout(
+        customerId: vehicle.customerId,
+        vehicleId: vehicle.id,
+        kmReading: vehicle.currentKm + 10,
+        items: [provider.catalog.first.copyWith(id: 'qs-1', quantity: 1)],
+        paymentAmount: 500,
+      );
+      expect(provider.jobCards.length, jobCountBefore + 1);
+      expect(invoice.payments.single.amount, 500);
+      // Look the job up by the invoice's jobCardId rather than trusting list
+      // position: the cache is newest-first today, but firstWhere encodes the
+      // intent regardless of insertion order.
+      final job = provider.jobCards.firstWhere((j) => j.id == invoice.jobCardId);
+      expect(job.status, JobStatus.delivered); // addInvoice side effect
+    });
+
+    test('quick service checkout rejects an empty item list', () async {
+      final vehicle = provider.vehicles.first;
+      expect(
+        () => provider.quickServiceCheckout(
+          customerId: vehicle.customerId,
+          vehicleId: vehicle.id,
+          kmReading: vehicle.currentKm,
+          items: const [],
+        ),
+        throwsException,
+      );
+    });
   });
 }
