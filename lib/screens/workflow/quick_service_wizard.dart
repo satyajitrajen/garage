@@ -374,6 +374,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                     context: context,
                     builder: (_) => AddVehicleDialog(customerId: _selectedCustomer!.id),
                   );
+                  if (!mounted) return;
                   if (newV != null) _onVehicleSelected(newV);
                 },
                 icon: const Icon(Icons.add_rounded, size: 16),
