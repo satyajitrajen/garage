@@ -24,11 +24,17 @@ class CreateJobCardScreen extends StatefulWidget {
   /// job card and saving updates it (id, number, status and timestamps kept).
   final JobCard? existing;
 
+  /// Edit mode only: when true the job card's items are locked (billed on an
+  /// invoice) — the items section is read-only and saving keeps the original
+  /// items instead of the editor's selection.
+  final bool itemsLocked;
+
   const CreateJobCardScreen({
     super.key,
     this.customer,
     this.vehicle,
     this.existing,
+    this.itemsLocked = false,
   });
 
   @override
@@ -50,6 +56,10 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
   bool _isSaving = false;
 
   bool get _isEditing => widget.existing != null;
+
+  /// Items are only ever locked on the edit path (a billed job card); the
+  /// create path has no originals to preserve, so the flag alone is not enough.
+  bool get _itemsLocked => _isEditing && widget.itemsLocked;
 
   // Single source: the model's default inspection checklist (mutable copy so
   // the form checkboxes can be toggled). Edit mode swaps this for a mutable
@@ -190,7 +200,10 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
       promisedDeliveryDate: _promisedDate,
       createdAt: existing?.createdAt,
       completedAt: existing?.completedAt,
-      items: _selectedItems,
+      // When the items are locked (billed on an invoice) the originals are
+      // carried over untouched so they keep matching the printed invoice —
+      // the editor's _selectedItems are display-only in that state.
+      items: _itemsLocked ? existing!.items : _selectedItems,
       estimatedCostNote:
           _estCostController.text.trim().isEmpty ? null : _estCostController.text.trim(),
       supervisorNotes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
@@ -533,10 +546,17 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     'Work Items & Parts (${_selectedItems.length})',
                     style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
-                  TextButton.icon(
-                    onPressed: _openAddItems,
-                    icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-                    label: const Text('Add Items'),
+                  // A billed job locks its items; the disabled button carries
+                  // the same explanatory tooltip as the detail screen.
+                  Tooltip(
+                    message: _itemsLocked
+                        ? 'Locked — billed on an invoice'
+                        : 'Add parts & labour items',
+                    child: TextButton.icon(
+                      onPressed: _itemsLocked ? null : _openAddItems,
+                      icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                      label: const Text('Add Items'),
+                    ),
                   ),
                 ],
               ),

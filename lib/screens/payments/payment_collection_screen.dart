@@ -108,14 +108,14 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   }
 
   void _showReceiptSuccessDialog(Payment payment, String invoiceNumber) {
-    // Captured before the dialog so the sheet below renders with the same
-    // palette as the screen that pushed it.
-    final palette = context.palette;
-
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) {
+        // Captured inside the builder so the dialog always renders with the
+        // live theme, like the other dialogs in the app.
+        final palette = dialogContext.palette;
+        return AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusCard)),
         backgroundColor: palette.card,
         title: Column(
@@ -203,7 +203,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             ),
           ),
         ],
-      ),
+        );
+      },
     );
   }
 
@@ -393,7 +394,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                         Icon(
                           mode.icon,
                           size: 16,
-                          color: isSelected ? Colors.white : palette.primary,
+                          color: isSelected ? palette.onPrimary : palette.primary,
                         ),
                         const SizedBox(width: 6),
                         Text(mode.label),
@@ -402,7 +403,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     selected: isSelected,
                     selectedColor: palette.primary,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : palette.textPrimary,
+                      color: isSelected ? palette.onPrimary : palette.textPrimary,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     ),
                     onSelected: (selected) {
@@ -451,7 +452,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: palette.paid,
-                    foregroundColor: Colors.white,
+                    foregroundColor: palette.onPrimary,
                   ),
                 ),
               ),

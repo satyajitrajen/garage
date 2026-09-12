@@ -94,7 +94,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: palette.pending,
-                foregroundColor: Colors.white,
+                foregroundColor: palette.onPrimary,
               ),
               onPressed: () async {
                 Navigator.pop(ctx);
@@ -139,7 +139,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: palette.pending,
-                foregroundColor: Colors.white,
+                foregroundColor: palette.onPrimary,
               ),
               onPressed: () async {
                 await provider.deleteVehicle(vehicle.id);
@@ -547,7 +547,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                         label: const Text('Start Service'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: palette.primary,
-                          foregroundColor: Colors.white,
+                          foregroundColor: palette.onPrimary,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         ),
                       ),
@@ -644,7 +644,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                       style: GoogleFonts.poppins(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: palette.onPrimary,
                       ),
                     ),
                   ),

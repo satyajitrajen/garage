@@ -151,7 +151,7 @@ class QuotationDetailScreen extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: palette.pending,
-                foregroundColor: Colors.white,
+                foregroundColor: palette.onPrimary,
               ),
               onPressed: () => Navigator.pop(dialogCtx, true),
               child: const Text('Decline'),
@@ -501,7 +501,7 @@ class QuotationDetailScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         backgroundColor: palette.primary,
-                        foregroundColor: Colors.white,
+                        foregroundColor: palette.onPrimary,
                       ),
                     ),
                   ),
@@ -541,7 +541,7 @@ class QuotationDetailScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         backgroundColor: palette.paid,
-                        foregroundColor: Colors.white,
+                        foregroundColor: palette.onPrimary,
                       ),
                     ),
                   ),

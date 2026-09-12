@@ -538,7 +538,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: palette.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: palette.onPrimary,
                   ),
                 ),
               ),
@@ -592,7 +592,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: palette.pending,
-                foregroundColor: Colors.white,
+                foregroundColor: palette.onPrimary,
               ),
               onPressed: () async {
                 try {

@@ -34,12 +34,16 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
 
   /// Opens the job card form in edit mode. The detail screen resolves the job
   /// card by id from the provider on every build, so the notifyListeners from
-  /// the update refreshes everything shown here automatically.
-  Future<void> _editJobCard(JobCard jobCard) async {
+  /// the update refreshes everything shown here automatically. A billed job
+  /// card passes [itemsLocked] so the editor keeps its items read-only too.
+  Future<void> _editJobCard(JobCard jobCard, {required bool itemsLocked}) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CreateJobCardScreen(existing: jobCard),
+        builder: (_) => CreateJobCardScreen(
+          existing: jobCard,
+          itemsLocked: itemsLocked,
+        ),
       ),
     );
   }
@@ -81,19 +85,19 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
     }
     // Upsert each picked item through the provider: new ids append, known
     // ids replace in place (this is the same flow the create form uses).
-    // Wrapped so one failing item surfaces an error snack bar instead of
-    // letting a repo throw escape mid-way through the batch.
-    try {
-      for (final item in updatedItems) {
+    // Each item is guarded individually so one failing item surfaces an
+    // error snack bar without aborting the rest of the batch.
+    for (final item in updatedItems) {
+      try {
         await provider.addOrUpdateItemInJobCard(jobCard.id, item);
+      } catch (e) {
+        if (!mounted) return;
+        showAppSnackBar(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+          type: SnackBarType.error,
+        );
       }
-    } catch (e) {
-      if (!mounted) return;
-      showAppSnackBar(
-        context,
-        e.toString().replaceFirst('Exception: ', ''),
-        type: SnackBarType.error,
-      );
     }
   }
 
@@ -170,7 +174,12 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
           if (_isJobActive(jobCard))
             IconButton(
               tooltip: 'Edit job card',
-              onPressed: () => _editJobCard(jobCard),
+              // Same lock as the list-level item controls: once the job is
+              // billed, the editor must not be able to rewrite its items.
+              onPressed: () => _editJobCard(
+                jobCard,
+                itemsLocked: existingInvoice != null,
+              ),
               icon: const Icon(Icons.edit_rounded),
             ),
           Padding(
@@ -218,7 +227,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                             selected: isSelected,
                             selectedColor: palette.primary,
                             labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : palette.textPrimary,
+                              color: isSelected ? palette.onPrimary : palette.textPrimary,
                               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                               fontSize: 12,
                             ),
@@ -628,7 +637,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: palette.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: palette.onPrimary,
                   ),
                 ),
               )
@@ -642,7 +651,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: palette.paid,
-                    foregroundColor: Colors.white,
+                    foregroundColor: palette.onPrimary,
                   ),
                 ),
               ),
