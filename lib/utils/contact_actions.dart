@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../widgets/app_snack_bar.dart';
+import 'app_snack_bar.dart';
 
 /// Real outbound actions: dial a phone number, open a WhatsApp chat and
 /// hand text to the OS share sheet. Every action degrades to an error

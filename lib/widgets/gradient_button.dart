@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dimens.dart';
 
 class GradientButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -120,7 +121,7 @@ class GradientFloatingActionButton extends StatelessWidget {
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppDimens.radiusFAB),
         border: Border.all(
           color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.8),
           width: 1.5,
@@ -137,7 +138,7 @@ class GradientFloatingActionButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(AppDimens.radiusFAB),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             child: Row(

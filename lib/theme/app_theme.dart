@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
+import 'app_dimens.dart';
+import 'app_palette.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
     final baseTextTheme = GoogleFonts.poppinsTextTheme();
     return ThemeData(
       useMaterial3: true,
+      extensions: const <ThemeExtension<dynamic>>[AppPalette.light],
       brightness: Brightness.light,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
@@ -168,6 +171,12 @@ class AppTheme {
           borderRadius: BorderRadius.circular(18),
         ),
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppPalette.light.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimens.radiusCard),
+        ),
+      ),
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
         thickness: 1,
@@ -180,6 +189,7 @@ class AppTheme {
     final baseTextTheme = GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme);
     return ThemeData(
       useMaterial3: true,
+      extensions: const <ThemeExtension<dynamic>>[AppPalette.dark],
       brightness: Brightness.dark,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.darkBackground,
@@ -228,12 +238,12 @@ class AppTheme {
         bodyMedium: baseTextTheme.bodyMedium?.copyWith(
           fontSize: 12,
           fontWeight: FontWeight.w400,
-          color: const Color(0xFF94A3B8),
+          color: AppPalette.dark.textSecondary,
         ),
         bodySmall: baseTextTheme.bodySmall?.copyWith(
           fontSize: 11,
           fontWeight: FontWeight.w400,
-          color: const Color(0xFF64748B),
+          color: AppPalette.dark.textMuted,
         ),
         labelLarge: baseTextTheme.labelLarge?.copyWith(
           fontSize: 13.5,
@@ -294,11 +304,11 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.pending),
         ),
         hintStyle: GoogleFonts.poppins(
-          color: const Color(0xFF64748B),
+          color: AppPalette.dark.textMuted,
           fontSize: 13,
         ),
         labelStyle: GoogleFonts.poppins(
-          color: const Color(0xFF94A3B8),
+          color: AppPalette.dark.textSecondary,
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
@@ -322,7 +332,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-          side: const BorderSide(color: Color(0xFF334155), width: 1.4),
+          side: BorderSide(color: AppPalette.dark.border, width: 1.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -338,6 +348,12 @@ class AppTheme {
         elevation: 3,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppPalette.dark.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimens.radiusCard),
         ),
       ),
       dividerTheme: const DividerThemeData(

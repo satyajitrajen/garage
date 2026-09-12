@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../models/expense.dart';
 import '../models/invoice.dart';
 import '../models/job_card.dart';
 import '../models/quotation.dart';
 import '../models/staff.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_palette.dart';
 
 class StatusBadge extends StatelessWidget {
   final String label;
@@ -158,6 +160,17 @@ class StatusBadge extends StatelessWidget {
           isCompact: true,
         );
     }
+  }
+
+  factory StatusBadge.forExpenseCategory(
+    ExpenseCategory category, {
+    required AppPalette palette,
+  }) {
+    final color = palette.categoryColors[category]!;
+    return StatusBadge(
+      label: category.displayName,
+      color: color,
+    );
   }
 
   @override
