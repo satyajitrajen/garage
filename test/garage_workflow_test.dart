@@ -8,6 +8,7 @@ import 'package:garage_manager/models/invoice.dart';
 import 'package:garage_manager/models/payment.dart';
 import 'package:garage_manager/models/expense.dart';
 import 'package:garage_manager/models/staff.dart';
+import 'package:garage_manager/data/app_config.dart';
 import 'package:garage_manager/data/mock/mock_garage_repository.dart';
 import 'package:garage_manager/providers/garage_provider.dart';
 
@@ -385,6 +386,114 @@ void main() {
         ),
         throwsException,
       );
+    });
+
+    test('config normalization preserves a default tax rate missing from its options', () {
+      // The default tax rate is a billed money value: when the fetched
+      // option list has drifted out of sync with it, normalization must
+      // append the stored rate instead of rewriting it to options.first.
+      final raw = AppConfig(defaultTaxPercent: 5.0, taxPercentOptions: const [0.0, 12.0, 18.0]);
+      final healed = normalizeConfig(raw);
+      expect(healed.defaultTaxPercent, 5.0);
+      expect(healed.taxPercentOptions, contains(5.0));
+      expect(healed.taxPercentOptions, [0.0, 12.0, 18.0, 5.0]);
+
+      // A config whose default is already a member passes through unchanged.
+      final consistent = normalizeConfig(const AppConfig());
+      expect(consistent.defaultTaxPercent, 18.0);
+      expect(consistent.taxPercentOptions, const [0.0, 12.0, 18.0, 28.0]);
+
+      // Empty option lists fall back to the default options, but the stored
+      // default tax rate is still preserved as a member.
+      final emptyOptions = normalizeConfig(
+          AppConfig(defaultTaxPercent: 5.0, taxPercentOptions: const []));
+      expect(emptyOptions.taxPercentOptions, const [0.0, 12.0, 18.0, 28.0, 5.0]);
+      expect(emptyOptions.defaultTaxPercent, 5.0);
+
+      // The provider heals the repo config at fetch time, so the invariant
+      // holds on the live config after load().
+      expect(provider.config.taxPercentOptions, contains(provider.config.defaultTaxPercent));
+    });
+
+    test('isOverdue: past due date + balance owed only; never cancelled or paid', () {
+      final item = MaintenanceItem(
+        id: 'od_item',
+        name: 'Brake Pads',
+        category: ItemCategory.sparePart,
+        unitPrice: 1000.0, // taxPercent defaults to 0 -> grand total 1000
+      );
+      final now = DateTime.now();
+
+      // Unpaid with a past due date -> overdue.
+      final overdue = Invoice(
+        id: 'od_past',
+        invoiceNumber: 'INV-TEST-PAST',
+        customerId: 'c_1',
+        vehicleId: 'v_1',
+        kmReading: 1000,
+        items: [item],
+        dueDate: now.subtract(const Duration(days: 2)),
+      );
+      expect(overdue.balanceDue, greaterThan(0));
+      expect(overdue.isOverdue, isTrue);
+
+      // Unpaid but due in the future (incl. later today) -> not overdue.
+      final upcoming = Invoice(
+        id: 'od_future',
+        invoiceNumber: 'INV-TEST-FUTURE',
+        customerId: 'c_1',
+        vehicleId: 'v_1',
+        kmReading: 1000,
+        items: [item],
+        dueDate: now.add(const Duration(hours: 1)),
+      );
+      expect(upcoming.isOverdue, isFalse);
+
+      // No due date set -> never overdue.
+      final noDueDate = Invoice(
+        id: 'od_nodue',
+        invoiceNumber: 'INV-TEST-NODUE',
+        customerId: 'c_1',
+        vehicleId: 'v_1',
+        kmReading: 1000,
+        items: [item],
+      );
+      expect(noDueDate.isOverdue, isFalse);
+
+      // Cancelled with a past due date -> never overdue.
+      final cancelled = Invoice(
+        id: 'od_cancelled',
+        invoiceNumber: 'INV-TEST-CANCELLED',
+        customerId: 'c_1',
+        vehicleId: 'v_1',
+        kmReading: 1000,
+        items: [item],
+        dueDate: now.subtract(const Duration(days: 2)),
+        cancelledAt: now,
+      );
+      expect(cancelled.isOverdue, isFalse);
+
+      // Fully paid with a past due date -> never overdue.
+      final paid = Invoice(
+        id: 'od_paid',
+        invoiceNumber: 'INV-TEST-PAID',
+        customerId: 'c_1',
+        vehicleId: 'v_1',
+        kmReading: 1000,
+        items: [item],
+        taxPercent: 0.0, // keep grand total at exactly 1000
+        dueDate: now.subtract(const Duration(days: 2)),
+        payments: [
+          Payment(
+            id: 'od_pay_1',
+            invoiceId: 'od_paid',
+            amount: 1000.0,
+            mode: PaymentMode.cash,
+          ),
+        ],
+      );
+      expect(paid.balanceDue, 0.0);
+      expect(paid.isOverdue, isFalse);
     });
   });
 }

@@ -96,6 +96,20 @@ class Invoice {
     return InvoiceStatus.pending;
   }
 
+  /// An invoice is overdue when all four conditions hold: it has a [dueDate],
+  /// it is not cancelled, [balanceDue] is still positive, and the due date is
+  /// before the current instant. That last check is timestamp-based, so a due
+  /// date later today does not trigger until the moment actually passes.
+  /// Cancelled invoices zero out their balance and fully paid ones owe
+  /// nothing, so the flag can never appear on either.
+  bool get isOverdue {
+    final due = dueDate;
+    return due != null &&
+        status != InvoiceStatus.cancelled &&
+        balanceDue > 0 &&
+        due.isBefore(DateTime.now());
+  }
+
   Invoice copyWith({
     String? id,
     String? invoiceNumber,

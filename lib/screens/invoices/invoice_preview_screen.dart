@@ -125,68 +125,84 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            profile.name,
-                            style: GoogleFonts.poppins(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          if (profile.tagline.trim().isNotEmpty) ...[
-                            const SizedBox(height: 2),
+                      // Expanded + ellipsis so long profile strings shrink the
+                      // left column instead of overflowing the letterhead row.
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              profile.tagline.trim(),
+                              profile.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.poppins(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w500,
-                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
                               ),
                             ),
-                          ],
-                          const SizedBox(height: 2),
-                          Text(
-                            'TAX INVOICE & CASH MEMO',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
-                              color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
-                            ),
-                          ),
-                          Text(
-                            'GSTIN: ${profile.gstin}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
-                            ),
-                          ),
-                          Text(
-                            '${profile.addressLine}, ${profile.city}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
-                            ),
-                          ),
-                          Text(
-                            'Phone: ${profile.phone}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
-                            ),
-                          ),
-                          if (profile.email.trim().isNotEmpty)
+                            if (profile.tagline.trim().isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                profile.tagline.trim(),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 2),
                             Text(
-                              'Email: ${profile.email.trim()}',
+                              'TAX INVOICE & CASH MEMO',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.2,
+                                color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+                              ),
+                            ),
+                            Text(
+                              'GSTIN: ${profile.gstin}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
                               ),
                             ),
-                        ],
+                            Text(
+                              '${profile.addressLine}, ${profile.city}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                              ),
+                            ),
+                            Text(
+                              'Phone: ${profile.phone}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                              ),
+                            ),
+                            if (profile.email.trim().isNotEmpty)
+                              Text(
+                                'Email: ${profile.email.trim()}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,

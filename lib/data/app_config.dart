@@ -22,3 +22,36 @@ class AppConfig {
   final String invoiceTerms;
   final String defaultReceivedBy;
 }
+
+/// Heals a raw config fetched from the repository so form screens can trust
+/// the invariants (option lists non-empty, default tax a member of the tax
+/// options) without re-validating in every dropdown.
+///
+/// [AppConfig.defaultTaxPercent] is a billed money value, so when the stored
+/// option list has drifted out of sync with it, the stored rate is preserved
+/// by appending it to the options rather than silently rewriting the tax rate
+/// the garage actually bills at. Pure and side-effect free so tests can call
+/// it directly.
+AppConfig normalizeConfig(AppConfig raw) {
+  final defaults = const AppConfig();
+  final taxOptions = raw.taxPercentOptions.isNotEmpty
+      ? raw.taxPercentOptions
+      : defaults.taxPercentOptions;
+  final healedTaxOptions = taxOptions.contains(raw.defaultTaxPercent)
+      ? taxOptions
+      : [...taxOptions, raw.defaultTaxPercent];
+  final validityOptions = raw.quotationValidityOptions.isNotEmpty
+      ? raw.quotationValidityOptions
+      : defaults.quotationValidityOptions;
+  return AppConfig(
+    defaultTaxPercent: raw.defaultTaxPercent,
+    taxPercentOptions: healedTaxOptions,
+    invoiceDueDays: raw.invoiceDueDays,
+    quotationValidityOptions: validityOptions,
+    workingDaysPerMonth: raw.workingDaysPerMonth,
+    promisedDeliveryHours: raw.promisedDeliveryHours,
+    invoiceNotes: raw.invoiceNotes,
+    invoiceTerms: raw.invoiceTerms,
+    defaultReceivedBy: raw.defaultReceivedBy,
+  );
+}

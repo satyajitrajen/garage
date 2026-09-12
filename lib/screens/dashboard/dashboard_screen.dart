@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../models/job_card.dart';
-import '../../models/invoice.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/currency_formatter.dart';
@@ -106,8 +105,23 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => context.read<GarageProvider>().refresh(),
+        onRefresh: () async {
+          try {
+            await context.read<GarageProvider>().refresh();
+          } catch (e) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(e.toString().replaceFirst('Exception: ', '')),
+                backgroundColor: AppColors.pending,
+              ),
+            );
+          }
+        },
         child: SingleChildScrollView(
+          // Always scrollable so pull-to-refresh works even when the content
+          // fits the viewport.
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -840,7 +854,7 @@ class DashboardScreen extends StatelessWidget {
                                 color: inv.balanceDue > 0 ? AppColors.pending : AppColors.paid,
                               ),
                             ),
-                            if (_isOverdue(inv)) ...[
+                            if (inv.isOverdue) ...[
                               const SizedBox(height: 2),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -877,16 +891,6 @@ class DashboardScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// An invoice is overdue when its due date has passed and money is still
-  /// owed; cancelled invoices zero out their balance and paid ones owe
-  /// nothing, so the chip can never appear on either.
-  bool _isOverdue(Invoice inv) {
-    return inv.dueDate != null &&
-        inv.status != InvoiceStatus.cancelled &&
-        inv.balanceDue > 0 &&
-        inv.dueDate!.isBefore(DateTime.now());
   }
 
   Widget _buildKpiTile({
