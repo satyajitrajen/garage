@@ -225,7 +225,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           style: GoogleFonts.poppins(
             fontSize: 11,
             fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-            color: isActive ? palette.primary : palette.textMuted,
+            color: isActive ? palette.primary : palette.textSecondary,
           ),
         ),
       ],
@@ -238,7 +238,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       child: Container(
         height: 2,
         margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-        color: isActive ? context.palette.primary : context.palette.border,
+        color: isActive ? context.palette.primary : context.palette.textMuted,
       ),
     );
   }

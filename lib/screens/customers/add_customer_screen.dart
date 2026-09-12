@@ -548,7 +548,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                         onPressed: () => _handleSave(),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: palette.border),
+                          side: BorderSide(color: palette.textMuted),
                           foregroundColor: palette.textPrimary,
                         ),
                         child: const Text('Save Customer Only'),
