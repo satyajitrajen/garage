@@ -232,11 +232,8 @@ class MockGarageRepository implements GarageRepository {
   @override
   Future<Invoice> updateInvoice(Invoice invoice) async {
     final i = _invoices.indexWhere((inv) => inv.id == invoice.id);
-    if (i == -1) {
-      _invoices.insert(0, invoice);
-    } else {
-      _invoices[i] = invoice;
-    }
+    if (i == -1) throw Exception('Invoice not found');
+    _invoices[i] = invoice;
     return invoice;
   }
 
