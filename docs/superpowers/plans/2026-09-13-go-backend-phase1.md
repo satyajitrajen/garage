@@ -573,7 +573,9 @@ func TestHashAndCheckPassword(t *testing.T) {
 
 func TestTokenIssuerRoundTrip(t *testing.T) {
 	issuer := NewTokenIssuer("secret")
-	now := time.Date(2026, 9, 13, 12, 0, 0, 0, time.UTC)
+	// Wall-clock relative, not a fixed date: jwt.Parse validates exp against
+	// the real clock, so a hardcoded `now` would expire as time passes.
+	now := time.Now()
 	token, err := issuer.Issue("u-1", now)
 	if err != nil {
 		t.Fatal(err)
