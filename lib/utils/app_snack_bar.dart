@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_palette.dart';
 
 /// Severity of an app-wide snack bar, mapped onto the status colors the
 /// screens already use for this kind of feedback.
@@ -14,11 +14,11 @@ void showAppSnackBar(
   SnackBarType type = SnackBarType.info,
 }) {
   final Color background = switch (type) {
-    // Emerald "paid" green, coral "pending" red and brand blue — the same
-    // AppColors the screens show for success/error/neutral feedback today.
-    SnackBarType.success => AppColors.paid,
-    SnackBarType.error => AppColors.pending,
-    SnackBarType.info => AppColors.primary,
+    // Status colors from the palette; info is near-black — brand red is
+    // reserved for actions (spec color-usage ratio).
+    SnackBarType.success => AppPalette.light.paid,
+    SnackBarType.error => AppPalette.light.absent,
+    SnackBarType.info => AppPalette.light.textPrimary,
   };
 
   ScaffoldMessenger.of(context)

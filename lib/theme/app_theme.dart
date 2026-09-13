@@ -1,186 +1,150 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'app_colors.dart';
 import 'app_dimens.dart';
 import 'app_palette.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
-    final baseTextTheme = GoogleFonts.poppinsTextTheme();
+    final baseTextTheme = GoogleFonts.interTextTheme();
+    const palette = AppPalette.light;
     return ThemeData(
       useMaterial3: true,
       extensions: const <ThemeExtension<dynamic>>[AppPalette.light],
       brightness: Brightness.light,
-      primaryColor: AppColors.primary,
-      scaffoldBackgroundColor: AppColors.background,
-      colorScheme: const ColorScheme.light(
-        primary: AppColors.primary,
-        secondary: AppColors.accent,
-        surface: AppColors.surface,
-        error: AppColors.pending,
-        onPrimary: Colors.white,
+      primaryColor: palette.primary,
+      scaffoldBackgroundColor: palette.background,
+      colorScheme: ColorScheme.light(
+        primary: palette.primary,
+        secondary: palette.primaryDark,
+        surface: palette.surface,
+        error: palette.absent,
+        onPrimary: palette.onPrimary,
         onSecondary: Colors.white,
-        onSurface: AppColors.textPrimary,
+        onSurface: palette.textPrimary,
       ),
       textTheme: baseTextTheme.copyWith(
         headlineLarge: baseTextTheme.headlineLarge?.copyWith(
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
-          color: AppColors.textPrimary,
-          letterSpacing: -0.5,
-        ),
+            fontSize: 24, fontWeight: FontWeight.w700, color: palette.textPrimary, letterSpacing: -0.5),
         headlineMedium: baseTextTheme.headlineMedium?.copyWith(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
-          letterSpacing: -0.3,
-        ),
+            fontSize: 20, fontWeight: FontWeight.w700, color: palette.textPrimary, letterSpacing: -0.3),
         titleLarge: baseTextTheme.titleLarge?.copyWith(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
-        ),
+            fontSize: 17, fontWeight: FontWeight.w600, color: palette.textPrimary),
         titleMedium: baseTextTheme.titleMedium?.copyWith(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
+            fontSize: 14, fontWeight: FontWeight.w600, color: palette.textPrimary),
         titleSmall: baseTextTheme.titleSmall?.copyWith(
-          fontSize: 12.5,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
+            fontSize: 12.5, fontWeight: FontWeight.w600, color: palette.textPrimary),
         bodyLarge: baseTextTheme.bodyLarge?.copyWith(
-          fontSize: 13.5,
-          fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
-        ),
+            fontSize: 14, fontWeight: FontWeight.w500, color: palette.textPrimary),
         bodyMedium: baseTextTheme.bodyMedium?.copyWith(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          color: AppColors.textSecondary,
-        ),
+            fontSize: 13, fontWeight: FontWeight.w400, color: palette.textSecondary),
         bodySmall: baseTextTheme.bodySmall?.copyWith(
-          fontSize: 11,
-          fontWeight: FontWeight.w400,
-          color: AppColors.textMuted,
-        ),
+            fontSize: 11.5, fontWeight: FontWeight.w400, color: palette.textMuted),
         labelLarge: baseTextTheme.labelLarge?.copyWith(
-          fontSize: 13.5,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.2,
-        ),
-        labelMedium: baseTextTheme.labelMedium?.copyWith(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w600,
-        ),
+            fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.1),
+        labelMedium: baseTextTheme.labelMedium?.copyWith(fontSize: 11.5, fontWeight: FontWeight.w500),
         labelSmall: baseTextTheme.labelSmall?.copyWith(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
-        ),
+            fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 0.3),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: palette.background,
+        foregroundColor: palette.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: GoogleFonts.inter(
           fontSize: 17,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.3,
-          color: AppColors.textPrimary,
+          color: palette.textPrimary,
         ),
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        iconTheme: IconThemeData(color: palette.textPrimary),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.cardBg,
+        color: palette.card,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: AppColors.border, width: 1),
+          borderRadius: BorderRadius.circular(AppDimens.radiusCard),
+          side: BorderSide(color: palette.border, width: 1),
         ),
         margin: EdgeInsets.zero,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: palette.cardAlt,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(AppDimens.radiusInput),
+          borderSide: BorderSide(color: palette.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(AppDimens.radiusInput),
+          borderSide: BorderSide(color: palette.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+          borderRadius: BorderRadius.circular(AppDimens.radiusInput),
+          borderSide: BorderSide(color: palette.primary, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.pending),
+          borderRadius: BorderRadius.circular(AppDimens.radiusInput),
+          borderSide: BorderSide(color: palette.absent),
         ),
-        hintStyle: GoogleFonts.poppins(
-          color: AppColors.textMuted,
-          fontSize: 13,
-        ),
-        labelStyle: GoogleFonts.poppins(
-          color: AppColors.textSecondary,
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-        ),
+        hintStyle: GoogleFonts.inter(color: palette.textMuted, fontSize: 13),
+        labelStyle: GoogleFonts.inter(
+            color: palette.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          backgroundColor: palette.primary,
+          foregroundColor: palette.onPrimary,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppDimens.radiusButton),
           ),
-          textStyle: GoogleFonts.poppins(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
-          ),
+          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.1),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-          side: const BorderSide(color: AppColors.primary, width: 1.4),
+          foregroundColor: palette.textPrimary,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          side: BorderSide(color: palette.border, width: 1.2),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppDimens.radiusButton),
           ),
-          textStyle: GoogleFonts.poppins(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 3,
+        backgroundColor: palette.primary,
+        foregroundColor: palette.onPrimary,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppDimens.radiusFAB),
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: AppPalette.light.surface,
+        backgroundColor: palette.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimens.radiusCard),
         ),
       ),
-      dividerTheme: const DividerThemeData(
-        color: AppColors.divider,
-        thickness: 1,
-        space: 1,
+      dividerTheme: DividerThemeData(color: palette.divider, thickness: 1, space: 1),
+      tabBarTheme: TabBarThemeData(
+        labelColor: palette.primary,
+        unselectedLabelColor: palette.textMuted,
+        indicatorColor: palette.primary,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? palette.primary : palette.textMuted),
+        trackColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? palette.primaryLight : palette.border),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? palette.primary : Colors.transparent),
+        side: BorderSide(color: palette.textMuted, width: 1.4),
       ),
     );
   }
