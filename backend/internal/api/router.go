@@ -122,6 +122,15 @@ func NewRouter(s *Server) http.Handler {
 				r.Put("/{quotationId}", s.updateQuotation)
 				r.Post("/{quotationId}/status", s.updateQuotationStatus)
 			})
+
+			r.Route("/invoices", func(r chi.Router) {
+				r.Use(auth.RequireGarage(s.Store))
+				r.Use(auth.RequirePermission("invoices.manage"))
+				r.Get("/", s.listInvoices)
+				r.Post("/", s.createInvoice)
+				r.Put("/{invoiceId}", s.updateInvoice)
+				r.Post("/{invoiceId}/cancel", s.cancelInvoice)
+			})
 			// Catalog is readable by any member of the garage (spec §5).
 			r.Route("/catalog", func(r chi.Router) {
 				r.Use(auth.RequireGarage(s.Store))

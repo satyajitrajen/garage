@@ -86,6 +86,17 @@ func truncate(t *testing.T) {
 	}
 }
 
+// seedPayment inserts a payment row directly (used to set up paid invoices
+// before the payments endpoint exists in test order).
+func seedPayment(t *testing.T, invoiceID string, amount float64) {
+	t.Helper()
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO payments (invoice_id, amount, mode, payment_date)
+		 VALUES ($1,$2,'cash',now())`, invoiceID, amount); err != nil {
+		t.Fatalf("seed payment: %v", err)
+	}
+}
+
 func boolPtr(b bool) *bool { return &b }
 
 func mustUnmarshal(t *testing.T, data []byte, dst any) {
