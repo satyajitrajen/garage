@@ -61,6 +61,14 @@ func TestRegisterValidation(t *testing.T) {
 	if status != 400 {
 		t.Fatalf("missing name: status %d body %s", status, data)
 	}
+
+	status, data = doJSON(t, "POST", "/api/auth/register", "", "", "not-json")
+	if status != 400 {
+		t.Fatalf("malformed body: status %d body %s", status, data)
+	}
+	if code, _ := decodeError(t, data); code != "invalid_request" {
+		t.Fatalf("code = %s, want invalid_request", code)
+	}
 }
 
 func TestLogin(t *testing.T) {
@@ -72,6 +80,18 @@ func TestLogin(t *testing.T) {
 	})
 	if status != 401 {
 		t.Fatalf("wrong password: status %d body %s", status, data)
+	}
+	_, wrongMsg := decodeError(t, data)
+
+	status, data = doJSON(t, "POST", "/api/auth/login", "", "", map[string]string{
+		"email": "nobody-login@test.dev", "password": "wrongpass1",
+	})
+	if status != 401 {
+		t.Fatalf("unknown email: status %d body %s", status, data)
+	}
+	_, unknownMsg := decodeError(t, data)
+	if wrongMsg != unknownMsg {
+		t.Fatalf("login errors must not reveal account existence: %q vs %q", wrongMsg, unknownMsg)
 	}
 
 	status, data = doJSON(t, "POST", "/api/auth/login", "", "", map[string]string{
@@ -138,5 +158,11 @@ func TestRefreshRotationAndLogout(t *testing.T) {
 		map[string]string{"refresh_token": pair.RefreshToken})
 	if status != 401 {
 		t.Fatalf("refresh after logout: status %d body %s", status, data)
+	}
+
+	status, _ = doJSON(t, "POST", "/api/auth/logout", "", "",
+		map[string]string{"refresh_token": pair.RefreshToken})
+	if status != 204 {
+		t.Fatalf("logout must be idempotent: status %d", status)
 	}
 }

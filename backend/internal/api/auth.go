@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -21,8 +20,7 @@ type credentialsRequest struct {
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var req credentialsRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, 400, "invalid_request", "malformed JSON")
+	if !httputil.Decode(w, r, &req) {
 		return
 	}
 	if req.Name == "" || req.Email == "" || req.Password == "" || req.GarageName == "" {
@@ -53,8 +51,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var req credentialsRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, 400, "invalid_request", "malformed JSON")
+	if !httputil.Decode(w, r, &req) {
 		return
 	}
 	if req.Email == "" || req.Password == "" {
@@ -63,6 +60,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := s.Store.UserByEmail(r.Context(), req.Email)
 	if errors.Is(err, store.ErrNotFound) {
+		auth.CompareDummy(req.Password)
 		httputil.Error(w, 401, "unauthorized", "invalid email or password")
 		return
 	}
@@ -86,8 +84,7 @@ func (s *Server) handleRefresh(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		RefreshToken string `json:"refresh_token"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, 400, "invalid_request", "malformed JSON")
+	if !httputil.Decode(w, r, &req) {
 		return
 	}
 	if req.RefreshToken == "" {
@@ -124,8 +121,7 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		RefreshToken string `json:"refresh_token"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, 400, "invalid_request", "malformed JSON")
+	if !httputil.Decode(w, r, &req) {
 		return
 	}
 	if req.RefreshToken == "" {

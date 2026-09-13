@@ -43,5 +43,12 @@ func NewRouter(s *Server) http.Handler {
 			r.Get("/me", s.handleMe)
 		})
 	})
+
+	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
+		httputil.Error(w, 404, "not_found", "route not found")
+	})
+	r.MethodNotAllowed(func(w http.ResponseWriter, _ *http.Request) {
+		httputil.Error(w, 405, "method_not_allowed", "method not allowed")
+	})
 	return r
 }

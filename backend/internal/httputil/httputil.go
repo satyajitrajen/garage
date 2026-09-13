@@ -25,3 +25,14 @@ func JSON(w http.ResponseWriter, status int, payload any) {
 func Error(w http.ResponseWriter, status int, code, message string) {
 	JSON(w, status, errorEnvelope{Error: APIError{Code: code, Message: message}})
 }
+
+// Decode reads a bounded JSON request body into dst and answers with the
+// standard 400 envelope on failure, returning whether to continue.
+func Decode(w http.ResponseWriter, r *http.Request, dst any) bool {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
+		Error(w, 400, "invalid_request", "malformed JSON")
+		return false
+	}
+	return true
+}

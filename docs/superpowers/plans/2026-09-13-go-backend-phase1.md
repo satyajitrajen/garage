@@ -2846,6 +2846,9 @@ git commit -m "feat(backend): register/login/refresh/logout/me endpoints"
 
 ### Task 8: Members endpoints
 
+> Task 7 note: `TestGarageIsolation` (in Task 7's test sketch above) was deferred to this
+> task — its routes only exist here. Add it unchanged to members_test.go in Step 1.
+
 **Files:**
 - Create: `backend/internal/api/members.go`
 - Test: `backend/internal/itest/members_test.go`
