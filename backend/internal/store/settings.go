@@ -53,7 +53,7 @@ func (s *Store) UpdateSettings(ctx context.Context, gs models.GarageSettings) er
 		gs.TaxPercentOptions, gs.InvoiceDueDays, gs.QuotationValidityOptions, gs.WorkingDaysPerMonth,
 		gs.PromisedDeliveryHours, gs.InvoiceNotes, gs.InvoiceTerms, gs.DefaultReceivedBy)
 	if err != nil {
-		return err
+		return mapPGError(err)
 	}
 	if tag.RowsAffected() == 0 {
 		return ErrNotFound

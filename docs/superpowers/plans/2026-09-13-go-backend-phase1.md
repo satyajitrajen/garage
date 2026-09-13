@@ -3412,6 +3412,11 @@ git commit -m "feat(backend): member management with granular permissions"
 
 ### Task 9: Settings endpoints
 
+> Concurrency note (Task 6 quality review): PATCH settings is load → merge → full-row write
+> with last-write-wins semantics — accepted deliberately. Settings are edited rarely, by the
+> owner(s) of one garage, and garage_settings has no updated_at column; the handler must NOT
+> add locking around this in Task 9.
+
 **Files:**
 - Create: `backend/internal/api/settings.go`
 - Test: `backend/internal/itest/settings_test.go`

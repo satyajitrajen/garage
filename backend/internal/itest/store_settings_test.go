@@ -1,9 +1,11 @@
 package itest
 
 import (
+	"reflect"
 	"testing"
 
 	"garage-backend/internal/auth"
+	"garage-backend/internal/models"
 	"garage-backend/internal/store"
 )
 
@@ -18,6 +20,9 @@ func TestSettingsGetOrCreateDefaults(t *testing.T) {
 	gs, err := s.GetOrCreateSettings(ctx, m.GarageID)
 	if err != nil {
 		t.Fatalf("get or create: %v", err)
+	}
+	if want := models.DefaultSettings(m.GarageID); !reflect.DeepEqual(gs, want) {
+		t.Fatalf("defaults must match models.DefaultSettings:\n got %+v\nwant %+v", gs, want)
 	}
 	if gs.GarageID != m.GarageID {
 		t.Fatalf("garage_id = %s", gs.GarageID)

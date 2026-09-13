@@ -20,7 +20,7 @@ func (s *Store) RotateRefreshToken(ctx context.Context, oldHash, newHash string,
 	if err != nil {
 		return "", err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback(context.WithoutCancel(ctx))
 
 	var userID string
 	err = tx.QueryRow(ctx,

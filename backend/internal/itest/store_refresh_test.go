@@ -56,4 +56,12 @@ func TestRefreshTokenLifecycle(t *testing.T) {
 	if _, err := s.RotateRefreshToken(ctx, hE, hE2, now.Add(time.Hour)); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("expired token must not rotate, got %v", err)
 	}
+
+	rawX, hX, expX, _ := auth.NewRefreshToken(now)
+	if err := s.InsertRefreshToken(ctx, u.ID, hX, expX); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.RotateRefreshToken(ctx, rawX, "x", expX); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("store must key rotation on the stored hash, not hash its input: got %v", err)
+	}
 }
