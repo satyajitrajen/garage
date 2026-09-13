@@ -78,7 +78,10 @@ func runTests(m *testing.M) int {
 func truncate(t *testing.T) {
 	t.Helper()
 	if _, err := pool.Exec(ctx,
-		`TRUNCATE users, garages, memberships, refresh_tokens, garage_settings CASCADE`); err != nil {
+		`TRUNCATE users, garages, memberships, refresh_tokens, garage_settings,
+		customers, vehicles, staff_members, attendance_records, salary_advances,
+		job_cards, job_card_items, quotations, quotation_items, invoices,
+		invoice_items, payments, expenses, catalog_items CASCADE`); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 }
