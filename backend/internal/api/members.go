@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
 	"garage-backend/internal/auth"
 	"garage-backend/internal/httputil"
@@ -87,6 +88,10 @@ func (s *Server) writeMemberStoreError(w http.ResponseWriter, err error) {
 
 func (s *Server) updateMember(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "userId")
+	if _, err := uuid.Parse(userID); err != nil {
+		httputil.Error(w, 404, "not_found", "member not found")
+		return
+	}
 	garageID := auth.GarageID(r.Context())
 
 	target, err := s.Store.Member(r.Context(), garageID, userID)
@@ -141,6 +146,10 @@ func (s *Server) updateMember(w http.ResponseWriter, r *http.Request) {
 		patch.PasswordHash = &hash
 	}
 	member, err := s.Store.UpdateMember(r.Context(), garageID, userID, patch)
+	if errors.Is(err, store.ErrNotFound) {
+		httputil.Error(w, 404, "not_found", "member not found")
+		return
+	}
 	if err != nil {
 		httputil.Error(w, 500, "internal", "could not update member")
 		return
@@ -150,6 +159,10 @@ func (s *Server) updateMember(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) deleteMember(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "userId")
+	if _, err := uuid.Parse(userID); err != nil {
+		httputil.Error(w, 404, "not_found", "member not found")
+		return
+	}
 	garageID := auth.GarageID(r.Context())
 
 	if auth.Role(r.Context()) != "owner" {

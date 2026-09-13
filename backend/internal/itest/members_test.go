@@ -68,6 +68,52 @@ func TestCreateMemberWithDefaults(t *testing.T) {
 	}
 }
 
+func TestUpdateMemberEdgeCases(t *testing.T) {
+	truncate(t)
+	owner := registerOwner(t, "edge")
+	garageID := owner.Memberships[0].GarageID
+	_, _, staff := createMember(t, owner, garageID, map[string]any{
+		"name": "Edge Staff", "email": "edge@test.dev", "password": "password123",
+	})
+
+	status, data := doJSON(t, "PATCH", membersURL(garageID)+"/"+staff.UserID, owner.AccessToken, garageID,
+		map[string]any{})
+	if status != 200 {
+		t.Fatalf("empty patch: status %d body %s", status, data)
+	}
+
+	status, data = doJSON(t, "PATCH", membersURL(garageID)+"/"+staff.UserID, owner.AccessToken, garageID,
+		map[string]any{"permissions": []string{}})
+	if status != 200 {
+		t.Fatalf("empty permissions: status %d body %s", status, data)
+	}
+	var member models.Member
+	mustUnmarshal(t, data, &member)
+	if len(member.Permissions) != 0 {
+		t.Fatalf("permissions must be explicitly empty, got %v", member.Permissions)
+	}
+
+	status, data = doJSON(t, "PATCH", membersURL(garageID)+"/00000000-0000-0000-0000-000000000000",
+		owner.AccessToken, garageID, map[string]any{"is_active": false})
+	if status != 404 {
+		t.Fatalf("unknown member: status %d body %s", status, data)
+	}
+	if code, _ := decodeError(t, data); code != "not_found" {
+		t.Fatalf("code = %s, want not_found", code)
+	}
+
+	status, data = doJSON(t, "PATCH", membersURL(garageID)+"/not-a-uuid", owner.AccessToken, garageID,
+		map[string]any{"is_active": false})
+	if status != 404 {
+		t.Fatalf("malformed userId: status %d body %s", status, data)
+	}
+
+	status, _ = doJSON(t, "DELETE", membersURL(garageID)+"/not-a-uuid", owner.AccessToken, garageID, nil)
+	if status != 404 {
+		t.Fatalf("malformed userId delete: status %d", status)
+	}
+}
+
 func TestMembersRequirePermission(t *testing.T) {
 	truncate(t)
 	owner := registerOwner(t, "perm")
