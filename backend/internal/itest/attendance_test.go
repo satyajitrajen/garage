@@ -98,6 +98,19 @@ func TestSalaryAdvanceCreateAndSettle(t *testing.T) {
 		"staffId": st.ID, "amount": 1000.0, "date": "2026-09-20",
 	})
 
+	// Seeded before the settle so "August untouched" proves scoping, not over-reach.
+	status, data = doJSON(t, "POST", "/api/salary-advances", owner.AccessToken, garageID, map[string]any{
+		"staffId": st.ID, "amount": 500.0, "date": "2026-08-15",
+	})
+	if status != 201 {
+		t.Fatalf("create aug: status %d body %s", status, data)
+	}
+	var aug models.SalaryAdvance
+	mustUnmarshal(t, data, &aug)
+	if aug.IsDeducted {
+		t.Fatalf("august advance must start undeducted: %+v", aug)
+	}
+
 	status, data = doJSON(t, "POST", "/api/salary-advances/settle", owner.AccessToken, garageID, map[string]any{
 		"staff_id": st.ID, "month": 9, "year": 2026,
 	})
@@ -108,26 +121,24 @@ func TestSalaryAdvanceCreateAndSettle(t *testing.T) {
 		Items []models.SalaryAdvance `json:"items"`
 	}
 	mustUnmarshal(t, data, &list)
-	if len(list.Items) != 2 {
+	if len(list.Items) != 3 {
 		t.Fatalf("settle must return the full garage list, got %d", len(list.Items))
 	}
+	augFound := false
 	for _, a := range list.Items {
+		if a.ID == aug.ID {
+			augFound = true
+			if a.IsDeducted {
+				t.Fatalf("august advance must be untouched after settle: %+v", list.Items)
+			}
+			continue
+		}
 		if !a.IsDeducted {
-			t.Fatalf("all rows must be deducted after settle: %+v", list.Items)
+			t.Fatalf("all september rows must be deducted after settle: %+v", list.Items)
 		}
 	}
-
-	// An advance from another month is untouched by the settle above.
-	status, data = doJSON(t, "POST", "/api/salary-advances", owner.AccessToken, garageID, map[string]any{
-		"staffId": st.ID, "amount": 500.0, "date": "2026-08-15",
-	})
-	if status != 201 {
-		t.Fatalf("create aug: status %d body %s", status, data)
-	}
-	var aug models.SalaryAdvance
-	mustUnmarshal(t, data, &aug)
-	if aug.IsDeducted {
-		t.Fatalf("august advance must be untouched: %+v", aug)
+	if !augFound {
+		t.Fatalf("august advance missing from settle list: %+v", list.Items)
 	}
 
 	// Invalid month.
@@ -136,5 +147,13 @@ func TestSalaryAdvanceCreateAndSettle(t *testing.T) {
 	})
 	if status != 400 {
 		t.Fatalf("bad month: status %d", status)
+	}
+
+	// Negative amount must be rejected.
+	status, _ = doJSON(t, "POST", "/api/salary-advances", owner.AccessToken, garageID, map[string]any{
+		"staffId": st.ID, "amount": -100.0, "date": "2026-09-05",
+	})
+	if status != 422 {
+		t.Fatalf("negative amount: status %d", status)
 	}
 }

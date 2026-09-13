@@ -25,6 +25,11 @@ func (s *Server) createSalaryAdvance(w http.ResponseWriter, r *http.Request) {
 	if !httputil.Decode(w, r, &adv) {
 		return
 	}
+	if adv.Amount <= 0 {
+		httputil.Error(w, 422, "unprocessable", "amount must be positive")
+		return
+	}
+	adv.IsDeducted = false
 	if _, err := uuid.Parse(adv.StaffID); err != nil {
 		httputil.Error(w, 400, "invalid_request", "invalid staff id")
 		return
