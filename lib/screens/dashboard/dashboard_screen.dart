@@ -5,7 +5,6 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../models/invoice.dart';
 import '../../models/job_card.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
@@ -32,7 +31,6 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final palette = context.palette;
 
     final today = DateTime.now();
@@ -48,9 +46,7 @@ class DashboardScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: palette.blueGradient,
-                ),
+                color: palette.primary,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.car_repair_rounded, color: Colors.white, size: 18),
@@ -132,12 +128,11 @@ class DashboardScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: palette.bannerGradient,
-                    stops: AppColors.bannerGradientStops,
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                  boxShadow: AppDimens.accentGlow(palette.paid),
+                  boxShadow: AppDimens.accentGlow(palette.primary),
                 ),
                 padding: const EdgeInsets.only(top: 14, left: 12, right: 12, bottom: 12),
                 child: Column(
@@ -147,10 +142,10 @@ class DashboardScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.black.withValues(alpha: 0.25) : Colors.white.withValues(alpha: 0.85),
+                          color: Colors.white.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.white,
+                            color: Colors.white.withValues(alpha: 0.15),
                             width: 1,
                           ),
                         ),
@@ -171,7 +166,7 @@ class DashboardScreen extends StatelessWidget {
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: palette.textSecondary,
+                                color: Colors.white70,
                                 letterSpacing: 0.4,
                               ),
                             ),
@@ -303,29 +298,25 @@ class DashboardScreen extends StatelessWidget {
                         child: Ink(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: palette.bannerGradient,
-                              stops: AppColors.bannerGradientStops,
+                              colors: palette.brandGradient,
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
                             ),
                             borderRadius: BorderRadius.circular(AppDimens.radiusCard),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.8),
+                              color: Colors.white.withValues(alpha: 0.15),
                               width: 1.5,
                             ),
-                            boxShadow: AppDimens.accentGlow(palette.paid),
+                            boxShadow: AppDimens.accentGlow(palette.primary),
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           child: Row(
                             children: [
-                              // Dark Squircle Icon (as in user screenshot)
                               Container(
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  // Deliberately a dark navy chip in BOTH themes (white bolt
-                                  // icon on top); no single palette slot preserves that.
-                                  color: const Color(0xFF121726),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -344,7 +335,7 @@ class DashboardScreen extends StatelessWidget {
                                       style: GoogleFonts.poppins(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w700,
-                                        color: palette.textPrimary,
+                                        color: Colors.white,
                                       ),
                                     ),
                                     Text(
@@ -352,7 +343,7 @@ class DashboardScreen extends StatelessWidget {
                                       style: GoogleFonts.poppins(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
-                                        color: palette.textSecondary,
+                                        color: Colors.white70,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -360,9 +351,9 @@ class DashboardScreen extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              Icon(
+                              const Icon(
                                 Icons.chevron_right_rounded,
-                                color: palette.textSecondary,
+                                color: Colors.white,
                                 size: 20,
                               ),
                             ],
@@ -994,15 +985,12 @@ class DashboardScreen extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        // Deliberately a dark navy pill in BOTH themes (white icon + label on
-        // top); no single palette slot preserves that, so the literals stay.
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
+        color: color,
         borderRadius: BorderRadius.circular(AppDimens.radiusCard),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFF1E293B),
+          color: Colors.white.withValues(alpha: 0.25),
           width: 1,
         ),
         boxShadow: AppDimens.cardShadow(context.palette.textPrimary),

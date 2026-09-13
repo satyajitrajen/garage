@@ -232,10 +232,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  // Blue gradient in BOTH themes: white text and status colors
+                  // Brand gradient in BOTH themes: white text and status colors
                   // sit on top, so a light-mode surface slot would hide them.
                   gradient: LinearGradient(
-                    colors: palette.blueGradient,
+                    colors: palette.brandGradient,
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

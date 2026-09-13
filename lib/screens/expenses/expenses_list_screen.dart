@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../models/expense.dart';
 import '../../models/payment.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
@@ -101,9 +100,6 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
       return true;
     }).toList();
     final palette = context.palette;
-    // isDark only tunes the white banner border's alpha, matching the
-    // dashboard's quick-action banner; no palette slot encodes that pair.
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: palette.background,
@@ -136,18 +132,10 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(AppDimens.paddingCard),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: palette.bannerGradient,
-                stops: AppColors.bannerGradientStops,
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
+              color: palette.card,
               borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.8),
-                width: 1.5,
-              ),
-              boxShadow: AppDimens.accentGlow(palette.paid),
+              border: Border.all(color: palette.border, width: 1),
+              boxShadow: AppDimens.cardShadow(palette.textPrimary),
             ),
             child: Row(
               children: [

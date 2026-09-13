@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/currency_formatter.dart';
@@ -22,7 +21,6 @@ class MoreMenuScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
     final profile = provider.profile;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final palette = context.palette;
 
     return Scaffold(
@@ -60,7 +58,7 @@ class MoreMenuScreen extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: palette.blueGradient,
+                      colors: palette.brandGradient,
                     ),
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -111,17 +109,16 @@ class MoreMenuScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: palette.bannerGradient,
-                    stops: AppColors.bannerGradientStops,
+                    colors: palette.brandGradient,
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.8),
+                    color: Colors.white.withValues(alpha: 0.15),
                     width: 1.5,
                   ),
-                  boxShadow: AppDimens.accentGlow(palette.paid),
+                  boxShadow: AppDimens.accentGlow(palette.primary),
                 ),
                 child: Row(
                   children: [
@@ -129,9 +126,7 @@ class MoreMenuScreen extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        // Deliberately a dark navy chip in BOTH themes (white bolt
-                        // icon on top); no single palette slot preserves that.
-                        color: const Color(0xFF121726),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
@@ -146,7 +141,7 @@ class MoreMenuScreen extends StatelessWidget {
                             style: GoogleFonts.poppins(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
-                              color: palette.textPrimary,
+                              color: Colors.white,
                             ),
                           ),
                           Text(
@@ -154,16 +149,16 @@ class MoreMenuScreen extends StatelessWidget {
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: palette.textSecondary,
+                              color: Colors.white70,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(
+                    const Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
-                      color: palette.textSecondary,
+                      color: Colors.white,
                     ),
                   ],
                 ),

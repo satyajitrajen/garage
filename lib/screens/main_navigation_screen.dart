@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/garage_provider.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_dimens.dart';
 import '../theme/app_palette.dart';
 import 'dashboard/dashboard_screen.dart';
@@ -78,18 +77,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           child: Container(
             height: 64,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: palette.bannerGradient,
-                stops: AppColors.bannerGradientStops,
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
+              color: palette.surface,
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.8),
-                width: 1.5,
-              ),
-              boxShadow: AppDimens.accentGlow(palette.paid),
+              border: Border.all(color: palette.border, width: 1),
+              boxShadow: AppDimens.cardShadow(palette.textPrimary),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
