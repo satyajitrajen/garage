@@ -57,6 +57,18 @@ func NewRouter(s *Server) http.Handler {
 					r.Patch("/", s.patchSettings)
 				})
 			})
+
+			// Domain routes are flat under /api and scoped by the X-Garage-Id
+			// header (spec §5); RequireGarage resolves the header since there
+			// is no {garageId} URL segment here.
+			r.Route("/customers", func(r chi.Router) {
+				r.Use(auth.RequireGarage(s.Store))
+				r.Use(auth.RequirePermission("customers.manage"))
+				r.Get("/", s.listCustomers)
+				r.Post("/", s.createCustomer)
+				r.Put("/{customerId}", s.updateCustomer)
+				r.Delete("/{customerId}", s.deleteCustomer)
+			})
 		})
 	})
 

@@ -164,3 +164,25 @@ func registerOwner(t *testing.T, suffix string) authResponse {
 	mustUnmarshal(t, data, &resp)
 	return resp
 }
+
+// createStaffSession creates a staff member with the given permission keys
+// and logs them in, returning their auth response.
+func createStaffSession(t *testing.T, owner authResponse, garageID, suffix string, perms []string) authResponse {
+	t.Helper()
+	status, data := doJSON(t, "POST", membersURL(garageID), owner.AccessToken, garageID, map[string]any{
+		"name": "Staff " + suffix, "email": "staff-" + suffix + "@test.dev",
+		"password": "password123", "permissions": perms,
+	})
+	if status != 201 {
+		t.Fatalf("create staff: status %d body %s", status, data)
+	}
+	status, data = doJSON(t, "POST", "/api/auth/login", "", "", map[string]string{
+		"email": "staff-" + suffix + "@test.dev", "password": "password123",
+	})
+	if status != 200 {
+		t.Fatalf("staff login: status %d body %s", status, data)
+	}
+	var login authResponse
+	mustUnmarshal(t, data, &login)
+	return login
+}
