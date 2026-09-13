@@ -1,8 +1,11 @@
 package itest
 
 import (
+	"errors"
 	"testing"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"garage-backend/internal/models"
 )
@@ -26,14 +29,24 @@ func customerBody(name string) map[string]any {
 
 // seedInvoice inserts an invoice + one item (+ optional payment) directly so
 // dues-gated delete can be tested without the invoice endpoints. gross is
-// the item taxable amount (quantity 1, no item discount/tax).
+// the item taxable amount (quantity 1, no item discount/tax). The invoice is
+// attached to the customer's existing vehicle when one exists; otherwise a
+// throwaway vehicle is created (invoices require a vehicle).
 func seedInvoice(t *testing.T, garageID, customerID, number string, gross, discount, taxPercent, paid float64, cancelled bool) {
 	t.Helper()
 	var vehicleID string
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO vehicles (garage_id, customer_id, registration_number, make, model, fuel_type)
-		 VALUES ($1,$2,'SEED-00','Seed','Seed','petrol') RETURNING id`,
-		garageID, customerID).Scan(&vehicleID); err != nil {
+	err := pool.QueryRow(ctx,
+		`SELECT id FROM vehicles WHERE garage_id = $1 AND customer_id = $2
+		 ORDER BY created_at, id LIMIT 1`,
+		garageID, customerID).Scan(&vehicleID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		if err := pool.QueryRow(ctx,
+			`INSERT INTO vehicles (garage_id, customer_id, registration_number, make, model, fuel_type)
+			 VALUES ($1,$2,'SEED-00','Seed','Seed','petrol') RETURNING id`,
+			garageID, customerID).Scan(&vehicleID); err != nil {
+			t.Fatalf("seed vehicle: %v", err)
+		}
+	} else if err != nil {
 		t.Fatalf("seed vehicle: %v", err)
 	}
 	var cancelledArg any

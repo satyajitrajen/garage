@@ -69,6 +69,15 @@ func NewRouter(s *Server) http.Handler {
 				r.Put("/{customerId}", s.updateCustomer)
 				r.Delete("/{customerId}", s.deleteCustomer)
 			})
+
+			r.Route("/vehicles", func(r chi.Router) {
+				r.Use(auth.RequireGarage(s.Store))
+				r.Use(auth.RequirePermission("vehicles.manage"))
+				r.Get("/", s.listVehicles)
+				r.Post("/", s.createVehicle)
+				r.Put("/{vehicleId}", s.updateVehicle)
+				r.Delete("/{vehicleId}", s.deleteVehicle)
+			})
 		})
 	})
 
