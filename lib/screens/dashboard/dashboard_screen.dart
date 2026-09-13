@@ -3,10 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../models/invoice.dart';
-import '../../models/job_card.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
+import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
@@ -14,18 +14,14 @@ import '../../widgets/book_service_card.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_badge.dart';
 import '../customers/customers_list_screen.dart';
-import '../customers/add_customer_screen.dart';
-import '../vehicles/vehicle_selection_screen.dart';
 import '../job_cards/job_cards_list_screen.dart';
 import '../job_cards/job_card_detail_screen.dart';
 import '../quotations/quotations_list_screen.dart';
 import '../invoices/invoices_list_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
 import '../expenses/expenses_list_screen.dart';
-import '../expenses/add_expense_screen.dart';
 import '../staff/staff_list_screen.dart';
 import '../workflow/quick_service_wizard.dart';
-import '../../theme/app_text.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -122,350 +118,24 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // -------------------------------------------------------------
-              // 1. CORE BENTO ISLAND CARD (BLACK BANNER)
-              // -------------------------------------------------------------
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: palette.bannerGradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                  boxShadow: AppDimens.accentGlow(palette.primary),
-                ),
-                padding: const EdgeInsets.only(top: 14, left: 12, right: 12, bottom: 12),
-                child: Column(
-                  children: [
-                    // Status Pill Header (Luminous Glass Capsule)
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                color: palette.accent,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.check_rounded, color: Colors.white, size: 10),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'GARAGE STATUS: ',
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.label,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white70,
-                                letterSpacing: 0.4,
-                              ),
-                            ),
-                            Flexible(
-                              child: Text(
-                                activeJobs.isEmpty
-                                    ? 'All clear — no vehicles in workshop'
-                                    : '${activeJobs.length} vehicle(s) in workshop',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
-                                  fontSize: AppText.label,
-                                  fontWeight: FontWeight.w700,
-                                  color: palette.ready,
-                                  letterSpacing: 0.4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
 
-                    // 4-Quadrant Metric Tiles (2x2 Grid)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: palette.card,
-                        borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildKpiTile(
-                                  icon: Icons.payments_rounded,
-                                  badgeBg: palette.badgeGreenBg,
-                                  iconColor: palette.badgeGreenIcon,
-                                  value: CurrencyFormatter.format(provider.todayCollection),
-                                  label: "TODAY'S COLLECTION",
-                                  subtitle: "Month: ${CurrencyFormatter.formatCompact(provider.thisMonthRevenue)}",
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const InvoicesListScreen()),
-                                    );
-                                  },
-                                  palette: palette,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _buildKpiTile(
-                                  icon: Icons.warning_amber_rounded,
-                                  badgeBg: palette.badgeRedBg,
-                                  iconColor: palette.badgeRedIcon,
-                                  value: CurrencyFormatter.format(provider.totalPendingPayments),
-                                  label: 'PENDING DUES',
-                                  subtitle: '${provider.invoices.where((i) => i.balanceDue > 0).length} unpaid bills',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const InvoicesListScreen()),
-                                    );
-                                  },
-                                  palette: palette,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildKpiTile(
-                                  icon: Icons.car_repair_rounded,
-                                  badgeBg: palette.badgePurpleBg,
-                                  iconColor: palette.badgePurpleIcon,
-                                  value: '${provider.activeVehiclesUnderMaintenanceCount}',
-                                  label: 'VEHICLES IN BAY',
-                                  subtitle: 'Under repair',
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const JobCardsListScreen()),
-                                    );
-                                  },
-                                  palette: palette,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _buildKpiTile(
-                                  icon: Icons.receipt_long_rounded,
-                                  badgeBg: palette.badgeOrangeBg,
-                                  iconColor: palette.badgeOrangeIcon,
-                                  value: CurrencyFormatter.format(provider.todayExpenses),
-                                  label: "TODAY'S EXPENSES",
-                                  subtitle: "Month: ${CurrencyFormatter.formatCompact(provider.thisMonthExpenses)}",
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const ExpensesListScreen()),
-                                    );
-                                  },
-                                  palette: palette,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Quick Service Wizard Action Banner (Exact User Gradient)
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const QuickServiceWizard()),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                        child: Ink(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: palette.brandGradient,
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
-                            borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              width: 1.5,
-                            ),
-                            boxShadow: AppDimens.accentGlow(palette.primary),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.bolt_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Quick Service Wizard',
-                                      style: GoogleFonts.inter(
-                                        fontSize: AppText.body,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Create job card, bill & collect payment in 60s',
-                                      style: GoogleFonts.inter(
-                                        fontSize: AppText.label,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.white.withValues(alpha: 0.85),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
+              // -------------------------------------------------------------
+              // 1. BOOK A SERVICE (HERO)
+              // -------------------------------------------------------------
               const BookServiceCard(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // -------------------------------------------------------------
-              // 2. QUICK ACTIONS SHORTCUTS CAROUSEL
+              // 2. TODAY CARD (COLLECTION / EXPENSES / SPARKLINE / DUES)
               // -------------------------------------------------------------
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildQuickActionChip(
-                      context,
-                      label: '+ Job Card',
-                      icon: Icons.add_task_rounded,
-                      color: palette.primary,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CustomersListScreen(
-                              isSelectionMode: true,
-                              targetAction: VehicleTargetAction.createJobCard,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    _buildQuickActionChip(
-                      context,
-                      label: '+ Customer',
-                      icon: Icons.person_add_alt_1_rounded,
-                      color: palette.accent,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    _buildQuickActionChip(
-                      context,
-                      label: '+ Estimate',
-                      icon: Icons.request_quote_rounded,
-                      color: palette.badgePurpleIcon,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CustomersListScreen(
-                              isSelectionMode: true,
-                              targetAction: VehicleTargetAction.createQuotation,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    _buildQuickActionChip(
-                      context,
-                      label: '+ Quick Bill',
-                      icon: Icons.receipt_long_rounded,
-                      color: palette.paid,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CustomersListScreen(
-                              isSelectionMode: true,
-                              targetAction: VehicleTargetAction.createInvoice,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    _buildQuickActionChip(
-                      context,
-                      label: '+ Expense',
-                      icon: Icons.account_balance_wallet_rounded,
-                      color: palette.badgeOrangeIcon,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const AddExpenseScreen()),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
+              _buildTodayCard(context, provider, palette),
               const SizedBox(height: 24),
 
               // -------------------------------------------------------------
-              // 3. LIVE BAY ACTIVITY (ACTIVE FLOOR VEHICLES)
+              // 3. LIVE FLOOR (ACTIVE VEHICLES)
               // -------------------------------------------------------------
               SectionHeader(
-                title: 'Live Bay Activity',
+                title: 'Live Floor',
                 actionText: 'View All (${activeJobs.length})',
                 onActionTap: () {
                   Navigator.push(
@@ -475,134 +145,7 @@ class DashboardScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 8),
-
-              if (activeJobs.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: palette.surface,
-                    borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                    border: Border.all(
-                      color: palette.border,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'All bays clear • No vehicles currently under repair',
-                      style: GoogleFonts.inter(
-                        color: palette.textMuted,
-                        fontSize: AppText.caption,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                )
-              else
-                ...activeJobs.take(3).map((jc) {
-                  final vehicle = provider.getVehicleById(jc.vehicleId);
-                  final customer = provider.getCustomerById(jc.customerId);
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      color: palette.surface,
-                      borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                      border: Border.all(
-                        color: palette.border,
-                        width: 1,
-                      ),
-                      boxShadow: AppDimens.cardShadow(palette.textPrimary),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => JobCardDetailScreen(jobCardId: jc.id)),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 34,
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  color: jc.status == JobStatus.inProgress
-                                      ? palette.badgeBlueBg
-                                      : jc.status == JobStatus.inspection
-                                          ? palette.badgeOrangeBg
-                                          : palette.badgeRedBg,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(
-                                  jc.status == JobStatus.inProgress
-                                      ? Icons.build_rounded
-                                      : jc.status == JobStatus.inspection
-                                          ? Icons.hourglass_top_rounded
-                                          : Icons.warning_rounded,
-                                  color: jc.status == JobStatus.inProgress
-                                      ? palette.badgeBlueIcon
-                                      : jc.status == JobStatus.inspection
-                                          ? palette.badgeOrangeIcon
-                                          : palette.badgeRedIcon,
-                                  size: 17,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${vehicle?.registrationNumber ?? "Vehicle"} • ${vehicle?.displayName ?? ""}',
-                                      style: GoogleFonts.inter(
-                                        fontSize: AppText.body,
-                                        fontWeight: FontWeight.w700,
-                                        color: palette.textPrimary,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Row(
-                                      children: [
-                                        Flexible(
-                                          child: Text(
-                                            '${customer?.name ?? ""} • In Bay',
-                                            style: GoogleFonts.inter(
-                                              fontSize: AppText.label,
-                                              color: palette.textMuted,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        StatusBadge.fromJobStatus(jc.status),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                color: palette.textMuted,
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
+              _buildLiveFloorStrip(context, provider, palette),
               const SizedBox(height: 24),
 
               // -------------------------------------------------------------
@@ -681,12 +224,6 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // -------------------------------------------------------------
-              // 5. FINANCIAL REVENUE BAR CHART (computed from real data)
-              // -------------------------------------------------------------
-              ..._buildWeeklyRevenueExpenseChart(provider, palette),
               const SizedBox(height: 24),
 
               // -------------------------------------------------------------
@@ -827,89 +364,284 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildKpiTile({
-    required IconData icon,
-    required Color badgeBg,
-    required Color iconColor,
-    required String value,
-    required String label,
-    required String subtitle,
-    required VoidCallback onTap,
-    required AppPalette palette,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppDimens.radiusTile),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: palette.surface,
-            borderRadius: BorderRadius.circular(AppDimens.radiusTile),
-            border: Border.all(
-              color: palette.border,
-              width: 1,
+  Widget _buildTodayCard(BuildContext context, GarageProvider provider, AppPalette palette) {
+    final pendingCount = provider.invoices
+        .where((inv) => inv.status != InvoiceStatus.cancelled && inv.balanceDue > 0)
+        .length;
+    final pendingTotal = provider.totalPendingPayments;
+
+    // 7-day collections series (Mon–Sun) — the same bucketing the deleted
+    // revenue/expense chart used, now rendered as a sparkline.
+    final now = DateTime.now();
+    final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+    final weeklyCollections = List<double>.filled(7, 0);
+    for (final p in provider.payments) {
+      final dayDiff = DateTime(p.paymentDate.year, p.paymentDate.month, p.paymentDate.day)
+          .difference(DateTime(monday.year, monday.month, monday.day))
+          .inDays;
+      if (dayDiff >= 0 && dayDiff < 7) weeklyCollections[dayDiff] += p.amount;
+    }
+    final hasWeeklyData = weeklyCollections.any((v) => v > 0);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppDimens.paddingCard),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusCard),
+        border: Border.all(color: palette.border),
+        boxShadow: AppDimens.cardShadow(palette.textPrimary),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Today',
+            style: GoogleFonts.inter(
+              fontSize: AppText.subtitle,
+              fontWeight: FontWeight.w700,
+              color: palette.textPrimary,
+              letterSpacing: -0.2,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 12),
+          Row(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: badgeBg,
-                      borderRadius: BorderRadius.circular(10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Collection',
+                      style: GoogleFonts.inter(
+                        fontSize: AppText.label,
+                        fontWeight: FontWeight.w600,
+                        color: palette.textMuted,
+                      ),
                     ),
-                    child: Icon(icon, color: iconColor, size: 17),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      value,
+                    const SizedBox(height: 2),
+                    Text(
+                      CurrencyFormatter.format(provider.todayCollection),
                       style: GoogleFonts.inter(
                         fontSize: AppText.title,
                         fontWeight: FontWeight.w800,
-                        color: palette.textPrimary,
-                        letterSpacing: -0.3,
+                        color: palette.paid,
                       ),
-                      textAlign: TextAlign.end,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: AppText.micro,
-                  fontWeight: FontWeight.w600,
-                  color: palette.textMuted,
-                  letterSpacing: 0.3,
+                  ],
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: GoogleFonts.inter(
-                  fontSize: AppText.micro,
-                  fontWeight: FontWeight.w500,
-                  color: palette.textSecondary,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Expenses',
+                      style: GoogleFonts.inter(
+                        fontSize: AppText.label,
+                        fontWeight: FontWeight.w600,
+                        color: palette.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      CurrencyFormatter.format(provider.todayExpenses),
+                      style: GoogleFonts.inter(
+                        fontSize: AppText.title,
+                        fontWeight: FontWeight.w800,
+                        color: palette.pending,
+                      ),
+                    ),
+                  ],
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
+          if (hasWeeklyData) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 48,
+              child: LineChart(
+                LineChartData(
+                  minY: 0,
+                  lineTouchData: const LineTouchData(enabled: false),
+                  gridData: const FlGridData(show: false),
+                  titlesData: const FlTitlesData(show: false),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: [
+                        for (var i = 0; i < 7; i++) FlSpot(i.toDouble(), weeklyCollections[i]),
+                      ],
+                      isCurved: true,
+                      barWidth: 2.5,
+                      color: palette.primary,
+                      dotData: const FlDotData(show: false),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        gradient: LinearGradient(
+                          colors: [
+                            palette.primary.withValues(alpha: 0.22),
+                            palette.primary.withValues(alpha: 0),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          if (pendingCount > 0)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const InvoicesListScreen()),
+                  );
+                },
+                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.account_balance_wallet_rounded, size: 16, color: palette.pending),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${CurrencyFormatter.format(pendingTotal)} due across $pendingCount bills',
+                          style: GoogleFonts.inter(
+                            fontSize: AppText.caption,
+                            fontWeight: FontWeight.w700,
+                            color: palette.pending,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, size: 18, color: palette.pending),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Text(
+                'No pending dues',
+                style: GoogleFonts.inter(
+                  fontSize: AppText.caption,
+                  fontWeight: FontWeight.w600,
+                  color: palette.textMuted,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLiveFloorStrip(BuildContext context, GarageProvider provider, AppPalette palette) {
+    final activeJobs = provider.activeJobCards;
+
+    if (activeJobs.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        decoration: BoxDecoration(
+          color: palette.surface,
+          borderRadius: BorderRadius.circular(AppDimens.radiusCard),
+          border: Border.all(color: palette.border),
         ),
+        child: Center(
+          child: Text(
+            'All clear — no vehicles in workshop',
+            style: GoogleFonts.inter(
+              fontSize: AppText.caption,
+              fontWeight: FontWeight.w500,
+              color: palette.textMuted,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 92,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: activeJobs.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          final jc = activeJobs[index];
+          final vehicle = provider.getVehicleById(jc.vehicleId);
+          return Container(
+            // 210 so the widest status badge (WAITING PARTS) fits beside the
+            // registration number on one line instead of overflowing.
+            width: 210,
+            decoration: BoxDecoration(
+              color: palette.surface,
+              borderRadius: BorderRadius.circular(AppDimens.radiusCard),
+              border: Border.all(color: palette.border),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => JobCardDetailScreen(jobCardId: jc.id)),
+                  );
+                },
+                borderRadius: BorderRadius.circular(AppDimens.radiusCard),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              vehicle?.registrationNumber ?? 'Vehicle',
+                              style: GoogleFonts.inter(
+                                fontSize: AppText.body,
+                                fontWeight: FontWeight.w800,
+                                color: palette.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          StatusBadge.fromJobStatus(jc.status),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        vehicle?.displayName ?? '',
+                        style: GoogleFonts.inter(
+                          fontSize: AppText.label,
+                          fontWeight: FontWeight.w500,
+                          color: palette.textMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -982,203 +714,4 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActionChip(
-    BuildContext context, {
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.25),
-          width: 1,
-        ),
-        boxShadow: AppDimens.cardShadow(context.palette.textPrimary),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 15, color: Colors.white),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: AppText.label,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLegendItem(String title, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
-        ),
-        const SizedBox(width: 4),
-        Text(title, style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w600)),
-      ],
-    );
-  }
-
-  /// Builds the Weekly Revenue vs Expenses chart using real payment/expense
-  /// data bucketed by weekday for the current calendar week (Mon–Sun).
-  List<Widget> _buildWeeklyRevenueExpenseChart(GarageProvider provider, AppPalette palette) {
-    final now = DateTime.now();
-    // Monday of the current week (weekday: Mon=1 .. Sun=7).
-    final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
-
-    final weeklyRevenue = List<double>.filled(7, 0);
-    final weeklyExpenses = List<double>.filled(7, 0);
-
-    for (final p in provider.payments) {
-      final dayDiff = DateTime(p.paymentDate.year, p.paymentDate.month, p.paymentDate.day)
-          .difference(DateTime(monday.year, monday.month, monday.day))
-          .inDays;
-      if (dayDiff >= 0 && dayDiff < 7) weeklyRevenue[dayDiff] += p.amount;
-    }
-    for (final e in provider.expenses) {
-      final dayDiff = DateTime(e.expenseDate.year, e.expenseDate.month, e.expenseDate.day)
-          .difference(DateTime(monday.year, monday.month, monday.day))
-          .inDays;
-      if (dayDiff >= 0 && dayDiff < 7) weeklyExpenses[dayDiff] += e.amount;
-    }
-
-    // Derive a sensible Y axis: round the max up to a clean value.
-    final rawMax = [0.0, ...weeklyRevenue, ...weeklyExpenses].reduce((a, b) => a > b ? a : b);
-    final maxY = rawMax <= 0 ? 100.0 : (rawMax * 1.25);
-
-    return [
-      Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: palette.surface,
-          borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-          border: Border.all(
-            color: palette.border,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Weekly Revenue vs Expenses',
-                  style: GoogleFonts.inter(
-                    fontSize: AppText.subtitle,
-                    fontWeight: FontWeight.w700,
-                    color: palette.textPrimary,
-                  ),
-                ),
-                Row(
-                  children: [
-                    _buildLegendItem('Income', palette.paid),
-                    const SizedBox(width: 8),
-                    _buildLegendItem('Expense', palette.pending),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            SizedBox(
-              height: 145,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: maxY,
-                  barTouchData: BarTouchData(enabled: true),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (val, meta) {
-                          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                          final index = val.toInt();
-                          if (index >= 0 && index < days.length) {
-                            return Text(
-                              days[index],
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.label,
-                                color: palette.textMuted,
-                              ),
-                            );
-                          }
-                          return const Text('');
-                        },
-                      ),
-                    ),
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  gridData: const FlGridData(show: false),
-                  borderData: FlBorderData(show: false),
-                  barGroups: [
-                    for (var i = 0; i < 7; i++)
-                      _makeGroupData(
-                        i,
-                        weeklyRevenue[i],
-                        weeklyExpenses[i],
-                        incomeColor: palette.paid,
-                        expenseColor: palette.pending,
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ];
-  }
-
-  BarChartGroupData _makeGroupData(
-    int x,
-    double y1,
-    double y2, {
-    required Color incomeColor,
-    required Color expenseColor,
-  }) {
-    return BarChartGroupData(
-      barsSpace: 4,
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y1,
-          color: incomeColor,
-          width: 8,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        BarChartRodData(
-          toY: y2,
-          color: expenseColor,
-          width: 8,
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ],
-    );
-  }
 }
