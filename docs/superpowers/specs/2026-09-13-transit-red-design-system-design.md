@@ -51,9 +51,10 @@ AppPalette keeps its 42-slot API. New values (light only):
 | badgeBlueBg / badgeBlueIcon | `0xFFE8F1FD` / `0xFF1D4ED8` | |
 | paperBg | `0xFFFFFFFF` | invoice ticket body |
 | paperHeaderBg | `0xFFF8F8F8` | ticket header band |
-| bannerGradient | `0xFF1A1A1A → 0xFF111111` | BLACK banner, white text, red accents (approved) |
+| bannerGradient | `0xFF1A1A1A → 0xFF111111` | BLACK — consumed ONLY by the dashboard bento island (the approved black brand block) |
 | cardGradient | `0xFFFFFFFF → 0xFFF8F8F8` | subtle white card wash |
-| **blueGradient → renamed `brandGradient`** | `0xFFF01018 → 0xFFD90E16` | payment-collection highlight card; the "10% red" |
+| **blueGradient → renamed `brandGradient`** | `0xFFF01018 → 0xFFD90E16` | CTA surfaces: payment-collection highlight card, quick-service banners (dashboard + more menu), GradientButton/FAB |
+| **consumer remap (bannerGradient old users)** | bottom nav → solid `surface` + `border` (reference has a white nav); expenses KPI card → solid `card` + `border`; more-menu wizard banner + dashboard action banner → `brandGradient` | per-surface mapping, not one gradient for all |
 | categoryColors | remap onto the muted badge palette (red→primary, orange→amber, green→green, blue→blue, purple→purple) | same map shape |
 
 Dark instance: **deleted**. `AppPalette.light` stays the single instance name; all references to `AppPalette.dark` are removed with it.
@@ -94,10 +95,10 @@ New widget `lib/widgets/book_service_card.dart`, placed on the dashboard beneath
 
 - **Customer row** (`From` analog): label 'Customer' 11px gray, value 15px/600 dark, red dot indicator; tap → existing customer selection flow.
 - **Vehicle row** (`To` analog): same styling; tap → `VehicleSelectionScreen` scoped to selected customer.
-- **Two-column pill row** (`Date/Passengers` analog): date pill (label + value + calendar icon, tap → date picker) and odometer pill (label + km value + icon, numeric input).
-- **Service-type chips** (class selector analog): Quick Service / Full Service / Repair — 36px, radius 8, selected red bg + white text, unselected white + `#DDDDDD` border + `#292929` text.
-- **CTA**: full-width red button `Start Service` (48–52px, radius 12, 14/600) → opens Quick Service Wizard with the selected customer/vehicle/date pre-filled.
-- State is card-local; rows open existing flows — **no new data paths**. Wizard gains optional `initialCustomer`/`initialVehicle` params (null-safe, default null = current behavior).
+- **Two-column pill row** (`Date/Passengers` analog): read-only Date pill (today — the job's real creation date) and read-only Odometer pill (selected vehicle's `currentKm`; em-dash when no vehicle). No editable fields here — the wizard owns KM input; **no new data paths**.
+- **Service-type chips** (class selector analog): `Quick Service` / `New Job Card` — 36px, radius 8, selected red bg + white text, unselected white + `#DDDDDD` border + `#292929` text. Both map to real existing flows.
+- **CTA**: full-width red button (48–52px, radius 12, 14/600), label follows chip selection — `Start Quick Service` opens `QuickServiceWizard` with new optional `initialCustomer`/`initialVehicle` params; `Create Job Card` opens `CreateJobCardScreen(customer:, vehicle:)` (already supported).
+- State is card-local (new widget `lib/widgets/book_service_card.dart`); placed on the dashboard beneath the bento island.
 
 ## 8. Hero 2 — Invoice preview as e-ticket
 
