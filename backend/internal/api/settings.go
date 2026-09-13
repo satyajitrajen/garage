@@ -45,6 +45,33 @@ func (s *Server) patchSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if patch.DefaultTaxPercent != nil && (*patch.DefaultTaxPercent < 0 || *patch.DefaultTaxPercent > 100) {
+		httputil.Error(w, 400, "invalid_request", "default_tax_percent must be between 0 and 100")
+		return
+	}
+	for _, v := range patch.TaxPercentOptions {
+		if v < 0 || v > 100 {
+			httputil.Error(w, 400, "invalid_request", "tax_percent_options must be between 0 and 100")
+			return
+		}
+	}
+	for _, v := range patch.QuotationValidityOptions {
+		if v < 0 || v > 365 {
+			httputil.Error(w, 400, "invalid_request", "quotation_validity_options must be between 0 and 365")
+			return
+		}
+	}
+	for field, v := range map[string]*int{
+		"invoice_due_days":        patch.InvoiceDueDays,
+		"working_days_per_month":  patch.WorkingDaysPerMonth,
+		"promised_delivery_hours": patch.PromisedDeliveryHours,
+	} {
+		if v != nil && (*v < 0 || *v > 1000) {
+			httputil.Error(w, 400, "invalid_request", field+" must be between 0 and 1000")
+			return
+		}
+	}
+
 	if patch.Profile != nil {
 		current.Profile = *patch.Profile
 	}

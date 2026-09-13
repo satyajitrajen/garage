@@ -3689,6 +3689,13 @@ git commit -m "feat(backend): garage settings get/patch endpoints"
 
 ### Task 10: README + final gates
 
+> README must document (Task 9 quality review): settings PATCH merge granularity (top-level
+> fields; a provided profile object replaces the whole profile — clients resend all 8 profile
+> fields; slices nil-checked so absent keeps, `[]` clears); settings route is owner-only by
+> default (default staff set excludes settings.manage); GET settings lazily creates defaults.
+> Phase 3 Dart note: Go emits integral floats without a decimal point (`default_tax_percent: 18`),
+> so Dart fromJson must use `(x as num).toDouble()` — never `as double` — for tax and options.
+
 **Files:**
 - Create: `backend/README.md`
 

@@ -1,6 +1,7 @@
 package itest
 
 import (
+	"reflect"
 	"testing"
 
 	"garage-backend/internal/models"
@@ -119,6 +120,63 @@ func TestSettingsNonMemberForbidden(t *testing.T) {
 		map[string]any{"invoice_due_days": 14})
 	if status != 403 {
 		t.Fatalf("non-member patch settings: status %d body %s", status, data)
+	}
+}
+
+func TestPatchSettingsValidation(t *testing.T) {
+	truncate(t)
+	owner := registerOwner(t, "val")
+	garageID := owner.Memberships[0].GarageID
+
+	for _, body := range []map[string]any{
+		{"default_tax_percent": -1},
+		{"default_tax_percent": 101},
+		{"default_tax_percent": 999999999999},
+		{"invoice_due_days": -3},
+		{"invoice_due_days": 999999999999},
+		{"working_days_per_month": -1},
+		{"promised_delivery_hours": -1},
+		{"tax_percent_options": []any{-2}},
+		{"quotation_validity_options": []any{400}},
+	} {
+		status, data := doJSON(t, "PATCH", settingsURL(garageID), owner.AccessToken, garageID, body)
+		if status != 400 {
+			t.Fatalf("invalid body %v: status %d body %s", body, status, data)
+		}
+		if code, _ := decodeError(t, data); code != "invalid_request" {
+			t.Fatalf("body %v: code = %s, want invalid_request", body, code)
+		}
+	}
+}
+
+func TestPatchSettingsZerosSlicesAndRoundTrip(t *testing.T) {
+	truncate(t)
+	owner := registerOwner(t, "zero")
+	garageID := owner.Memberships[0].GarageID
+
+	status, data := doJSON(t, "PATCH", settingsURL(garageID), owner.AccessToken, garageID,
+		map[string]any{"default_tax_percent": 0, "tax_percent_options": []any{5, 12, 18}, "invoice_notes": ""})
+	if status != 200 {
+		t.Fatalf("zero patch: status %d body %s", status, data)
+	}
+	var patched models.GarageSettings
+	mustUnmarshal(t, data, &patched)
+
+	status, data = doJSON(t, "GET", settingsURL(garageID), owner.AccessToken, garageID, nil)
+	if status != 200 {
+		t.Fatalf("get after patch: status %d body %s", status, data)
+	}
+	var fetched models.GarageSettings
+	mustUnmarshal(t, data, &fetched)
+
+	if !reflect.DeepEqual(patched, fetched) {
+		t.Fatalf("PATCH response must equal follow-up GET:\n got %+v\nwant %+v", patched, fetched)
+	}
+	if fetched.DefaultTaxPercent != 0 || fetched.InvoiceNotes != "" {
+		t.Fatalf("explicit zeros/empties must persist: %+v", fetched)
+	}
+	if len(fetched.TaxPercentOptions) != 3 || fetched.TaxPercentOptions[0] != 5 {
+		t.Fatalf("tax options = %v", fetched.TaxPercentOptions)
 	}
 }
 
