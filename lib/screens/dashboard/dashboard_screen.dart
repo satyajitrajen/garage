@@ -227,7 +227,7 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               // -------------------------------------------------------------
-              // 6. RECENT COLLECTIONS & BILLS
+              // 5. RECENT COLLECTIONS & BILLS
               // -------------------------------------------------------------
               SectionHeader(
                 title: 'Recent Collections & Bills',
@@ -370,8 +370,7 @@ class DashboardScreen extends StatelessWidget {
         .length;
     final pendingTotal = provider.totalPendingPayments;
 
-    // 7-day collections series (Mon–Sun) — the same bucketing the deleted
-    // revenue/expense chart used, now rendered as a sparkline.
+    // Mon–Sun totals of payments received this week, drawn as a sparkline.
     final now = DateTime.now();
     final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
     final weeklyCollections = List<double>.filled(7, 0);
@@ -507,7 +506,7 @@ class DashboardScreen extends StatelessWidget {
                 },
                 borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
                   child: Row(
                     children: [
                       Icon(Icons.account_balance_wallet_rounded, size: 16, color: palette.pending),
