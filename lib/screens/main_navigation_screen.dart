@@ -40,7 +40,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final palette = context.palette;
 
     final activeVehiclesCount = provider.activeVehiclesUnderMaintenanceCount;
@@ -87,7 +86,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 width: 1.5,
               ),
               boxShadow: AppDimens.accentGlow(palette.paid),
@@ -100,7 +99,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   icon: Icons.home_outlined,
                   selectedIcon: Icons.home_rounded,
                   label: 'Home',
-                  isDark: isDark,
                 ),
                 _buildNavItem(
                   index: 1,
@@ -108,14 +106,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   selectedIcon: Icons.car_repair_rounded,
                   label: 'Jobs',
                   badgeCount: activeVehiclesCount,
-                  isDark: isDark,
                 ),
                 _buildNavItem(
                   index: 2,
                   icon: Icons.people_alt_outlined,
                   selectedIcon: Icons.people_alt_rounded,
                   label: 'Clients',
-                  isDark: isDark,
                 ),
                 _buildNavItem(
                   index: 3,
@@ -123,14 +119,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   selectedIcon: Icons.receipt_long_rounded,
                   label: 'Bills',
                   badgeCount: pendingInvoicesCount,
-                  isDark: isDark,
                 ),
                 _buildNavItem(
                   index: 4,
                   icon: Icons.menu_rounded,
                   selectedIcon: Icons.density_medium_rounded,
                   label: 'More',
-                  isDark: isDark,
                 ),
               ],
             ),
@@ -146,7 +140,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     required IconData selectedIcon,
     required String label,
     int badgeCount = 0,
-    required bool isDark,
   }) {
     final isSelected = _currentIndex == index;
 
@@ -168,20 +161,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     vertical: isSelected ? 4 : 0,
                   ),
                   decoration: BoxDecoration(
-                    // Light theme: dark navy chip; dark theme: translucent
-                    // primary glass with an accent border (on-gradient design,
-                    // no single palette slot covers both treatments).
-                    color: isSelected
-                        ? (isDark
-                            ? context.palette.primary.withValues(alpha: 0.3)
-                            : context.palette.textPrimary)
-                        : Colors.transparent,
+                    color: isSelected ? context.palette.textPrimary : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
-                    border: isSelected && isDark
-                        ? Border.all(
-                            color: context.palette.accent.withValues(alpha: 0.6),
-                            width: 1.2)
-                        : null,
                   ),
                   child: Stack(
                     clipBehavior: Clip.none,
@@ -190,7 +171,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         isSelected ? selectedIcon : icon,
                         size: 20,
                         color: isSelected
-                            ? (isDark ? context.palette.accent : Colors.white)
+                            ? Colors.white
                             : context.palette.textSecondary,
                       ),
                       if (badgeCount > 0)

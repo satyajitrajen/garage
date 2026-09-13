@@ -91,14 +91,6 @@ class DashboardScreen extends StatelessWidget {
         scrolledUnderElevation: 0,
         actions: [
           IconButton(
-            icon: Icon(
-              provider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-              size: 20,
-            ),
-            tooltip: 'Toggle Theme',
-            onPressed: () => provider.toggleTheme(),
-          ),
-          IconButton(
             icon: Icon(Icons.flash_on_rounded, color: palette.primary, size: 22),
             tooltip: 'Quick Service Wizard',
             onPressed: () {

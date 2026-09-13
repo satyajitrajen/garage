@@ -37,16 +37,6 @@ class MoreMenuScreen extends StatelessWidget {
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(
-              provider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-              size: 20,
-            ),
-            tooltip: 'Toggle Theme',
-            onPressed: () => provider.toggleTheme(),
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -320,33 +310,6 @@ class MoreMenuScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                SwitchListTile(
-                  secondary: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: palette.badgeBlueBg,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      provider.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                      color: palette.badgeBlueIcon,
-                      size: 18,
-                    ),
-                  ),
-                  title: Text(
-                    'Dark Mode Theme',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13.5),
-                  ),
-                  subtitle: Text(
-                    provider.isDarkMode ? 'Dark slate theme enabled' : 'Light porcelain theme enabled',
-                    style: GoogleFonts.poppins(fontSize: 11.5, color: palette.textMuted),
-                  ),
-                  value: provider.isDarkMode,
-                  onChanged: (_) => provider.toggleTheme(),
-                  activeTrackColor: palette.accent,
-                ),
-                const Divider(height: 1),
                 ListTile(
                   leading: Container(
                     width: 34,

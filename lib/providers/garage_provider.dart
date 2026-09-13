@@ -101,15 +101,6 @@ class GarageProvider extends ChangeNotifier {
     }
   }
 
-  // Theme mode toggle
-  bool _isDarkMode = false;
-  bool get isDarkMode => _isDarkMode;
-
-  void toggleTheme() {
-    _isDarkMode = !_isDarkMode;
-    notifyListeners();
-  }
-
   // Getters
   List<Customer> get customers => List.unmodifiable(_customers);
   List<Vehicle> get vehicles => List.unmodifiable(_vehicles);

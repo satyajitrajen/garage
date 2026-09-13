@@ -27,18 +27,11 @@ class NexoryGarageApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<GarageProvider>(
       create: (_) => GarageProvider(MockGarageRepository())..load(),
-      child: Selector<GarageProvider, bool>(
-        selector: (_, provider) => provider.isDarkMode,
-        builder: (context, isDarkMode, child) {
-          return MaterialApp(
-            title: 'Nexory Garage Management',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            home: const MainNavigationScreen(),
-          );
-        },
+      child: MaterialApp(
+        title: 'Nexory Garage Management',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: const MainNavigationScreen(),
       ),
     );
   }
