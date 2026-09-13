@@ -11,6 +11,7 @@ import 'package:garage_manager/models/staff.dart';
 import 'package:garage_manager/data/app_config.dart';
 import 'package:garage_manager/data/mock/mock_garage_repository.dart';
 import 'package:garage_manager/providers/garage_provider.dart';
+import 'package:garage_manager/services/mock_data_service.dart';
 
 void main() {
   group('Nexory Garage State & Workflow Tests', () {
@@ -545,6 +546,53 @@ void main() {
       );
       expect(paid.balanceDue, 0.0);
       expect(paid.isOverdue, isFalse);
+    });
+
+    test('profile & config are served from the data layer after load', () {
+      // Compare against the repo's own seed source: if the seed changes, the
+      // provider must follow — nothing about the garage identity may live in
+      // the UI layer instead.
+      final seedProfile = MockDataService.getGarageProfile();
+      final seedConfig = MockDataService.getAppConfig();
+      expect(provider.profile.name, seedProfile.name);
+      expect(provider.profile.gstin, seedProfile.gstin);
+      expect(provider.profile.phone, seedProfile.phone);
+      expect(provider.profile.upiId, seedProfile.upiId);
+      expect(provider.config.defaultTaxPercent, seedConfig.defaultTaxPercent);
+      expect(provider.config.invoiceDueDays, seedConfig.invoiceDueDays);
+      expect(provider.config.promisedDeliveryHours, seedConfig.promisedDeliveryHours);
+      expect(provider.config.defaultReceivedBy, seedConfig.defaultReceivedBy);
+
+      // Pre-load access is a programming error, surfaced loudly.
+      final unloaded = GarageProvider(MockGarageRepository());
+      expect(() => unloaded.profile, throwsStateError);
+      expect(() => unloaded.config, throwsStateError);
+    });
+
+    test('recordPayment defaults receivedBy from config; explicit value honored', () async {
+      final unpaid = provider.invoices.firstWhere((i) => i.totalPaidAmount == 0);
+      final payment = await provider.recordPayment(
+        invoiceId: unpaid.id,
+        amount: unpaid.balanceDue,
+        mode: PaymentMode.cash,
+      );
+      expect(payment.receivedBy, provider.config.defaultReceivedBy);
+
+      // Explicit receivedBy (the collection screen's picker) wins.
+      final fresh = await provider.quickServiceCheckout(
+        customerId: provider.vehicles.first.customerId,
+        vehicleId: provider.vehicles.first.id,
+        kmReading: provider.vehicles.first.currentKm + 5,
+        items: [provider.catalog.first.copyWith(id: 'rb-1', quantity: 1)],
+        paymentAmount: 0,
+      );
+      final explicit = await provider.recordPayment(
+        invoiceId: fresh.id,
+        amount: fresh.balanceDue,
+        mode: PaymentMode.upi,
+        receivedBy: 'Ravi',
+      );
+      expect(explicit.receivedBy, 'Ravi');
     });
   });
 }
