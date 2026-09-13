@@ -77,6 +77,7 @@ func TestVehicleValidation(t *testing.T) {
 		{"customerId": "not-a-uuid"},
 		{"fuelType": "kerosene"},
 		{"lastServiceDate": "01-08-2026"},
+		{"lastServiceDate": ""},
 		{"currentKm": -5},
 	}
 	for i, patch := range bad {

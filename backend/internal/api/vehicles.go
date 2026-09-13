@@ -27,7 +27,7 @@ func validateVehicle(v models.Vehicle) (string, int) {
 	if v.CurrentKm < 0 {
 		return "current_km must not be negative", 400
 	}
-	if v.LastServiceDate != nil && *v.LastServiceDate != "" {
+	if v.LastServiceDate != nil {
 		if _, err := time.Parse("2006-01-02", *v.LastServiceDate); err != nil {
 			return "last_service_date must be YYYY-MM-DD", 400
 		}
