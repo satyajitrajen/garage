@@ -14,6 +14,7 @@ import '../../widgets/status_badge.dart';
 import '../customers/customers_list_screen.dart';
 import '../vehicles/vehicle_selection_screen.dart';
 import 'job_card_detail_screen.dart';
+import '../../theme/app_text.dart';
 
 class JobCardsListScreen extends StatefulWidget {
   const JobCardsListScreen({super.key});
@@ -103,7 +104,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
             unselectedLabelColor: palette.textMuted,
             indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5),
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.body),
             tabs: const [
               Tab(text: 'All Jobs'),
               Tab(text: 'In Progress'),
@@ -189,7 +190,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                       Text(
                         jc.jobCardNumber,
                         style: GoogleFonts.inter(
-                          fontSize: 13.5,
+                          fontSize: AppText.body,
                           fontWeight: FontWeight.w700,
                           color: palette.accent,
                         ),
@@ -208,7 +209,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                             Text(
                               vehicle?.registrationNumber ?? 'Unknown Plate',
                               style: GoogleFonts.inter(
-                                fontSize: 14.5,
+                                fontSize: AppText.subtitle,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.2,
                                 color: palette.textPrimary,
@@ -218,7 +219,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                             Text(
                               '${vehicle?.displayName ?? ""} • ${customer?.name ?? ""}',
                               style: GoogleFonts.inter(
-                                fontSize: 12,
+                                fontSize: AppText.label,
                                 color: palette.textSecondary,
                               ),
                             ),
@@ -232,14 +233,14 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                             Text(
                               CurrencyFormatter.format(jc.grandTotal),
                               style: GoogleFonts.inter(
-                                fontSize: 14.5,
+                                fontSize: AppText.subtitle,
                                 fontWeight: FontWeight.w800,
                                 color: palette.textPrimary,
                               ),
                             ),
                             Text(
                               '${jc.items.length} items',
-                              style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
+                              style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                             ),
                           ],
                         ),
@@ -258,7 +259,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                           Text(
                             staff?.name ?? 'Unassigned',
                             style: GoogleFonts.inter(
-                              fontSize: 11.5,
+                              fontSize: AppText.label,
                               color: palette.textSecondary,
                             ),
                           ),
@@ -271,7 +272,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                           Text(
                             AppDateFormatter.formatRelative(jc.promisedDeliveryDate),
                             style: GoogleFonts.inter(
-                              fontSize: 11.5,
+                              fontSize: AppText.label,
                               fontWeight: FontWeight.w600,
                               color: palette.accent,
                             ),

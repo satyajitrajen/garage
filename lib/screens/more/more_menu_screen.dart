@@ -13,6 +13,7 @@ import '../staff/staff_list_screen.dart';
 import '../staff/staff_attendance_screen.dart';
 import '../staff/staff_salary_screen.dart';
 import '../workflow/quick_service_wizard.dart';
+import '../../theme/app_text.dart';
 
 class MoreMenuScreen extends StatelessWidget {
   const MoreMenuScreen({super.key});
@@ -29,7 +30,7 @@ class MoreMenuScreen extends StatelessWidget {
         title: Text(
           'More Options',
           style: GoogleFonts.inter(
-            fontSize: 17,
+            fontSize: AppText.title,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
           ),
@@ -73,7 +74,7 @@ class MoreMenuScreen extends StatelessWidget {
                         profile.name,
                         style: GoogleFonts.inter(
                           color: palette.textPrimary,
-                          fontSize: 15,
+                          fontSize: AppText.subtitle,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.2,
                         ),
@@ -83,7 +84,7 @@ class MoreMenuScreen extends StatelessWidget {
                         'GSTIN: ${profile.gstin} • ${profile.city}',
                         style: GoogleFonts.inter(
                           color: palette.textSecondary,
-                          fontSize: 11.5,
+                          fontSize: AppText.label,
                         ),
                       ),
                     ],
@@ -139,7 +140,7 @@ class MoreMenuScreen extends StatelessWidget {
                           Text(
                             'Quick Service Wizard',
                             style: GoogleFonts.inter(
-                              fontSize: 13.5,
+                              fontSize: AppText.body,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
@@ -147,7 +148,7 @@ class MoreMenuScreen extends StatelessWidget {
                           Text(
                             'Step-by-step: Customer → Vehicle → Service → Bill',
                             style: GoogleFonts.inter(
-                              fontSize: 11,
+                              fontSize: AppText.label,
                               fontWeight: FontWeight.w500,
                               color: Colors.white.withValues(alpha: 0.85),
                             ),
@@ -249,9 +250,9 @@ class MoreMenuScreen extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Select Staff Member', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700)),
+                        Text('Select Staff Member', style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 4),
-                        Text('Choose a member to view attendance calendar or salary slip', style: GoogleFonts.inter(fontSize: 12.5, color: palette.textMuted)),
+                        Text('Choose a member to view attendance calendar or salary slip', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textMuted)),
                         const SizedBox(height: 16),
                         ...provider.staff.map((s) => ListTile(
                           leading: CircleAvatar(
@@ -317,11 +318,11 @@ class MoreMenuScreen extends StatelessWidget {
                   ),
                   title: Text(
                     'Quick Expense Entry',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13.5),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: AppText.body),
                   ),
                   subtitle: Text(
                     'Add workshop expense receipt',
-                    style: GoogleFonts.inter(fontSize: 11.5, color: palette.textMuted),
+                    style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded, size: 18),
                   onTap: () {
@@ -346,7 +347,7 @@ class MoreMenuScreen extends StatelessWidget {
       child: Text(
         title,
         style: GoogleFonts.inter(
-          fontSize: 11,
+          fontSize: AppText.label,
           fontWeight: FontWeight.w600,
           color: context.palette.textMuted,
           letterSpacing: 0.8,
@@ -388,12 +389,12 @@ class MoreMenuScreen extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.body),
         ),
         subtitle: Text(
           subtitle,
           style: GoogleFonts.inter(
-            fontSize: 11.5,
+            fontSize: AppText.label,
             color: context.palette.textSecondary,
           ),
           maxLines: 1,
@@ -409,7 +410,7 @@ class MoreMenuScreen extends StatelessWidget {
                 child: Text(
                   trailing,
                   style: GoogleFonts.inter(
-                    fontSize: 11.5,
+                    fontSize: AppText.label,
                     fontWeight: FontWeight.w700,
                     color: color,
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text.dart';
 
 class SectionHeader extends StatelessWidget {
   final String title;
@@ -33,7 +34,7 @@ class SectionHeader extends StatelessWidget {
               Text(
                 title,
                 style: GoogleFonts.inter(
-                  fontSize: 14.5,
+                  fontSize: AppText.subtitle,
                   fontWeight: FontWeight.w700,
                   color: palette.textPrimary,
                   letterSpacing: -0.2,
@@ -44,7 +45,7 @@ class SectionHeader extends StatelessWidget {
                 Text(
                   subtitle!,
                   style: GoogleFonts.inter(
-                    fontSize: 11.5,
+                    fontSize: AppText.label,
                     fontWeight: FontWeight.w500,
                     color: palette.textSecondary,
                   ),
@@ -69,7 +70,7 @@ class SectionHeader extends StatelessWidget {
                 Text(
                   actionText!,
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: AppText.label,
                     fontWeight: FontWeight.w600,
                     color: palette.accent,
                   ),

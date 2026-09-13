@@ -8,6 +8,7 @@ import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/date_formatter.dart';
 import 'staff_salary_screen.dart';
+import '../../theme/app_text.dart';
 
 class StaffAttendanceScreen extends StatefulWidget {
   final Staff staff;
@@ -120,7 +121,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                   Text(
                     AppDateFormatter.formatMonthYear(_currentMonth),
                     style: GoogleFonts.inter(
-                      fontSize: 17,
+                      fontSize: AppText.title,
                       fontWeight: FontWeight.w800,
                       color: palette.textPrimary,
                     ),
@@ -170,7 +171,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.w700,
-                            fontSize: 13,
+                            fontSize: AppText.caption,
                             color: isSunday ? palette.pending : palette.textMuted,
                           ),
                         ),
@@ -243,7 +244,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                               Text(
                                 '$dayNum',
                                 style: GoogleFonts.inter(
-                                  fontSize: 13,
+                                  fontSize: AppText.caption,
                                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                                   color: isSunday ? palette.pending : palette.textPrimary,
                                 ),
@@ -286,7 +287,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                     children: [
                       Text(
                         AppDateFormatter.formatDayDate(_selectedDate),
-                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
                       ),
                       if (selectedRecord != null)
                         Container(
@@ -298,7 +299,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                           child: Text(
                             'Status: ${selectedRecord.status.displayName}',
                             style: GoogleFonts.inter(
-                              fontSize: 12,
+                              fontSize: AppText.label,
                               fontWeight: FontWeight.w700,
                               color: palette.primary,
                             ),
@@ -382,7 +383,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
             Text(
               count,
               style: GoogleFonts.inter(
-                fontSize: 18,
+                fontSize: AppText.title,
                 fontWeight: FontWeight.w900,
                 color: color,
               ),
@@ -391,7 +392,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
             Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 11,
+                fontSize: AppText.label,
                 fontWeight: FontWeight.w600,
                 color: context.palette.textPrimary,
               ),

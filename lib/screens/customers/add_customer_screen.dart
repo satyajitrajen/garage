@@ -10,6 +10,7 @@ import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../job_cards/create_job_card_screen.dart';
 import '../quotations/create_quotation_screen.dart';
+import '../../theme/app_text.dart';
 
 class AddCustomerScreen extends StatefulWidget {
   final bool startJobImmediately;
@@ -256,7 +257,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 activeColor: palette.primary,
                 title: Text(
                   'WhatsApp number is same as Mobile',
-                  style: GoogleFonts.inter(fontSize: 13.5),
+                  style: GoogleFonts.inter(fontSize: AppText.body),
                 ),
                 onChanged: (val) => setState(() => _sameAsPhone = val ?? true),
               ),
@@ -430,7 +431,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 Text(
                   'Fuel Type',
                   style: GoogleFonts.inter(
-                    fontSize: 13,
+                    fontSize: AppText.caption,
                     fontWeight: FontWeight.w600,
                     color: palette.textSecondary,
                   ),
@@ -584,7 +585,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         Text(
           title,
           style: GoogleFonts.inter(
-            fontSize: 18,
+            fontSize: AppText.title,
             fontWeight: FontWeight.w700,
             color: context.palette.textPrimary,
           ),

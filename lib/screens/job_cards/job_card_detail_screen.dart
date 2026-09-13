@@ -14,6 +14,7 @@ import '../../widgets/status_badge.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
 import 'create_job_card_screen.dart';
+import '../../theme/app_text.dart';
 
 class JobCardDetailScreen extends StatefulWidget {
   final String jobCardId;
@@ -163,10 +164,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(jobCard.jobCardNumber, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 18)),
+            Text(jobCard.jobCardNumber, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.title)),
             Text(
               'Created ${AppDateFormatter.formatDate(jobCard.createdAt)}',
-              style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted),
+              style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
             ),
           ],
         ),
@@ -209,7 +210,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   Text(
                     'Update Live Status',
                     style: GoogleFonts.inter(
-                      fontSize: 13.5,
+                      fontSize: AppText.body,
                       fontWeight: FontWeight.w700,
                       color: palette.textSecondary,
                     ),
@@ -229,7 +230,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                             labelStyle: TextStyle(
                               color: isSelected ? palette.onPrimary : palette.textPrimary,
                               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              fontSize: 12,
+                              fontSize: AppText.label,
                             ),
                             onSelected: (selected) {
                               if (selected) _changeStatus(jobCard, status);
@@ -263,7 +264,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                       Text(
                         vehicle?.registrationNumber ?? 'Vehicle',
                         style: GoogleFonts.inter(
-                          fontSize: 18,
+                          fontSize: AppText.title,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
                         ),
@@ -277,7 +278,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                         child: Text(
                           vehicle?.fuelType.displayName ?? '',
                           style: GoogleFonts.inter(
-                            fontSize: 12,
+                            fontSize: AppText.label,
                             fontWeight: FontWeight.w600,
                             color: palette.primary,
                           ),
@@ -288,7 +289,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   const SizedBox(height: 4),
                   Text(
                     '${vehicle?.displayName ?? ""} • ${customer?.name ?? ""}',
-                    style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 12),
                   const Divider(),
@@ -309,7 +310,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                       Text(
                         'Promised: ${AppDateFormatter.formatDateTime(jobCard.promisedDeliveryDate)}',
                         style: GoogleFonts.inter(
-                          fontSize: 13,
+                          fontSize: AppText.caption,
                           fontWeight: FontWeight.w600,
                           color: palette.primary,
                         ),
@@ -327,7 +328,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                           child: Text(
                             'Est. cost note: ${jobCard.estimatedCostNote}',
                             style: GoogleFonts.inter(
-                              fontSize: 13,
+                              fontSize: AppText.caption,
                               fontWeight: FontWeight.w600,
                               color: palette.textSecondary,
                             ),
@@ -349,7 +350,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                           child: Text(
                             'Completed: ${AppDateFormatter.formatDateTime(jobCard.completedAt!)}',
                             style: GoogleFonts.inter(
-                              fontSize: 13,
+                              fontSize: AppText.caption,
                               fontWeight: FontWeight.w600,
                               color: palette.paid,
                             ),
@@ -379,7 +380,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                 children: [
                   Text(
                     'Reported Complaints (${jobCard.customerComplaints.length})',
-                    style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 10),
                   ...jobCard.customerComplaints.map((c) {
@@ -393,7 +394,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                           Expanded(
                             child: Text(
                               c,
-                              style: GoogleFonts.inter(fontSize: 13.5),
+                              style: GoogleFonts.inter(fontSize: AppText.body),
                             ),
                           ),
                         ],
@@ -423,7 +424,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Text(
                       'Inspection Checklist '
                       '(${jobCard.inspectionChecklist.values.where((v) => v).length}/${jobCard.inspectionChecklist.length})',
-                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                      style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 10),
                     ...jobCard.inspectionChecklist.entries.map((entry) {
@@ -443,7 +444,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                               child: Text(
                                 entry.key,
                                 style: GoogleFonts.inter(
-                                  fontSize: 13.5,
+                                  fontSize: AppText.body,
                                   color: done ? palette.textPrimary : palette.textMuted,
                                 ),
                               ),
@@ -475,12 +476,12 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   children: [
                     Text(
                       'Supervisor Notes',
-                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                      style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       jobCard.supervisorNotes!,
-                      style: GoogleFonts.inter(fontSize: 13.5, height: 1.4),
+                      style: GoogleFonts.inter(fontSize: AppText.body, height: 1.4),
                     ),
                   ],
                 ),
@@ -505,7 +506,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     children: [
                       Text(
                         'Services & Parts (${jobCard.items.length})',
-                        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
                       ),
                       // A billed job locks its items so they can no longer
                       // diverge from the invoice; the disabled button carries
@@ -529,7 +530,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Center(
                       child: Text(
                         'No maintenance items added yet. Tap "Add / Edit Items" to add parts & labour.',
-                        style: GoogleFonts.inter(color: palette.textMuted, fontSize: 13),
+                        style: GoogleFonts.inter(color: palette.textMuted, fontSize: AppText.caption),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -548,11 +549,11 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                                 children: [
                                   Text(
                                     item.name,
-                                    style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w600),
                                   ),
                                   Text(
                                     '${item.quantity} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}',
-                                    style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted),
+                                    style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                                   ),
                                 ],
                               ),
@@ -560,7 +561,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                             Text(
                               CurrencyFormatter.format(item.totalAmount),
                               style: GoogleFonts.inter(
-                                fontSize: 14,
+                                fontSize: AppText.body,
                                 fontWeight: FontWeight.w700,
                                 color: palette.textPrimary,
                               ),
@@ -587,29 +588,29 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('Parts Subtotal:', style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary))),
+                        Expanded(child: Text('Parts Subtotal:', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textSecondary))),
                         const SizedBox(width: 8),
-                        Text(CurrencyFormatter.format(jobCard.partsTotal), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text(CurrencyFormatter.format(jobCard.partsTotal), style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('Labour Subtotal:', style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary))),
+                        Expanded(child: Text('Labour Subtotal:', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textSecondary))),
                         const SizedBox(width: 8),
-                        Text(CurrencyFormatter.format(jobCard.labourTotal), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text(CurrencyFormatter.format(jobCard.labourTotal), style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('Estimated Grand Total:', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700))),
+                        Expanded(child: Text('Estimated Grand Total:', style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700))),
                         const SizedBox(width: 8),
                         Text(
                           CurrencyFormatter.format(jobCard.grandTotal),
-                          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: palette.primary),
+                          style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w800, color: palette.primary),
                         ),
                       ],
                     ),
@@ -670,7 +671,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
         Text(
           label,
           style: GoogleFonts.inter(
-            fontSize: 11.5,
+            fontSize: AppText.label,
             color: palette.textMuted,
           ),
         ),
@@ -678,7 +679,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
         Text(
           value,
           style: GoogleFonts.inter(
-            fontSize: 14,
+            fontSize: AppText.body,
             fontWeight: FontWeight.w700,
             color: palette.textPrimary,
           ),

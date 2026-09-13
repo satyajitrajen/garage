@@ -14,6 +14,7 @@ import '../../utils/currency_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import 'quotation_detail_screen.dart';
+import '../../theme/app_text.dart';
 
 class CreateQuotationScreen extends StatefulWidget {
   final Customer customer;
@@ -282,13 +283,13 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                         children: [
                           Text(
                             widget.customer.name,
-                            style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${widget.vehicle.displayName} (${widget.vehicle.registrationNumber})',
                             style: GoogleFonts.inter(
-                              fontSize: 13.5,
+                              fontSize: AppText.body,
                               color: palette.textSecondary,
                             ),
                           ),
@@ -306,7 +307,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 children: [
                   Text(
                     'Estimate Line Items (${_items.length})',
-                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
                   ),
                   ElevatedButton.icon(
                     onPressed: _openAddItems,
@@ -447,11 +448,11 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Estimated Total:', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
+                        Text('Estimated Total:', style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700)),
                         Text(
                           CurrencyFormatter.format(grandTotal),
                           style: GoogleFonts.inter(
-                            fontSize: 20,
+                            fontSize: AppText.headline,
                             fontWeight: FontWeight.w800,
                             color: palette.primary,
                           ),
@@ -491,7 +492,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           child: Text(
             label,
             style: GoogleFonts.inter(
-              fontSize: 13,
+              fontSize: AppText.caption,
               color: palette.textSecondary,
             ),
           ),
@@ -500,7 +501,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         Text(
           value,
           style: GoogleFonts.inter(
-            fontSize: 13.5,
+            fontSize: AppText.body,
             fontWeight: FontWeight.w600,
             color: color ?? palette.textPrimary,
           ),

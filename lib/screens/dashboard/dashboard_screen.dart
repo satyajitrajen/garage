@@ -25,6 +25,7 @@ import '../expenses/expenses_list_screen.dart';
 import '../expenses/add_expense_screen.dart';
 import '../staff/staff_list_screen.dart';
 import '../workflow/quick_service_wizard.dart';
+import '../../theme/app_text.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -63,7 +64,7 @@ class DashboardScreen extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
-                      fontSize: 17,
+                      fontSize: AppText.title,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
                       color: palette.textPrimary,
@@ -72,7 +73,7 @@ class DashboardScreen extends StatelessWidget {
                   Text(
                     AppDateFormatter.formatDayDate(today),
                     style: GoogleFonts.inter(
-                      fontSize: 11,
+                      fontSize: AppText.label,
                       fontWeight: FontWeight.w500,
                       color: palette.textMuted,
                     ),
@@ -165,7 +166,7 @@ class DashboardScreen extends StatelessWidget {
                             Text(
                               'GARAGE STATUS: ',
                               style: GoogleFonts.inter(
-                                fontSize: 11,
+                                fontSize: AppText.label,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white70,
                                 letterSpacing: 0.4,
@@ -179,7 +180,7 @@ class DashboardScreen extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.inter(
-                                  fontSize: 11,
+                                  fontSize: AppText.label,
                                   fontWeight: FontWeight.w700,
                                   color: palette.ready,
                                   letterSpacing: 0.4,
@@ -334,7 +335,7 @@ class DashboardScreen extends StatelessWidget {
                                     Text(
                                       'Quick Service Wizard',
                                       style: GoogleFonts.inter(
-                                        fontSize: 13.5,
+                                        fontSize: AppText.body,
                                         fontWeight: FontWeight.w700,
                                         color: Colors.white,
                                       ),
@@ -342,7 +343,7 @@ class DashboardScreen extends StatelessWidget {
                                     Text(
                                       'Create job card, bill & collect payment in 60s',
                                       style: GoogleFonts.inter(
-                                        fontSize: 11,
+                                        fontSize: AppText.label,
                                         fontWeight: FontWeight.w500,
                                         color: Colors.white.withValues(alpha: 0.85),
                                       ),
@@ -491,7 +492,7 @@ class DashboardScreen extends StatelessWidget {
                       'All bays clear • No vehicles currently under repair',
                       style: GoogleFonts.inter(
                         color: palette.textMuted,
-                        fontSize: 13,
+                        fontSize: AppText.caption,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -560,7 +561,7 @@ class DashboardScreen extends StatelessWidget {
                                     Text(
                                       '${vehicle?.registrationNumber ?? "Vehicle"} • ${vehicle?.displayName ?? ""}',
                                       style: GoogleFonts.inter(
-                                        fontSize: 13.5,
+                                        fontSize: AppText.body,
                                         fontWeight: FontWeight.w700,
                                         color: palette.textPrimary,
                                       ),
@@ -574,7 +575,7 @@ class DashboardScreen extends StatelessWidget {
                                           child: Text(
                                             '${customer?.name ?? ""} • In Bay',
                                             style: GoogleFonts.inter(
-                                              fontSize: 11.5,
+                                              fontSize: AppText.label,
                                               color: palette.textMuted,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -610,7 +611,7 @@ class DashboardScreen extends StatelessWidget {
               Text(
                 'Workshop Modules',
                 style: GoogleFonts.inter(
-                  fontSize: 13.5,
+                  fontSize: AppText.body,
                   fontWeight: FontWeight.w600,
                   color: palette.textSecondary,
                 ),
@@ -756,11 +757,11 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     title: Text(
                       inv.invoiceNumber,
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5),
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.body),
                     ),
                     subtitle: Text(
                       '${customer?.name ?? ""} • ${vehicle?.registrationNumber ?? ""}',
-                      style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted),
+                      style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -773,12 +774,12 @@ class DashboardScreen extends StatelessWidget {
                           children: [
                             Text(
                               CurrencyFormatter.format(inv.grandTotal),
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 13.5),
+                              style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: AppText.body),
                             ),
                             Text(
                               isCancelled ? 'Cancelled' : hasDue ? 'Due' : 'Paid',
                               style: GoogleFonts.inter(
-                                fontSize: 11,
+                                fontSize: AppText.label,
                                 fontWeight: FontWeight.w600,
                                 color: isCancelled
                                     ? palette.cancelled
@@ -798,7 +799,7 @@ class DashboardScreen extends StatelessWidget {
                                 child: Text(
                                   'Overdue',
                                   style: GoogleFonts.inter(
-                                    fontSize: 9,
+                                    fontSize: AppText.micro,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
                                   ),
@@ -871,7 +872,7 @@ class DashboardScreen extends StatelessWidget {
                     child: Text(
                       value,
                       style: GoogleFonts.inter(
-                        fontSize: 18,
+                        fontSize: AppText.title,
                         fontWeight: FontWeight.w800,
                         color: palette.textPrimary,
                         letterSpacing: -0.3,
@@ -887,7 +888,7 @@ class DashboardScreen extends StatelessWidget {
               Text(
                 label,
                 style: GoogleFonts.inter(
-                  fontSize: 10,
+                  fontSize: AppText.micro,
                   fontWeight: FontWeight.w600,
                   color: palette.textMuted,
                   letterSpacing: 0.3,
@@ -899,7 +900,7 @@ class DashboardScreen extends StatelessWidget {
               Text(
                 subtitle,
                 style: GoogleFonts.inter(
-                  fontSize: 10.5,
+                  fontSize: AppText.micro,
                   fontWeight: FontWeight.w500,
                   color: palette.textSecondary,
                 ),
@@ -956,7 +957,7 @@ class DashboardScreen extends StatelessWidget {
                     Text(
                       count,
                       style: GoogleFonts.inter(
-                        fontSize: 14,
+                        fontSize: AppText.body,
                         fontWeight: FontWeight.w800,
                         color: context.palette.textPrimary,
                       ),
@@ -966,7 +967,7 @@ class DashboardScreen extends StatelessWidget {
                 Text(
                   title,
                   style: GoogleFonts.inter(
-                    fontSize: 12.5,
+                    fontSize: AppText.caption,
                     fontWeight: FontWeight.w600,
                     color: context.palette.textPrimary,
                   ),
@@ -1014,7 +1015,7 @@ class DashboardScreen extends StatelessWidget {
                   label,
                   style: GoogleFonts.inter(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: AppText.label,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1035,7 +1036,7 @@ class DashboardScreen extends StatelessWidget {
           decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
         ),
         const SizedBox(width: 4),
-        Text(title, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600)),
+        Text(title, style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -1086,7 +1087,7 @@ class DashboardScreen extends StatelessWidget {
                 Text(
                   'Weekly Revenue vs Expenses',
                   style: GoogleFonts.inter(
-                    fontSize: 14.5,
+                    fontSize: AppText.subtitle,
                     fontWeight: FontWeight.w700,
                     color: palette.textPrimary,
                   ),
@@ -1120,7 +1121,7 @@ class DashboardScreen extends StatelessWidget {
                             return Text(
                               days[index],
                               style: GoogleFonts.inter(
-                                fontSize: 11,
+                                fontSize: AppText.label,
                                 color: palette.textMuted,
                               ),
                             );

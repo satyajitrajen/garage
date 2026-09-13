@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_dimens.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text.dart';
 
 class CustomSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -47,14 +48,14 @@ class CustomSearchBar extends StatelessWidget {
               controller: controller,
               onChanged: onChanged,
               style: GoogleFonts.inter(
-                fontSize: 15,
+                fontSize: AppText.subtitle,
                 color: palette.textPrimary,
               ),
               decoration: InputDecoration(
                 hintText: hintText,
                 hintStyle: GoogleFonts.inter(
                   color: palette.textMuted,
-                  fontSize: 14,
+                  fontSize: AppText.body,
                 ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,

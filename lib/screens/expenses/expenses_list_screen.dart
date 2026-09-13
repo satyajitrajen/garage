@@ -14,6 +14,7 @@ import '../../widgets/gradient_button.dart';
 import '../../widgets/search_bar_widget.dart';
 import '../../widgets/status_badge.dart';
 import 'add_expense_screen.dart';
+import '../../theme/app_text.dart';
 
 class ExpensesListScreen extends StatefulWidget {
   const ExpensesListScreen({super.key});
@@ -107,7 +108,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
         title: Text(
           'Garage Expenses',
           style: GoogleFonts.inter(
-            fontSize: 17,
+            fontSize: AppText.title,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
           ),
@@ -147,7 +148,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                         'This Month Expenses',
                         style: GoogleFonts.inter(
                           color: palette.textSecondary,
-                          fontSize: 11.5,
+                          fontSize: AppText.label,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -155,7 +156,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                       Text(
                         CurrencyFormatter.format(provider.thisMonthExpenses),
                         style: GoogleFonts.inter(
-                          fontSize: 20,
+                          fontSize: AppText.headline,
                           fontWeight: FontWeight.w800,
                           color: palette.textPrimary,
                         ),
@@ -181,7 +182,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                           'Today\'s Expenses',
                           style: GoogleFonts.inter(
                             color: palette.textSecondary,
-                            fontSize: 11.5,
+                            fontSize: AppText.label,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -189,7 +190,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                         Text(
                           CurrencyFormatter.format(provider.todayExpenses),
                           style: GoogleFonts.inter(
-                            fontSize: 20,
+                            fontSize: AppText.headline,
                             fontWeight: FontWeight.w800,
                             color: palette.textPrimary,
                           ),
@@ -302,7 +303,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                     Text(
                                       exp.title,
                                       style: GoogleFonts.inter(
-                                        fontSize: 14.5,
+                                        fontSize: AppText.subtitle,
                                         fontWeight: FontWeight.w700,
                                         color: palette.textPrimary,
                                       ),
@@ -313,7 +314,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                         StatusBadge.forExpenseCategory(exp.category, palette: palette),
                                         if (exp.vendorName != null) ...[
                                           const SizedBox(width: 6),
-                                          Text(exp.vendorName!, style: GoogleFonts.inter(fontSize: 11.5, color: palette.textMuted)),
+                                          Text(exp.vendorName!, style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted)),
                                         ],
                                       ],
                                     ),
@@ -322,7 +323,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                       children: [
                                         Text(
                                           AppDateFormatter.formatDate(exp.expenseDate),
-                                          style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
+                                          style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                                         ),
                                         const SizedBox(width: 8),
                                         Container(
@@ -335,7 +336,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                           ),
                                           child: Text(
                                             exp.paymentMode.shortName,
-                                            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600),
+                                            style: GoogleFonts.inter(fontSize: AppText.micro, fontWeight: FontWeight.w600),
                                           ),
                                         ),
                                       ],
@@ -351,7 +352,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                   Text(
                                     CurrencyFormatter.format(exp.amount),
                                     style: GoogleFonts.inter(
-                                      fontSize: 16,
+                                      fontSize: AppText.title,
                                       fontWeight: FontWeight.w800,
                                       color: palette.pending,
                                     ),

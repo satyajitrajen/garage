@@ -10,6 +10,7 @@ import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
+import '../../theme/app_text.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   /// Non-null puts the screen in edit mode: fields are prefilled from this
@@ -168,7 +169,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // Expense Category Picker
               Text(
                 'Expense Category *',
-                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -184,7 +185,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     labelStyle: TextStyle(
                       color: isSelected ? palette.onPrimary : palette.textPrimary,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      fontSize: 13,
+                      fontSize: AppText.caption,
                     ),
                     onSelected: (selected) {
                       if (selected) {
@@ -217,7 +218,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: AppText.headline, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
                   labelText: 'Amount Spent (₹) *',
                   prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.primary),
@@ -255,13 +256,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               Text(
                                 'Expense Date',
                                 style: GoogleFonts.inter(
-                                  fontSize: 11.5,
+                                  fontSize: AppText.label,
                                   color: palette.textMuted,
                                 ),
                               ),
                               Text(
                                 AppDateFormatter.formatDate(_expenseDate),
-                                style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600),
+                                style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -277,7 +278,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // Paid Via (Payment Mode)
               Text(
                 'Paid Via Mode',
-                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Wrap(

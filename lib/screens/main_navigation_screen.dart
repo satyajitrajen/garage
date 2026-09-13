@@ -9,6 +9,7 @@ import 'job_cards/job_cards_list_screen.dart';
 import 'customers/customers_list_screen.dart';
 import 'invoices/invoices_list_screen.dart';
 import 'more/more_menu_screen.dart';
+import '../../theme/app_text.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int initialIndex;
@@ -184,7 +185,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                               '${badgeCount > 9 ? '9+' : badgeCount}',
                               textAlign: TextAlign.center,
                               style: GoogleFonts.inter(
-                                fontSize: 9,
+                                fontSize: AppText.micro,
                                 height: 1,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -199,7 +200,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 Text(
                   label,
                   style: GoogleFonts.inter(
-                    fontSize: 10,
+                    fontSize: AppText.micro,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected
                         ? context.palette.textPrimary

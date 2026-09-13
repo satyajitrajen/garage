@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_palette.dart';
+import '../theme/app_text.dart';
 
 /// Severity of an app-wide snack bar, mapped onto the status colors the
 /// screens already use for this kind of feedback.
@@ -29,7 +30,7 @@ void showAppSnackBar(
           message,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 13.5,
+            fontSize: AppText.body,
             fontWeight: FontWeight.w500,
           ),
         ),

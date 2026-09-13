@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../models/vehicle.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_palette.dart';
+import '../../theme/app_text.dart';
 
 class AddVehicleDialog extends StatefulWidget {
   final String customerId;
@@ -135,7 +136,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                     Text(
                       isEditing ? 'Edit Vehicle' : 'Add New Vehicle',
                       style: GoogleFonts.inter(
-                        fontSize: 20,
+                        fontSize: AppText.headline,
                         fontWeight: FontWeight.w700,
                         color: palette.textPrimary,
                       ),
@@ -225,7 +226,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                 Text(
                   'Fuel Type',
                   style: GoogleFonts.inter(
-                    fontSize: 13,
+                    fontSize: AppText.caption,
                     fontWeight: FontWeight.w600,
                     color: palette.textSecondary,
                   ),

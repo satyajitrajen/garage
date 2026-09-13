@@ -15,6 +15,7 @@ import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import 'job_card_detail_screen.dart';
+import '../../theme/app_text.dart';
 
 class CreateJobCardScreen extends StatefulWidget {
   /// Customer/vehicle a NEW job card is created for. The screen shows them as
@@ -313,7 +314,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                           Text(
                             vehicle?.registrationNumber ?? 'Vehicle',
                             style: GoogleFonts.inter(
-                              fontSize: 17,
+                              fontSize: AppText.title,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.5,
                             ),
@@ -322,7 +323,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                           Text(
                             '${vehicle?.displayName ?? '—'} • ${customer?.name ?? '—'}',
                             style: GoogleFonts.inter(
-                              fontSize: 13.5,
+                              fontSize: AppText.body,
                               color: palette.textSecondary,
                             ),
                           ),
@@ -331,7 +332,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                             Text(
                               '${widget.existing!.jobCardNumber} • customer & vehicle locked',
                               style: GoogleFonts.inter(
-                                fontSize: 11.5,
+                                fontSize: AppText.label,
                                 color: palette.textMuted,
                               ),
                             ),
@@ -430,14 +431,14 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                               Text(
                                 'Promised Delivery Time',
                                 style: GoogleFonts.inter(
-                                  fontSize: 11.5,
+                                  fontSize: AppText.label,
                                   color: palette.textMuted,
                                 ),
                               ),
                               Text(
                                 AppDateFormatter.formatDateTime(_promisedDate),
                                 style: GoogleFonts.inter(
-                                  fontSize: 14.5,
+                                  fontSize: AppText.subtitle,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -455,7 +456,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               // Customer Complaints / Demands
               Text(
                 'Customer Complaints & Voice',
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               Row(
@@ -497,7 +498,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                         Expanded(
                           child: Text(
                             entry.value,
-                            style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w500),
+                            style: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w500),
                           ),
                         ),
                         GestureDetector(
@@ -514,7 +515,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               // Inspection Checklist
               Text(
                 'Inspection & Vehicle Health Checklist',
-                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               Container(
@@ -529,7 +530,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     final checked = _inspectionChecklist[key] ?? true;
                     return CheckboxListTile(
                       value: checked,
-                      title: Text(key, style: GoogleFonts.inter(fontSize: 13.5)),
+                      title: Text(key, style: GoogleFonts.inter(fontSize: AppText.body)),
                       activeColor: palette.paid,
                       dense: true,
                       contentPadding: EdgeInsets.zero,
@@ -550,7 +551,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                 children: [
                   Text(
                     'Work Items & Parts (${_selectedItems.length})',
-                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
                   ),
                   // A billed job locks its items; the disabled button carries
                   // the same explanatory tooltip as the detail screen.

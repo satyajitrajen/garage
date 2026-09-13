@@ -6,6 +6,7 @@ import '../models/job_card.dart';
 import '../models/quotation.dart';
 import '../models/staff.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text.dart';
 
 class StatusBadge extends StatelessWidget {
   final String label;
@@ -217,7 +218,7 @@ class StatusBadge extends StatelessWidget {
             label,
             style: GoogleFonts.inter(
               color: resolvedColor,
-              fontSize: isCompact ? 9.5 : 10.5,
+              fontSize: AppText.micro,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.4,
             ),

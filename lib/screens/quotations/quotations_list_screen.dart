@@ -14,6 +14,7 @@ import '../../widgets/status_badge.dart';
 import '../customers/customers_list_screen.dart';
 import '../vehicles/vehicle_selection_screen.dart';
 import 'quotation_detail_screen.dart';
+import '../../theme/app_text.dart';
 
 class QuotationsListScreen extends StatefulWidget {
   const QuotationsListScreen({super.key});
@@ -99,7 +100,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
             unselectedLabelColor: palette.textMuted,
             indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5),
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.body),
             tabs: const [
               Tab(text: 'All Estimates'),
               Tab(text: 'Sent'),
@@ -181,7 +182,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                       Text(
                         quote.quotationNumber,
                         style: GoogleFonts.inter(
-                          fontSize: 13.5,
+                          fontSize: AppText.body,
                           fontWeight: FontWeight.w700,
                           color: palette.accent,
                         ),
@@ -199,7 +200,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                           Text(
                             customer?.name ?? '',
                             style: GoogleFonts.inter(
-                              fontSize: 14.5,
+                              fontSize: AppText.subtitle,
                               fontWeight: FontWeight.w700,
                               color: palette.textPrimary,
                             ),
@@ -208,7 +209,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                           Text(
                             '${vehicle?.registrationNumber ?? ""} • ${vehicle?.displayName ?? ""}',
                             style: GoogleFonts.inter(
-                              fontSize: 12,
+                              fontSize: AppText.label,
                               color: palette.textSecondary,
                             ),
                           ),
@@ -220,14 +221,14 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                           Text(
                             CurrencyFormatter.format(quote.grandTotal),
                             style: GoogleFonts.inter(
-                              fontSize: 15,
+                              fontSize: AppText.subtitle,
                               fontWeight: FontWeight.w800,
                               color: palette.textPrimary,
                             ),
                           ),
                           Text(
                             '${quote.items.length} items',
-                            style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
+                            style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                           ),
                         ],
                       ),
@@ -241,11 +242,11 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                     children: [
                       Text(
                         'Created: ${AppDateFormatter.formatDate(quote.createdAt)}',
-                        style: GoogleFonts.inter(fontSize: 11.5, color: palette.textMuted),
+                        style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                       ),
                       Text(
                         'Valid: ${quote.validityDays} Days',
-                        style: GoogleFonts.inter(fontSize: 11.5, color: palette.accent, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(fontSize: AppText.label, color: palette.accent, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),

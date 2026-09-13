@@ -13,6 +13,7 @@ import '../job_cards/create_job_card_screen.dart';
 import '../quotations/create_quotation_screen.dart';
 import '../invoices/create_invoice_screen.dart';
 import 'add_vehicle_dialog.dart';
+import '../../theme/app_text.dart';
 
 enum VehicleTargetAction {
   createJobCard,
@@ -136,7 +137,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                   child: Text(
                     widget.customer.name.substring(0, 1).toUpperCase(),
                     style: GoogleFonts.inter(
-                      fontSize: 20,
+                      fontSize: AppText.headline,
                       fontWeight: FontWeight.w700,
                       color: palette.primary,
                     ),
@@ -150,7 +151,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                       Text(
                         widget.customer.name,
                         style: GoogleFonts.inter(
-                          fontSize: 17,
+                          fontSize: AppText.title,
                           fontWeight: FontWeight.w700,
                           color: palette.textPrimary,
                         ),
@@ -163,7 +164,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                           Text(
                             widget.customer.phone,
                             style: GoogleFonts.inter(
-                              fontSize: 13,
+                              fontSize: AppText.caption,
                               color: palette.textSecondary,
                             ),
                           ),
@@ -177,7 +178,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                             child: Text(
                               '${vehicles.length} Vehicles',
                               style: GoogleFonts.inter(
-                                fontSize: 11.5,
+                                fontSize: AppText.label,
                                 fontWeight: FontWeight.w600,
                                 color: palette.textPrimary,
                               ),
@@ -255,14 +256,14 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                           ),
                                           child: const Text(
                                             'IND',
-                                            style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                            style: TextStyle(color: Colors.white, fontSize: AppText.micro, fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                         const SizedBox(width: 6),
                                         Text(
                                           vehicle.registrationNumber,
                                           style: GoogleFonts.inter(
-                                            fontSize: 14,
+                                            fontSize: AppText.body,
                                             fontWeight: FontWeight.w800,
                                             letterSpacing: 0.8,
                                             color: palette.textPrimary,
@@ -281,7 +282,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                     child: Text(
                                       vehicle.fuelType.displayName,
                                       style: GoogleFonts.inter(
-                                        fontSize: 12,
+                                        fontSize: AppText.label,
                                         fontWeight: FontWeight.w600,
                                         color: palette.primary,
                                       ),
@@ -293,7 +294,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                               Text(
                                 vehicle.displayName,
                                 style: GoogleFonts.inter(
-                                  fontSize: 16,
+                                  fontSize: AppText.title,
                                   fontWeight: FontWeight.w700,
                                   color: palette.textPrimary,
                                 ),
@@ -306,7 +307,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                   Text(
                                     '${vehicle.currentKm.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} KM',
                                     style: GoogleFonts.inter(
-                                      fontSize: 13,
+                                      fontSize: AppText.caption,
                                       fontWeight: FontWeight.w500,
                                       color: palette.textSecondary,
                                     ),
@@ -318,7 +319,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                     Text(
                                       '${vehicle.year} Model',
                                       style: GoogleFonts.inter(
-                                        fontSize: 13,
+                                        fontSize: AppText.caption,
                                         color: palette.textSecondary,
                                       ),
                                     ),
@@ -330,7 +331,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                     Text(
                                       vehicle.color!,
                                       style: GoogleFonts.inter(
-                                        fontSize: 13,
+                                        fontSize: AppText.caption,
                                         color: palette.textSecondary,
                                       ),
                                     ),
@@ -342,7 +343,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                 Text(
                                   'Last serviced: ${AppDateFormatter.formatDate(vehicle.lastServiceDate!)} (${serviceHistory.length} total visits)',
                                   style: GoogleFonts.inter(
-                                    fontSize: 12,
+                                    fontSize: AppText.label,
                                     color: palette.paid,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -355,7 +356,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                   Text(
                                     'Tap to select & continue',
                                     style: GoogleFonts.inter(
-                                      fontSize: 12.5,
+                                      fontSize: AppText.caption,
                                       fontWeight: FontWeight.w600,
                                       color: palette.primary,
                                     ),

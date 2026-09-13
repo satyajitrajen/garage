@@ -9,6 +9,7 @@ import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/payment_mode_display.dart';
+import '../../theme/app_text.dart';
 
 class PaymentCollectionScreen extends StatefulWidget {
   final Invoice invoice;
@@ -133,7 +134,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             const SizedBox(height: 12),
             Text(
               'Payment Received!',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 20),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: AppText.headline),
             ),
           ],
         ),
@@ -143,7 +144,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             Text(
               CurrencyFormatter.format(payment.amount),
               style: GoogleFonts.inter(
-                fontSize: 28,
+                fontSize: AppText.display,
                 fontWeight: FontWeight.w900,
                 color: palette.paid,
               ),
@@ -152,7 +153,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             Text(
               'Paid via ${payment.mode.label}',
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: AppText.body,
                 fontWeight: FontWeight.w600,
                 color: palette.textSecondary,
               ),
@@ -161,7 +162,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               const SizedBox(height: 4),
               Text(
                 'Ref: ${payment.transactionRef}',
-                style: GoogleFonts.inter(fontSize: 12.5, color: palette.textMuted),
+                style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textMuted),
               ),
             ],
             const SizedBox(height: 12),
@@ -170,19 +171,19 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Invoice:', style: GoogleFonts.inter(fontSize: 13, color: palette.textMuted)),
-                Text(invoiceNumber, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700)),
+                Text('Invoice:', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textMuted)),
+                Text(invoiceNumber, style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w700)),
               ],
             ),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Remaining Due:', style: GoogleFonts.inter(fontSize: 13, color: palette.textMuted)),
+                Text('Remaining Due:', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textMuted)),
                 Text(
                   CurrencyFormatter.format(_remainingDueSnapshot),
                   style: GoogleFonts.inter(
-                    fontSize: 13,
+                    fontSize: AppText.caption,
                     fontWeight: FontWeight.w700,
                     color: _remainingDueSnapshot > 0 ? palette.pending : palette.paid,
                   ),
@@ -262,7 +263,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                         Expanded(
                           child: Text(
                             '${vehicle?.registrationNumber ?? ""} • ${customer?.name ?? ""}',
-                            style: GoogleFonts.inter(color: Colors.white70, fontSize: 12.5),
+                            style: GoogleFonts.inter(color: Colors.white70, fontSize: AppText.caption),
                             textAlign: TextAlign.end,
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
@@ -273,13 +274,13 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     const SizedBox(height: 14),
                     Text(
                       'Outstanding Balance Due',
-                      style: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
+                      style: GoogleFonts.inter(color: Colors.white70, fontSize: AppText.caption),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       CurrencyFormatter.format(invoice.balanceDue),
                       style: GoogleFonts.inter(
-                        fontSize: 32,
+                        fontSize: AppText.display,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
                         letterSpacing: -0.5,
@@ -292,11 +293,11 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       children: [
                         Text(
                           'Total Bill: ${CurrencyFormatter.format(invoice.grandTotal)}',
-                          style: GoogleFonts.inter(color: Colors.white70, fontSize: 12),
+                          style: GoogleFonts.inter(color: Colors.white70, fontSize: AppText.label),
                         ),
                         Text(
                           'Paid So Far: ${CurrencyFormatter.format(invoice.totalPaidAmount)}',
-                          style: GoogleFonts.inter(color: palette.paid, fontSize: 12, fontWeight: FontWeight.w600),
+                          style: GoogleFonts.inter(color: palette.paid, fontSize: AppText.label, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -308,7 +309,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               // Full vs Partial Payment Choice
               Text(
                 'Payment Type',
-                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Row(
@@ -362,7 +363,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: AppText.headline, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
                   labelText: 'Amount Received (₹) *',
                   prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.primary),
@@ -379,7 +380,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               // Payment Mode Selector
               Text(
                 'Payment Mode',
-                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Wrap(

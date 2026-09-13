@@ -6,6 +6,7 @@ import '../../models/staff.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../theme/app_text.dart';
 
 class AddStaffScreen extends StatefulWidget {
   final Staff? staffToEdit;
@@ -157,7 +158,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               TextFormField(
                 controller: _salaryController,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
                   labelText: 'Monthly Base Salary (₹) *',
                   hintText: 'e.g. 24000',

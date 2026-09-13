@@ -16,6 +16,7 @@ import '../../utils/payment_mode_display.dart';
 import '../../utils/quantity_formatter.dart';
 import '../../widgets/status_badge.dart';
 import '../payments/payment_collection_screen.dart';
+import '../../theme/app_text.dart';
 
 class InvoicePreviewScreen extends StatefulWidget {
   final String invoiceId;
@@ -139,14 +140,14 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         Text(
                           profile.name,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: palette.textPrimary),
+                          style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: palette.textPrimary),
                         ),
                         if (profile.tagline.trim().isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(
                             profile.tagline.trim(),
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w400, color: palette.textSecondary),
+                            style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w400, color: palette.textSecondary),
                           ),
                         ],
                         const SizedBox(height: 14),
@@ -167,7 +168,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                           const SizedBox(height: 6),
                           Text(
                             invoice.balanceDue > 0 ? 'Awaiting Payment' : 'Payment Settled',
-                            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: palette.primary),
+                            style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w600, color: palette.primary),
                           ),
                         ],
                         const SizedBox(height: 10),
@@ -180,7 +181,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                           ),
                           child: Text(
                             'Invoice No: ${invoice.invoiceNumber}',
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: palette.textSecondary),
+                            style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w500, color: palette.textSecondary),
                           ),
                         ),
                       ],
@@ -246,7 +247,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                       Text(
                         'TAX INVOICE & CASH MEMO',
                         style: GoogleFonts.inter(
-                          fontSize: 11,
+                          fontSize: AppText.label,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.2,
                           color: palette.textMuted,
@@ -257,28 +258,28 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         'GSTIN: ${profile.gstin} • ${profile.addressLine}, ${profile.city}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
+                        style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Phone: ${profile.phone}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
+                        style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                       ),
                       if (profile.email.trim().isNotEmpty)
                         Text(
                           'Email: ${profile.email.trim()}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
+                          style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                         ),
                       if (invoice.jobCardId != null) ...[
                         const SizedBox(height: 2),
                         Text(
                           'JC Ref: ${provider.getJobCardById(invoice.jobCardId!)?.jobCardNumber ?? "JC"}',
                           style: GoogleFonts.inter(
-                            fontSize: 11,
+                            fontSize: AppText.label,
                             color: palette.accent,
                             fontWeight: FontWeight.w600,
                           ),
@@ -299,17 +300,17 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('BILLED TO:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textMuted)),
+                            Text('BILLED TO:', style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textMuted)),
                             const SizedBox(height: 2),
-                            Text(customer?.name ?? '', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
-                            Text(customer?.phone ?? '', style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary)),
+                            Text(customer?.name ?? '', style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
+                            Text(customer?.phone ?? '', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textSecondary)),
                             if (customer?.address != null)
-                              Text(customer!.address!, style: GoogleFonts.inter(fontSize: 11.5, color: palette.textMuted), maxLines: 2),
+                              Text(customer!.address!, style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted), maxLines: 2),
                             if (customerGstin != null && customerGstin.isNotEmpty) ...[
                               const SizedBox(height: 2),
                               Text(
                                 'GSTIN: $customerGstin',
-                                style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: palette.textSecondary),
+                                style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w600, color: palette.textSecondary),
                               ),
                             ],
                           ],
@@ -320,11 +321,11 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text('VEHICLE DETAILS:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textMuted)),
+                            Text('VEHICLE DETAILS:', style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textMuted)),
                             const SizedBox(height: 2),
-                            Text(vehicle?.registrationNumber ?? '', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-                            Text(vehicle?.displayName ?? "", style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary)),
-                            Text('Odometer: ${invoice.kmReading} KM', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: palette.primary)),
+                            Text(vehicle?.registrationNumber ?? '', style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                            Text(vehicle?.displayName ?? "", style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textSecondary)),
+                            Text('Odometer: ${invoice.kmReading} KM', style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w600, color: palette.primary)),
                           ],
                         ),
                       ),
@@ -343,19 +344,19 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                       children: [
                         Expanded(
                           flex: 4,
-                          child: Text('ITEM / SERVICE', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('ITEM / SERVICE', style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 1,
-                          child: Text('QTY', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('QTY', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('RATE', textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('RATE', textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('TOTAL', textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('TOTAL', textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                       ],
                     ),
@@ -377,26 +378,26 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                               children: [
                                 Text(
                                   '$index. ${item.name}',
-                                  style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600),
+                                  style: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w600),
                                 ),
                                 Text(
                                   item.isLabour ? 'Labour Charge' : 'Part • ${item.category.displayName}',
-                                  style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
+                                  style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                                 ),
                               ],
                             ),
                           ),
                           Expanded(
                             flex: 1,
-                            child: Text(formatQuantity(item.quantity), textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 13)),
+                            child: Text(formatQuantity(item.quantity), textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: AppText.caption)),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(CurrencyFormatter.format(item.unitPrice), textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 13)),
+                            child: Text(CurrencyFormatter.format(item.unitPrice), textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: AppText.caption)),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(CurrencyFormatter.format(item.taxableAmount), textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700)),
+                            child: Text(CurrencyFormatter.format(item.taxableAmount), textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w700)),
                           ),
                         ],
                       ),
@@ -423,10 +424,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Grand Total Bill:', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                      Text('Grand Total Bill:', style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w800)),
                       Text(
                         CurrencyFormatter.format(invoice.grandTotal),
-                        style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w900, color: palette.primary),
+                        style: GoogleFonts.inter(fontSize: AppText.headline, fontWeight: FontWeight.w900, color: palette.primary),
                       ),
                     ],
                   ),
@@ -434,10 +435,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Amount Paid:', style: GoogleFonts.inter(fontSize: 14, color: palette.paid, fontWeight: FontWeight.w600)),
+                      Text('Amount Paid:', style: GoogleFonts.inter(fontSize: AppText.body, color: palette.paid, fontWeight: FontWeight.w600)),
                       Text(
                         CurrencyFormatter.format(invoice.totalPaidAmount),
-                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: palette.paid),
+                        style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.paid),
                       ),
                     ],
                   ),
@@ -445,11 +446,11 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Balance Due / Pending:', style: GoogleFonts.inter(fontSize: 14, color: invoice.balanceDue > 0 ? palette.pending : palette.paid, fontWeight: FontWeight.w700)),
+                      Text('Balance Due / Pending:', style: GoogleFonts.inter(fontSize: AppText.body, color: invoice.balanceDue > 0 ? palette.pending : palette.paid, fontWeight: FontWeight.w700)),
                       Text(
                         CurrencyFormatter.format(invoice.balanceDue),
                         style: GoogleFonts.inter(
-                          fontSize: 18,
+                          fontSize: AppText.title,
                           fontWeight: FontWeight.w800,
                           color: invoice.balanceDue > 0 ? palette.pending : palette.paid,
                         ),
@@ -472,7 +473,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   if (invoice.payments.isNotEmpty) ...[
                     Text(
                       'Payment History',
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: palette.textSecondary),
+                      style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: palette.textSecondary),
                     ),
                     const SizedBox(height: 6),
                     ...invoice.payments.map((p) {
@@ -498,14 +499,14 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                                   if (p.receivedBy?.trim().isNotEmpty ?? false)
                                     'by ${p.receivedBy!.trim()}',
                                 ].join(' • '),
-                                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
+                                style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w500),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             Text(
                               CurrencyFormatter.format(p.amount),
-                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: palette.paid),
+                              style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: palette.paid),
                             ),
                           ],
                         ),
@@ -519,24 +520,24 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     if (notesText.isNotEmpty) ...[
                       Text(
                         'Notes',
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: palette.textSecondary),
+                        style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: palette.textSecondary),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         notesText,
-                        style: GoogleFonts.inter(fontSize: 12, height: 1.4, color: palette.textSecondary),
+                        style: GoogleFonts.inter(fontSize: AppText.label, height: 1.4, color: palette.textSecondary),
                       ),
                     ],
                     if (termsText.isNotEmpty) ...[
                       if (notesText.isNotEmpty) const SizedBox(height: 10),
                       Text(
                         'Terms & Conditions',
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: palette.textSecondary),
+                        style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: palette.textSecondary),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         termsText,
-                        style: GoogleFonts.inter(fontSize: 12, height: 1.4, color: palette.textSecondary),
+                        style: GoogleFonts.inter(fontSize: AppText.label, height: 1.4, color: palette.textSecondary),
                       ),
                     ],
                   ],
@@ -565,7 +566,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     Text(
                       'Invoice Cancelled',
                       style: GoogleFonts.inter(
-                        fontSize: 16,
+                        fontSize: AppText.title,
                         fontWeight: FontWeight.w700,
                         color: palette.cancelled,
                       ),
@@ -611,7 +612,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     Text(
                       'Bill Settled & Paid in Full',
                       style: GoogleFonts.inter(
-                        fontSize: 16,
+                        fontSize: AppText.title,
                         fontWeight: FontWeight.w700,
                         color: palette.paid,
                       ),
@@ -684,11 +685,11 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary),
+            style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textSecondary),
           ),
         ),
         const SizedBox(width: 8),
-        Text(value, style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
+        Text(value, style: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
       ],
     );
   }
@@ -706,7 +707,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     return Column(
       children: [
         Text(label,
-            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w500, color: palette.textMuted)),
+            style: GoogleFonts.inter(fontSize: AppText.micro, fontWeight: FontWeight.w500, color: palette.textMuted)),
         const SizedBox(height: 2),
         Text(
           value,
@@ -714,7 +715,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: GoogleFonts.inter(
-              fontSize: highlight ? 13 : 12.5,
+              fontSize: AppText.caption,
               fontWeight: FontWeight.w600,
               color: highlight ? palette.primary : palette.textPrimary),
         ),

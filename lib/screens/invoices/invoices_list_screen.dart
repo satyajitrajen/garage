@@ -16,6 +16,7 @@ import '../customers/customers_list_screen.dart';
 import '../vehicles/vehicle_selection_screen.dart';
 import '../payments/payment_collection_screen.dart';
 import 'invoice_preview_screen.dart';
+import '../../theme/app_text.dart';
 
 class InvoicesListScreen extends StatefulWidget {
   const InvoicesListScreen({super.key});
@@ -130,7 +131,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             unselectedLabelColor: palette.textMuted,
             indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5),
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.body),
             tabs: const [
               Tab(text: 'All Invoices'),
               Tab(text: 'Paid'),
@@ -162,7 +163,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
           Text(
             label,
             style: GoogleFonts.inter(
-              fontSize: 11,
+              fontSize: AppText.label,
               color: palette.textSecondary,
             ),
           ),
@@ -170,7 +171,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
           Text(
             value,
             style: GoogleFonts.inter(
-              fontSize: 14,
+              fontSize: AppText.body,
               fontWeight: FontWeight.w800,
               color: color ?? palette.textPrimary,
             ),
@@ -240,7 +241,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                       Text(
                         inv.invoiceNumber,
                         style: GoogleFonts.inter(
-                          fontSize: 13.5,
+                          fontSize: AppText.body,
                           fontWeight: FontWeight.w700,
                           color: palette.accent,
                         ),
@@ -258,7 +259,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                               child: Text(
                                 'Overdue',
                                 style: GoogleFonts.inter(
-                                  fontSize: 10,
+                                  fontSize: AppText.micro,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white,
                                 ),
@@ -283,7 +284,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                             Text(
                               customer?.name ?? 'Customer',
                               style: GoogleFonts.inter(
-                                fontSize: 14.5,
+                                fontSize: AppText.subtitle,
                                 fontWeight: FontWeight.w700,
                                 color: palette.textPrimary,
                               ),
@@ -292,7 +293,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                             Text(
                               '${vehicle?.registrationNumber ?? ""} • ${vehicle?.displayName ?? ""}',
                               style: GoogleFonts.inter(
-                                fontSize: 12,
+                                fontSize: AppText.label,
                                 color: palette.textSecondary,
                               ),
                             ),
@@ -305,7 +306,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                           Text(
                             CurrencyFormatter.format(inv.grandTotal),
                             style: GoogleFonts.inter(
-                              fontSize: 15,
+                              fontSize: AppText.subtitle,
                               fontWeight: FontWeight.w800,
                               color: palette.textPrimary,
                             ),
@@ -314,7 +315,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                             Text(
                               'Due: ${CurrencyFormatter.format(inv.balanceDue)}',
                               style: GoogleFonts.inter(
-                                fontSize: 11.5,
+                                fontSize: AppText.label,
                                 fontWeight: FontWeight.w700,
                                 color: palette.pending,
                               ),
@@ -323,7 +324,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                             Text(
                               'Paid in Full',
                               style: GoogleFonts.inter(
-                                fontSize: 11.5,
+                                fontSize: AppText.label,
                                 fontWeight: FontWeight.w600,
                                 color: palette.paid,
                               ),
@@ -340,7 +341,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                     children: [
                       Text(
                         AppDateFormatter.formatDate(inv.invoiceDate),
-                        style: GoogleFonts.inter(fontSize: 11.5, color: palette.textMuted),
+                        style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
                       ),
                       if (inv.balanceDue > 0)
                         InkWell(
@@ -368,7 +369,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                                 Text(
                                   'Collect',
                                   style: GoogleFonts.inter(
-                                    fontSize: 11.5,
+                                    fontSize: AppText.label,
                                     fontWeight: FontWeight.w700,
                                     color: palette.paid,
                                   ),
@@ -384,7 +385,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                             const SizedBox(width: 4),
                             Text(
                               'Paid via ${inv.payments.isEmpty ? '—' : inv.payments.last.mode.shortName}',
-                              style: GoogleFonts.inter(fontSize: 11.5, color: palette.paid, fontWeight: FontWeight.w600),
+                              style: GoogleFonts.inter(fontSize: AppText.label, color: palette.paid, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),

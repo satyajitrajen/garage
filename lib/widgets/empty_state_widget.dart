@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text.dart';
 
 class EmptyStateWidget extends StatelessWidget {
   final IconData icon;
@@ -42,7 +43,7 @@ class EmptyStateWidget extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
-                fontSize: 18,
+                fontSize: AppText.title,
                 fontWeight: FontWeight.w700,
                 color: palette.textPrimary,
               ),
@@ -52,7 +53,7 @@ class EmptyStateWidget extends StatelessWidget {
               description,
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
-                fontSize: 13.5,
+                fontSize: AppText.body,
                 color: palette.textSecondary,
                 height: 1.4,
               ),

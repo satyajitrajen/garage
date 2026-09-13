@@ -17,6 +17,7 @@ import '../invoices/invoice_preview_screen.dart';
 import '../payments/payment_collection_screen.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
+import '../../theme/app_text.dart';
 
 class QuickServiceWizard extends StatefulWidget {
   final Customer? initialCustomer;
@@ -242,7 +243,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
         Text(
           title,
           style: GoogleFonts.inter(
-            fontSize: 11,
+            fontSize: AppText.label,
             fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
             color: isActive ? palette.primary : palette.textSecondary,
           ),
@@ -297,7 +298,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
             children: [
               Text(
                 'Step 1: Choose Customer',
-                style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
               ),
               ElevatedButton.icon(
                 onPressed: () async {
@@ -384,8 +385,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Step 2: Choose Vehicle', style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700)),
-                  Text('For ${_selectedCustomer!.name}', style: GoogleFonts.inter(fontSize: 13, color: palette.primary, fontWeight: FontWeight.w600)),
+                  Text('Step 2: Choose Vehicle', style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                  Text('For ${_selectedCustomer!.name}', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.primary, fontWeight: FontWeight.w600)),
                 ],
               ),
               ElevatedButton.icon(
@@ -451,8 +452,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Step 3: Work Items', style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700)),
-                  Text('${_selectedVehicle!.registrationNumber} (${_selectedVehicle!.displayName})', style: GoogleFonts.inter(fontSize: 13, color: palette.primary)),
+                  Text('Step 3: Work Items', style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                  Text('${_selectedVehicle!.registrationNumber} (${_selectedVehicle!.displayName})', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.primary)),
                 ],
               ),
               ElevatedButton.icon(
@@ -551,10 +552,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Subtotal: ${CurrencyFormatter.format(subtotal)}', style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted)),
+                      Text('Subtotal: ${CurrencyFormatter.format(subtotal)}', style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted)),
                       if (discount > 0)
-                        Text('Discount: -${CurrencyFormatter.format(discount)}', style: GoogleFonts.inter(fontSize: 12, color: palette.paid, fontWeight: FontWeight.w600)),
-                      Text('Tax (${provider.config.defaultTaxPercent.toStringAsFixed(0)}%): ${CurrencyFormatter.format(tax)}', style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted)),
+                        Text('Discount: -${CurrencyFormatter.format(discount)}', style: GoogleFonts.inter(fontSize: AppText.label, color: palette.paid, fontWeight: FontWeight.w600)),
+                      Text('Tax (${provider.config.defaultTaxPercent.toStringAsFixed(0)}%): ${CurrencyFormatter.format(tax)}', style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -564,8 +565,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Net Bill Total:', style: GoogleFonts.inter(fontSize: 12.5, color: palette.textMuted)),
-                          Text(CurrencyFormatter.format(netGrandTotal), style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w900, color: palette.primary)),
+                          Text('Net Bill Total:', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textMuted)),
+                          Text(CurrencyFormatter.format(netGrandTotal), style: GoogleFonts.inter(fontSize: AppText.headline, fontWeight: FontWeight.w900, color: palette.primary)),
                         ],
                       ),
                       GradientButton(
@@ -609,24 +610,24 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           const SizedBox(height: 16),
           Text(
             'Job Card & Bill Generated!',
-            style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800),
+            style: GoogleFonts.inter(fontSize: AppText.headline, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
           Text(
             'Invoice #${inv.invoiceNumber}',
-            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: palette.primary),
+            style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.primary),
           ),
           if (job != null) ...[
             const SizedBox(height: 6),
             Text(
               'Job Card #${job.jobCardNumber} • Marked Delivered',
-              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: palette.paid),
+              style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w600, color: palette.paid),
             ),
           ],
           const SizedBox(height: 6),
           Text(
             'Total Amount: ${CurrencyFormatter.format(inv.grandTotal)} • Pending Due: ${CurrencyFormatter.format(inv.balanceDue)}',
-            style: GoogleFonts.inter(fontSize: 14, color: palette.textSecondary),
+            style: GoogleFonts.inter(fontSize: AppText.body, color: palette.textSecondary),
           ),
           const SizedBox(height: 28),
 

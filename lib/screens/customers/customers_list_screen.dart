@@ -13,6 +13,7 @@ import '../../widgets/search_bar_widget.dart';
 import '../vehicles/vehicle_selection_screen.dart';
 import 'add_customer_screen.dart';
 import 'customer_detail_screen.dart';
+import '../../theme/app_text.dart';
 
 class CustomersListScreen extends StatefulWidget {
   final bool isSelectionMode;
@@ -71,7 +72,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
         title: Text(
           widget.isSelectionMode ? 'Select Customer' : 'Customers',
           style: GoogleFonts.inter(
-            fontSize: 17,
+            fontSize: AppText.title,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
           ),
@@ -120,7 +121,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                 Text(
                   '${customers.length} Customers Found',
                   style: GoogleFonts.inter(
-                    fontSize: 13,
+                    fontSize: AppText.caption,
                     fontWeight: FontWeight.w600,
                     color: palette.textSecondary,
                   ),
@@ -128,7 +129,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                 Text(
                   'Tap to select / view',
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: AppText.label,
                     color: palette.primary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -179,7 +180,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                   child: Text(
                                     customer.name.substring(0, 1).toUpperCase(),
                                     style: GoogleFonts.inter(
-                                      fontSize: 18,
+                                      fontSize: AppText.title,
                                       fontWeight: FontWeight.w700,
                                       color: palette.primary,
                                     ),
@@ -193,7 +194,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                       Text(
                                         customer.name,
                                         style: GoogleFonts.inter(
-                                          fontSize: 14.5,
+                                          fontSize: AppText.subtitle,
                                           fontWeight: FontWeight.w700,
                                           color: palette.textPrimary,
                                         ),
@@ -210,7 +211,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                           Text(
                                             customer.phone,
                                             style: GoogleFonts.inter(
-                                              fontSize: 12,
+                                              fontSize: AppText.label,
                                               color: palette.textSecondary,
                                             ),
                                           ),
@@ -239,7 +240,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                                 Text(
                                                   '${vehicles.length} ${vehicles.length == 1 ? "Vehicle" : "Vehicles"}',
                                                   style: GoogleFonts.inter(
-                                                    fontSize: 10.5,
+                                                    fontSize: AppText.micro,
                                                     fontWeight: FontWeight.w600,
                                                     color: palette.textSecondary,
                                                   ),
@@ -257,7 +258,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                                child: Text(
                                                  vehicles.first.registrationNumber,
                                                  style: GoogleFonts.inter(
-                                                   fontSize: 10.5,
+                                                   fontSize: AppText.micro,
                                                    fontWeight: FontWeight.w700,
                                                    color: palette.accent,
                                                  ),
@@ -282,7 +283,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                          child: Text(
                                            'Due: ${CurrencyFormatter.format(outstandingBalance)}',
                                            style: GoogleFonts.inter(
-                                             fontSize: 11,
+                                             fontSize: AppText.label,
                                              fontWeight: FontWeight.w700,
                                              color: palette.pending,
                                            ),

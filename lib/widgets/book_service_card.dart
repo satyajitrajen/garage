@@ -9,6 +9,7 @@ import '../theme/app_palette.dart';
 import '../utils/app_snack_bar.dart';
 import '../screens/workflow/quick_service_wizard.dart';
 import '../screens/job_cards/create_job_card_screen.dart';
+import '../theme/app_text.dart';
 
 /// Dashboard hero card modeled on a travel booking search card:
 /// customer + vehicle rows, a read-only date/odometer pill row, service
@@ -143,7 +144,7 @@ class _BookServiceCardState extends State<BookServiceCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Book a Service', style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: palette.textPrimary)),
+          Text('Book a Service', style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.textPrimary)),
           const SizedBox(height: 12),
           _bookingRow(
             palette: palette,
@@ -212,7 +213,7 @@ class _BookServiceCardState extends State<BookServiceCard> {
               icon: const Icon(Icons.bolt_rounded, size: 20),
               label: Text(
                 _quickService ? 'Start Quick Service' : 'Create Job Card',
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                style: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -255,14 +256,14 @@ class _BookServiceCardState extends State<BookServiceCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: palette.textMuted)),
+                    Text(label, style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w500, color: palette.textMuted)),
                     const SizedBox(height: 2),
                     Text(
                       value,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
-                          fontSize: 14, fontWeight: FontWeight.w600,
+                          fontSize: AppText.body, fontWeight: FontWeight.w600,
                           color: hasValue ? palette.textPrimary : palette.textMuted),
                     ),
                   ],
@@ -295,10 +296,10 @@ class _BookServiceCardState extends State<BookServiceCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w500, color: palette.textMuted)),
+                Text(label, style: GoogleFonts.inter(fontSize: AppText.micro, fontWeight: FontWeight.w500, color: palette.textMuted)),
                 const SizedBox(height: 2),
                 Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: palette.textPrimary)),
+                    style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w600, color: palette.textPrimary)),
               ],
             ),
           ),
@@ -331,7 +332,7 @@ class _BookServiceCardState extends State<BookServiceCard> {
           child: Text(
             label,
             style: GoogleFonts.inter(
-                fontSize: 12.5, fontWeight: FontWeight.w600,
+                fontSize: AppText.caption, fontWeight: FontWeight.w600,
                 color: selected ? palette.onPrimary : palette.textPrimary),
           ),
         ),

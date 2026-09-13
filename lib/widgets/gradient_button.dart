@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_dimens.dart';
 import '../theme/app_palette.dart';
+import '../theme/app_text.dart';
 
 class GradientButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -32,7 +33,7 @@ class GradientButton extends StatelessWidget {
     final contentColor = textColor ?? palette.onPrimary;
 
     final effectiveTextStyle = GoogleFonts.inter(
-      fontSize: 14,
+      fontSize: AppText.body,
       fontWeight: FontWeight.w600,
       color: isEnabled ? contentColor : contentColor.withValues(alpha: 0.5),
     );
@@ -119,7 +120,7 @@ class GradientFloatingActionButton extends StatelessWidget {
                 const SizedBox(width: 8),
                 DefaultTextStyle(
                   style: GoogleFonts.inter(
-                    fontSize: 13.5,
+                    fontSize: AppText.body,
                     fontWeight: FontWeight.w600,
                     color: palette.onPrimary,
                   ),
