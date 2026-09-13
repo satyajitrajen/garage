@@ -87,6 +87,21 @@ func NewRouter(s *Server) http.Handler {
 				r.Put("/{staffId}", s.updateStaff)
 				r.Delete("/{staffId}", s.deleteStaff)
 			})
+
+			r.Route("/attendance", func(r chi.Router) {
+				r.Use(auth.RequireGarage(s.Store))
+				r.Use(auth.RequirePermission("attendance.manage"))
+				r.Get("/", s.listAttendance)
+				r.Post("/", s.upsertAttendance)
+			})
+
+			r.Route("/salary-advances", func(r chi.Router) {
+				r.Use(auth.RequireGarage(s.Store))
+				r.Use(auth.RequirePermission("advances.manage"))
+				r.Get("/", s.listSalaryAdvances)
+				r.Post("/", s.createSalaryAdvance)
+				r.Post("/settle", s.settleSalaryAdvances)
+			})
 		})
 	})
 

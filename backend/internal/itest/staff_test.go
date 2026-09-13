@@ -81,3 +81,55 @@ func TestStaffValidation(t *testing.T) {
 		}
 	}
 }
+
+func seedAttendance(t *testing.T, garageID, staffID, date, status string) {
+	t.Helper()
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO attendance_records (garage_id, staff_id, date, status)
+		 VALUES ($1,$2,$3,$4)`, garageID, staffID, date, status); err != nil {
+		t.Fatalf("seed attendance: %v", err)
+	}
+}
+
+func seedAdvance(t *testing.T, garageID, staffID string, amount float64, date string, deducted bool) {
+	t.Helper()
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO salary_advances (garage_id, staff_id, amount, date, is_deducted)
+		 VALUES ($1,$2,$3,$4,$5)`, garageID, staffID, amount, date, deducted); err != nil {
+		t.Fatalf("seed advance: %v", err)
+	}
+}
+
+func TestStaffTenancyIsolation(t *testing.T) {
+	truncate(t)
+	a := registerOwner(t, "s3a")
+	b := registerOwner(t, "s3b")
+	aGarage := a.Memberships[0].GarageID
+	bGarage := b.Memberships[0].GarageID
+	_, _, st := createStaffMember(t, a.AccessToken, aGarage, staffBody("Suresh"))
+
+	status, _ := doJSON(t, "PUT", "/api/staff/"+st.ID, b.AccessToken, bGarage, st)
+	if status != 404 {
+		t.Fatalf("B update A's staff: status %d", status)
+	}
+	status, _ = doJSON(t, "DELETE", "/api/staff/"+st.ID, b.AccessToken, bGarage, nil)
+	if status != 404 {
+		t.Fatalf("B delete A's staff: status %d", status)
+	}
+
+	// Deleting A's staff cascades attendance and advances (FK policy).
+	seedAttendance(t, aGarage, st.ID, "2026-09-01", "present")
+	seedAdvance(t, aGarage, st.ID, 2000, "2026-09-02", false)
+	status, _ = doJSON(t, "DELETE", "/api/staff/"+st.ID, a.AccessToken, aGarage, nil)
+	if status != 204 {
+		t.Fatalf("delete staff with history: status %d", status)
+	}
+	var n int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM attendance_records WHERE garage_id = $1`, aGarage).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	if n != 0 {
+		t.Fatalf("attendance rows survived staff delete: %d", n)
+	}
+}
