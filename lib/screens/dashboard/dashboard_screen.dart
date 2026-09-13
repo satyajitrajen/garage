@@ -121,7 +121,7 @@ class DashboardScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // -------------------------------------------------------------
-              // 1. CORE BENTO ISLAND CARD (EXACT USER GRADIENT)
+              // 1. CORE BENTO ISLAND CARD (BLACK BANNER)
               // -------------------------------------------------------------
               Container(
                 width: double.infinity,
@@ -343,7 +343,7 @@ class DashboardScreen extends StatelessWidget {
                                       style: GoogleFonts.poppins(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.white70,
+                                        color: Colors.white.withValues(alpha: 0.85),
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -444,7 +444,7 @@ class DashboardScreen extends StatelessWidget {
                       context,
                       label: '+ Expense',
                       icon: Icons.account_balance_wallet_rounded,
-                      color: palette.pending,
+                      color: palette.badgeOrangeIcon,
                       onTap: () {
                         Navigator.push(
                           context,

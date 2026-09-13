@@ -232,8 +232,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  // Brand gradient in BOTH themes: white text and status colors
-                  // sit on top, so a light-mode surface slot would hide them.
+                  // Brand gradient is the fixed brand anchor: white text sits
+                  // on top, so a themed surface slot would hide it.
                   gradient: LinearGradient(
                     colors: palette.brandGradient,
                     begin: Alignment.topLeft,

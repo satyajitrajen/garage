@@ -39,7 +39,7 @@ class MoreMenuScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          // Workshop banner (Gradient - No Black)
+          // Workshop banner (brand gradient)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -94,7 +94,7 @@ class MoreMenuScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // 1. Quick Service Flow Banner (Iridescent Pastel Gradient)
+          // 1. Quick Service Flow Banner (Brand Gradient)
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -149,7 +149,7 @@ class MoreMenuScreen extends StatelessWidget {
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: Colors.white70,
+                              color: Colors.white.withValues(alpha: 0.85),
                             ),
                           ),
                         ],
