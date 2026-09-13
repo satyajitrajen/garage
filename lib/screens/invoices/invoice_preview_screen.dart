@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import '../../data/garage_profile.dart';
 import '../../models/invoice.dart';
 import '../../models/maintenance_item.dart';
 import '../../providers/garage_provider.dart';
@@ -125,113 +127,164 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Workshop Tax Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Expanded + ellipsis so long profile strings shrink the
-                      // left column instead of overflowing the letterhead row.
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              profile.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: palette.primary,
-                              ),
+                  // -- Ticket header: brand + confirmation --
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: palette.paperHeaderBg,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppDimens.radiusCard)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          profile.name,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: palette.textPrimary),
+                        ),
+                        if (profile.tagline.trim().isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            profile.tagline.trim(),
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w400, color: palette.textSecondary),
+                          ),
+                        ],
+                        const SizedBox(height: 14),
+                        if (invoice.status != InvoiceStatus.cancelled) ...[
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: palette.primary, width: 1.6),
                             ),
-                            if (profile.tagline.trim().isNotEmpty) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                profile.tagline.trim(),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: palette.textSecondary,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 2),
-                            Text(
-                              'TAX INVOICE & CASH MEMO',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.2,
-                                color: palette.textMuted,
-                              ),
+                            child: Icon(
+                              invoice.balanceDue > 0 ? Icons.schedule_rounded : Icons.check_rounded,
+                              size: 20,
+                              color: palette.primary,
                             ),
-                            Text(
-                              'GSTIN: ${profile.gstin}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: palette.textMuted,
-                              ),
-                            ),
-                            Text(
-                              '${profile.addressLine}, ${profile.city}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: palette.textMuted,
-                              ),
-                            ),
-                            Text(
-                              'Phone: ${profile.phone}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: palette.textMuted,
-                              ),
-                            ),
-                            if (profile.email.trim().isNotEmpty)
-                              Text(
-                                'Email: ${profile.email.trim()}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  color: palette.textMuted,
-                                ),
-                              ),
-                          ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            invoice.balanceDue > 0 ? 'Awaiting Payment' : 'Payment Settled',
+                            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: palette.primary),
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                        Container(
+                          height: 34,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: palette.cardAlt,
+                            borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
+                          ),
+                          child: Text(
+                            'Invoice No: ${invoice.invoiceNumber}',
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: palette.textSecondary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // -- QR card --
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: palette.surface,
+                          borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
+                          border: Border.all(color: palette.border),
+                        ),
+                        child: QrImageView(
+                          data: _qrPayload(invoice, profile),
+                          size: 140,
+                          backgroundColor: Colors.white,
                         ),
                       ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            invoice.invoiceNumber,
-                            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
-                          ),
-                          Text(
-                            'Date: ${AppDateFormatter.formatDate(invoice.invoiceDate)}',
-                            style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted),
-                          ),
-                          if (invoice.jobCardId != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'JC Ref: ${provider.getJobCardById(invoice.jobCardId!)?.jobCardNumber ?? "JC"}',
-                              style: GoogleFonts.inter(
-                                fontSize: 11.5,
-                                color: palette.accent,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ],
+                    ),
+                  ),
+                  // -- Three-column summary: issue | total | due --
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _ticketColumn('Issued', AppDateFormatter.formatDate(invoice.invoiceDate), palette),
+                        ),
+                        Expanded(
+                          child: _ticketColumn('Total', CurrencyFormatter.format(invoice.grandTotal), palette,
+                              highlight: true),
+                        ),
+                        Expanded(
+                          child: _ticketColumn(
+                              'Due',
+                              invoice.dueDate == null ? '—' : AppDateFormatter.formatDate(invoice.dueDate!),
+                              palette),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // -- Customer / vehicle / paid-so-far row --
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      children: [
+                        Expanded(child: _ticketColumn('Customer', customer?.name ?? '—', palette)),
+                        Expanded(
+                            child: _ticketColumn('Vehicle', vehicle?.registrationNumber ?? '—', palette)),
+                        Expanded(
+                            child: _ticketColumn('Paid',
+                                CurrencyFormatter.format(invoice.totalPaidAmount), palette)),
+                      ],
+                    ),
+                  ),
+                  // -- Legal caption: seller identity the ticket header drops --
+                  Column(
+                    children: [
+                      Text(
+                        'TAX INVOICE & CASH MEMO',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                          color: palette.textMuted,
+                        ),
                       ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'GSTIN: ${profile.gstin} • ${profile.addressLine}, ${profile.city}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Phone: ${profile.phone}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
+                      ),
+                      if (profile.email.trim().isNotEmpty)
+                        Text(
+                          'Email: ${profile.email.trim()}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
+                        ),
+                      if (invoice.jobCardId != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'JC Ref: ${provider.getJobCardById(invoice.jobCardId!)?.jobCardNumber ?? "JC"}',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: palette.accent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -637,6 +690,35 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
         ),
         const SizedBox(width: 8),
         Text(value, style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
+      ],
+    );
+  }
+
+  String _qrPayload(Invoice invoice, GarageProfile profile) {
+    if (invoice.balanceDue > 0 && profile.upiId.isNotEmpty) {
+      return 'upi://pay?pa=${profile.upiId}'
+          '&pn=${Uri.encodeComponent(profile.name)}'
+          '&am=${invoice.balanceDue.toStringAsFixed(2)}&cu=INR';
+    }
+    return invoice.invoiceNumber;
+  }
+
+  Widget _ticketColumn(String label, String value, AppPalette palette, {bool highlight = false}) {
+    return Column(
+      children: [
+        Text(label,
+            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w500, color: palette.textMuted)),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.inter(
+              fontSize: highlight ? 13 : 12.5,
+              fontWeight: FontWeight.w600,
+              color: highlight ? palette.primary : palette.textPrimary),
+        ),
       ],
     );
   }
