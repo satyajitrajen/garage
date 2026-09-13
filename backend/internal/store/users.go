@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 
 	"garage-backend/internal/models"
 )
@@ -15,7 +16,13 @@ func (s *Store) CreateUser(ctx context.Context, email, passwordHash, name string
 	return u, mapPGError(err)
 }
 
+// userByColumn accepts only the whitelisted literals from the callers below.
 func (s *Store) userByColumn(ctx context.Context, column, value string) (models.User, error) {
+	switch column {
+	case "email", "id":
+	default:
+		return models.User{}, fmt.Errorf("userByColumn: unsupported column %q", column)
+	}
 	row := s.Pool.QueryRow(ctx,
 		`SELECT id, email, name, password_hash, created_at FROM users WHERE `+column+` = $1`, value)
 	var u models.User

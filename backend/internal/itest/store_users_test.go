@@ -32,6 +32,9 @@ func TestUserStore(t *testing.T) {
 	if _, err := s.CreateUser(ctx, "user1@test.dev", "hash2", "Dup"); !errors.Is(err, store.ErrDuplicate) {
 		t.Fatalf("want ErrDuplicate, got %v", err)
 	}
+	if _, err := s.CreateUser(ctx, "USER1@TEST.DEV", "hash2", "CaseDup"); !errors.Is(err, store.ErrDuplicate) {
+		t.Fatalf("CITEXT uniqueness must be case-insensitive, got %v", err)
+	}
 
 	got, err := s.UserByEmail(ctx, "user1@test.dev")
 	if err != nil {

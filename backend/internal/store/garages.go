@@ -14,7 +14,7 @@ func (s *Store) RegisterOwner(ctx context.Context, email, passwordHash, name, ga
 	if err != nil {
 		return models.User{}, models.Membership{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback(context.WithoutCancel(ctx))
 
 	var u models.User
 	err = tx.QueryRow(ctx,

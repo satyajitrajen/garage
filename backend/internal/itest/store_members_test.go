@@ -122,3 +122,59 @@ func TestMembershipQueries(t *testing.T) {
 		t.Fatalf("want ErrNotFound after delete, got %v", err)
 	}
 }
+
+func TestMemberTenancyIsolation(t *testing.T) {
+	truncate(t)
+	s := store.New(pool)
+
+	_, garageA, err := s.RegisterOwner(ctx, "ownerA@test.dev", "hash-a", "Owner A", "Garage A", auth.AllPermissions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, garageB, err := s.RegisterOwner(ctx, "ownerB@test.dev", "hash-b", "Owner B", "Garage B", auth.AllPermissions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	staff, err := s.CreateUser(ctx, "staff@test.dev", "staffhash", "Staff")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CreateMembership(ctx, garageA.GarageID, staff.ID, "staff", []string{"customers.manage"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := s.Member(ctx, garageB.GarageID, staff.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("garage B must not read garage A's member, got %v", err)
+	}
+	if _, err := s.MembershipFor(ctx, garageB.GarageID, staff.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("garage B must not read garage A's membership, got %v", err)
+	}
+
+	hacked := "hacked"
+	if _, err := s.UpdateMember(ctx, garageB.GarageID, staff.ID, store.MemberPatch{
+		PasswordHash: &hacked,
+		IsActive:     boolPtr(false),
+	}); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("garage B must not update garage A's member, got %v", err)
+	}
+	after, err := s.UserByID(ctx, staff.ID)
+	if err != nil || after.PasswordHash != "staffhash" {
+		t.Fatalf("cross-garage patch must not touch the password: %+v %v", after, err)
+	}
+	m, err := s.MembershipFor(ctx, garageA.GarageID, staff.ID)
+	if err != nil || !m.IsActive {
+		t.Fatalf("cross-garage patch must not touch the membership: %+v %v", m, err)
+	}
+
+	if err := s.DeleteMembership(ctx, garageB.GarageID, staff.ID); err != nil {
+		t.Fatalf("cross-garage delete must be a no-op, got %v", err)
+	}
+	if _, err := s.MembershipFor(ctx, garageA.GarageID, staff.ID); err != nil {
+		t.Fatalf("membership must survive a cross-garage delete: %v", err)
+	}
+
+	bMembers, err := s.ListMembers(ctx, garageB.GarageID)
+	if err != nil || len(bMembers) != 1 || bMembers[0].Role != "owner" {
+		t.Fatalf("garage B must list only its own owner: %+v %v", bMembers, err)
+	}
+}

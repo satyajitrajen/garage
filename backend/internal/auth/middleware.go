@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 
 	"garage-backend/internal/httputil"
 	"garage-backend/internal/models"
+	"garage-backend/internal/store"
 )
 
 type UserProvider interface {
@@ -35,9 +37,19 @@ func RequireAuth(issuer *TokenIssuer, users UserProvider) func(http.Handler) htt
 				httputil.Error(w, 401, "unauthorized", "invalid or expired token")
 				return
 			}
+			// Issue only signs server-generated UUIDs; a signed-but-malformed
+			// sub must 401 here instead of surfacing as a store query error.
+			if _, err := uuid.Parse(userID); err != nil {
+				httputil.Error(w, 401, "unauthorized", "invalid or expired token")
+				return
+			}
 			user, err := users.UserByID(r.Context(), userID)
 			if err != nil {
-				httputil.Error(w, 401, "unauthorized", "user no longer exists")
+				if errors.Is(err, store.ErrNotFound) {
+					httputil.Error(w, 401, "unauthorized", "user no longer exists")
+				} else {
+					httputil.Error(w, 500, "internal", "internal error")
+				}
 				return
 			}
 			ctx := context.WithValue(r.Context(), ctxUserID, user.ID)
@@ -76,7 +88,11 @@ func RequireGarage(memberships MembershipProvider) func(http.Handler) http.Handl
 			}
 			m, err := memberships.MembershipFor(r.Context(), garageID, UserID(r.Context()))
 			if err != nil {
-				httputil.Error(w, 403, "forbidden", "not a member of this garage")
+				if errors.Is(err, store.ErrNotFound) {
+					httputil.Error(w, 403, "forbidden", "not a member of this garage")
+				} else {
+					httputil.Error(w, 500, "internal", "internal error")
+				}
 				return
 			}
 			if !m.IsActive {

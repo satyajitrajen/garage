@@ -74,7 +74,7 @@ func (s *Store) CreateUserWithMembership(ctx context.Context, garageID, email, p
 	if err != nil {
 		return models.Member{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback(context.WithoutCancel(ctx))
 
 	var userID string
 	err = tx.QueryRow(ctx,
@@ -128,11 +128,16 @@ func (s *Store) UpdateMember(ctx context.Context, garageID, userID string, patch
 	if err != nil {
 		return models.Member{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback(context.WithoutCancel(ctx))
 
 	if patch.PasswordHash != nil {
+		// The EXISTS guard keeps the users-table write scoped to this garage:
+		// without it a foreign garage could reset a user's password before the
+		// memberships UPDATE below no-ops.
 		if _, err := tx.Exec(ctx,
-			`UPDATE users SET password_hash = $1 WHERE id = $2`, *patch.PasswordHash, userID); err != nil {
+			`UPDATE users SET password_hash = $1
+			 WHERE id = $2 AND EXISTS (SELECT 1 FROM memberships WHERE garage_id = $3 AND user_id = $2)`,
+			*patch.PasswordHash, userID, garageID); err != nil {
 			return models.Member{}, mapPGError(err)
 		}
 	}

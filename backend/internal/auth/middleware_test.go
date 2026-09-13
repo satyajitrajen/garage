@@ -13,9 +13,11 @@ import (
 
 	"garage-backend/internal/httputil"
 	"garage-backend/internal/models"
+	"garage-backend/internal/store"
 )
 
 const testGarageID = "11111111-1111-1111-1111-111111111111"
+const testUserID = "99999999-9999-9999-9999-999999999999"
 
 type fakeUsers struct {
 	user models.User
@@ -61,7 +63,7 @@ func ctxHandler(w http.ResponseWriter, r *http.Request) {
 
 func TestRequireAuth(t *testing.T) {
 	issuer := NewTokenIssuer("secret")
-	users := fakeUsers{user: models.User{ID: "u-1"}}
+	users := fakeUsers{user: models.User{ID: testUserID}}
 	h := RequireAuth(issuer, users)(http.HandlerFunc(ctxHandler))
 
 	t.Run("missing header is 401", func(t *testing.T) {
@@ -76,19 +78,19 @@ func TestRequireAuth(t *testing.T) {
 	})
 
 	t.Run("valid token reaches handler with user id", func(t *testing.T) {
-		token, _ := issuer.Issue("u-1", time.Now())
+		token, _ := issuer.Issue(testUserID, time.Now())
 		rr := httptest.NewRecorder()
 		h.ServeHTTP(rr, newRequest(t, "/api/me", nil, token, ""))
 		if rr.Code != 200 {
 			t.Fatalf("status = %d body %s", rr.Code, rr.Body.String())
 		}
-		if !strings.Contains(rr.Body.String(), `"u-1"`) {
+		if !strings.Contains(rr.Body.String(), testUserID) {
 			t.Fatalf("body = %s", rr.Body.String())
 		}
 	})
 
 	t.Run("bearer scheme is case-insensitive", func(t *testing.T) {
-		token, _ := issuer.Issue("u-1", time.Now())
+		token, _ := issuer.Issue(testUserID, time.Now())
 		r := newRequest(t, "/api/me", nil, "", "")
 		r.Header.Set("Authorization", "bearer "+token)
 		rr := httptest.NewRecorder()
@@ -98,9 +100,9 @@ func TestRequireAuth(t *testing.T) {
 		}
 	})
 
-	t.Run("user lookup failure is 401", func(t *testing.T) {
-		token, _ := issuer.Issue("u-1", time.Now())
-		h := RequireAuth(issuer, fakeUsers{err: errors.New("db down")})(http.HandlerFunc(ctxHandler))
+	t.Run("user no longer exists is 401", func(t *testing.T) {
+		token, _ := issuer.Issue(testUserID, time.Now())
+		h := RequireAuth(issuer, fakeUsers{err: store.ErrNotFound})(http.HandlerFunc(ctxHandler))
 		rr := httptest.NewRecorder()
 		h.ServeHTTP(rr, newRequest(t, "/api/me", nil, token, ""))
 		if rr.Code != 401 || !strings.Contains(rr.Body.String(), "user no longer exists") {
@@ -108,8 +110,18 @@ func TestRequireAuth(t *testing.T) {
 		}
 	})
 
+	t.Run("user lookup failure is 500", func(t *testing.T) {
+		token, _ := issuer.Issue(testUserID, time.Now())
+		h := RequireAuth(issuer, fakeUsers{err: errors.New("db down")})(http.HandlerFunc(ctxHandler))
+		rr := httptest.NewRecorder()
+		h.ServeHTTP(rr, newRequest(t, "/api/me", nil, token, ""))
+		if rr.Code != 500 || !strings.Contains(rr.Body.String(), `"internal"`) {
+			t.Fatalf("status = %d body %s", rr.Code, rr.Body.String())
+		}
+	})
+
 	t.Run("expired token is 401", func(t *testing.T) {
-		token, _ := issuer.Issue("u-1", time.Now().Add(-AccessTokenTTL-time.Minute))
+		token, _ := issuer.Issue(testUserID, time.Now().Add(-AccessTokenTTL-time.Minute))
 		rr := httptest.NewRecorder()
 		h.ServeHTTP(rr, newRequest(t, "/api/me", nil, token, ""))
 		if rr.Code != 401 {
@@ -120,14 +132,14 @@ func TestRequireAuth(t *testing.T) {
 
 func TestRequireGarage(t *testing.T) {
 	issuer := NewTokenIssuer("secret")
-	token, _ := issuer.Issue("u-1", time.Now())
+	token, _ := issuer.Issue(testUserID, time.Now())
 	activeMember := models.Membership{
 		GarageID: testGarageID, GarageName: "G", Role: "staff",
 		Permissions: []string{"customers.manage"}, IsActive: true,
 	}
 
 	newChain := func(m fakeMemberships) http.Handler {
-		return RequireAuth(issuer, fakeUsers{user: models.User{ID: "u-1"}})(
+		return RequireAuth(issuer, fakeUsers{user: models.User{ID: testUserID}})(
 			RequireGarage(m)(http.HandlerFunc(ctxHandler)))
 	}
 
@@ -173,9 +185,18 @@ func TestRequireGarage(t *testing.T) {
 
 	t.Run("non-member is 403", func(t *testing.T) {
 		rr := httptest.NewRecorder()
-		newChain(fakeMemberships{err: errors.New("no rows")}).ServeHTTP(rr,
+		newChain(fakeMemberships{err: store.ErrNotFound}).ServeHTTP(rr,
 			newRequest(t, "/api/stuff", nil, token, testGarageID))
 		if rr.Code != 403 || !strings.Contains(rr.Body.String(), `"forbidden"`) {
+			t.Fatalf("status = %d body %s", rr.Code, rr.Body.String())
+		}
+	})
+
+	t.Run("membership lookup failure is 500", func(t *testing.T) {
+		rr := httptest.NewRecorder()
+		newChain(fakeMemberships{err: errors.New("db down")}).ServeHTTP(rr,
+			newRequest(t, "/api/stuff", nil, token, testGarageID))
+		if rr.Code != 500 || !strings.Contains(rr.Body.String(), `"internal"`) {
 			t.Fatalf("status = %d body %s", rr.Code, rr.Body.String())
 		}
 	})
@@ -194,8 +215,8 @@ func TestRequireGarage(t *testing.T) {
 
 func TestRequirePermission(t *testing.T) {
 	issuer := NewTokenIssuer("secret")
-	token, _ := issuer.Issue("u-1", time.Now())
-	base := RequireAuth(issuer, fakeUsers{user: models.User{ID: "u-1"}})
+	token, _ := issuer.Issue(testUserID, time.Now())
+	base := RequireAuth(issuer, fakeUsers{user: models.User{ID: testUserID}})
 
 	newChain := func(m fakeMemberships) http.Handler {
 		return base(RequireGarage(m)(
