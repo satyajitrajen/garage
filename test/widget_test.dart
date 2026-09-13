@@ -20,6 +20,7 @@ void main() {
     // empty card.
     expect(find.text('All clear — no vehicles in workshop'), findsNothing);
     expect(find.text('Workshop Modules'), findsOneWidget);
+    expect(find.text('Recent Collections & Bills'), findsOneWidget);
 
     // Deleted sections stay deleted.
     expect(find.text('Live Bay Activity'), findsNothing);
