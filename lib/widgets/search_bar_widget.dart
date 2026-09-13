@@ -25,6 +25,9 @@ class CustomSearchBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
+        // Deliberate hand-rolled per-brightness pair kept verbatim (widget
+        // stays AppColors-anchored; converting to palette slots would shift
+        // the dark-mode surface and border tones with no golden to verify).
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(

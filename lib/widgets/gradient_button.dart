@@ -30,6 +30,9 @@ class GradientButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEnabled = onPressed != null;
 
+    // Content ink on the fixed banner gradient (AppColors, a deliberate
+    // both-themes anchor like the dashboard navy chips); no palette slot
+    // encodes "content on the banner gradient", so the literals stay.
     final contentColor = textColor ?? (isDark ? Colors.white : const Color(0xFF0F172A));
 
     final effectiveTextStyle = GoogleFonts.poppins(
@@ -113,6 +116,9 @@ class GradientFloatingActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Same both-themes gradient anchor as GradientButton above: content ink
+    // (white / navy) and the glow tint (bannerGradient's last stop) stay as
+    // literals because the FAB rides the fixed AppColors gradient.
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(

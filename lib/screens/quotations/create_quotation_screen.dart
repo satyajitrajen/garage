@@ -101,6 +101,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       ),
     );
 
+    if (!mounted) return;
     if (items != null) {
       setState(() {
         _items.clear();

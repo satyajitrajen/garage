@@ -64,7 +64,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: palette.pending,
-                foregroundColor: Colors.white,
+                foregroundColor: palette.onPrimary,
               ),
               onPressed: () async {
                 final provider = Provider.of<GarageProvider>(context, listen: false);

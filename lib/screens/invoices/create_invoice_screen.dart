@@ -65,6 +65,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       ),
     );
 
+    if (!mounted) return;
     if (items != null) {
       setState(() {
         _items.clear();

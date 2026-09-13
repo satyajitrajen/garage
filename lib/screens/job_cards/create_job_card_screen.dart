@@ -136,6 +136,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
       ),
     );
 
+    if (!mounted) return;
     if (items != null) {
       setState(() {
         _selectedItems.clear();

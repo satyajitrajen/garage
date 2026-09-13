@@ -53,6 +53,9 @@ class EmptyStateWidget extends StatelessWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13.5,
+                // Deliberate per-brightness pair kept verbatim: the dark
+                // literal equals palette.textSecondary.dark exactly and the
+                // widget stays AppColors-anchored like the other widgets.
                 color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                 height: 1.4,
               ),

@@ -73,6 +73,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       ),
     );
 
+    if (!mounted) return;
     if (items != null) {
       setState(() {
         _selectedItems.clear();
@@ -286,6 +287,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                     context,
                     MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
                   );
+                  if (!mounted) return;
                   if (newCust != null) _onCustomerSelected(newCust);
                 },
                 icon: const Icon(Icons.person_add_rounded, size: 16),

@@ -40,7 +40,7 @@ class StaffListScreen extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: palette.pending,
-                foregroundColor: Colors.white,
+                foregroundColor: palette.onPrimary,
               ),
               onPressed: () async {
                 await provider.deleteStaff(staff.id);
