@@ -70,13 +70,13 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
       builder: (ctx) {
         final palette = ctx.palette;
         return AlertDialog(
-          title: Text('Record Salary Advance', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+          title: Text('Record Salary Advance', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'Advance loan given to ${widget.staff.name}. This will be auto-deducted from monthly salary payout.',
-                style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary),
+                style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -138,7 +138,7 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.staff.name} - Payroll', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text('${widget.staff.name} - Payroll', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_card_rounded),
@@ -169,8 +169,8 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('MONTHLY PAYSLIP', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: palette.primary, letterSpacing: 1)),
-                          Text(AppDateFormatter.formatMonthYear(_selectedMonth), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800)),
+                          Text('MONTHLY PAYSLIP', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: palette.primary, letterSpacing: 1)),
+                          Text(AppDateFormatter.formatMonthYear(_selectedMonth), style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800)),
                         ],
                       ),
                       Container(
@@ -181,7 +181,7 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                         ),
                         child: Text(
                           widget.staff.role.displayName,
-                          style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: palette.primary),
+                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: palette.primary),
                         ),
                       ),
                     ],
@@ -203,12 +203,12 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                   const SizedBox(height: 20),
 
                   // Earnings & Deductions Breakdown
-                  Text('Earnings & Allowances', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700)),
+                  Text('Earnings & Allowances', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   _buildSalaryLine('Base Monthly Salary', CurrencyFormatter.format(baseSalary)),
                   const Divider(height: 20),
 
-                  Text('Deductions & Advances', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: palette.pending)),
+                  Text('Deductions & Advances', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: palette.pending)),
                   const SizedBox(height: 8),
                   if (absentDeduction > 0)
                     _buildSalaryLine('Absent Deduction (${summary["absentDays"]} days)', '- ${CurrencyFormatter.format(absentDeduction)}', isDeduction: true),
@@ -223,10 +223,10 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Net Salary Payout:', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w800)),
+                      Text('Net Salary Payout:', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
                       Text(
                         CurrencyFormatter.format(netPayable),
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
                           color: palette.paid,
@@ -253,7 +253,7 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Salary Advances Log', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
+                      Text('Salary Advances Log', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
                       TextButton.icon(
                         onPressed: _showAddAdvanceDialog,
                         icon: const Icon(Icons.add_rounded, size: 16),
@@ -265,7 +265,7 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'No advances given in ${AppDateFormatter.formatMonthYear(_selectedMonth)}',
-                      style: GoogleFonts.poppins(fontSize: 13, color: palette.textMuted),
+                      style: GoogleFonts.inter(fontSize: 13, color: palette.textMuted),
                     ),
                   ] else ...[
                     const SizedBox(height: 8),
@@ -280,15 +280,15 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                               children: [
                                 Text(
                                   AppDateFormatter.formatDate(adv.date),
-                                  style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
+                                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
                                 ),
                                 if (adv.reason != null)
-                                  Text(adv.reason!, style: GoogleFonts.poppins(fontSize: 11.5, color: palette.textMuted)),
+                                  Text(adv.reason!, style: GoogleFonts.inter(fontSize: 11.5, color: palette.textMuted)),
                               ],
                             ),
                             Text(
                               CurrencyFormatter.format(adv.amount),
-                              style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: palette.pending),
+                              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: palette.pending),
                             ),
                           ],
                         ),
@@ -345,8 +345,8 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
       ),
       child: Column(
         children: [
-          Text(count, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w800, color: color)),
-          Text(label, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600)),
+          Text(count, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: color)),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -362,13 +362,13 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.poppins(fontSize: 13.5, color: palette.textSecondary),
+              style: GoogleFonts.inter(fontSize: 13.5, color: palette.textSecondary),
             ),
           ),
           const SizedBox(width: 8),
           Text(
             val,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: isDeduction ? palette.pending : palette.textPrimary,

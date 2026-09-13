@@ -248,7 +248,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Estimate' : 'Create Quotation / Estimate', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(_isEditing ? 'Edit Estimate' : 'Create Quotation / Estimate', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
@@ -282,12 +282,12 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                         children: [
                           Text(
                             widget.customer.name,
-                            style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${widget.vehicle.displayName} (${widget.vehicle.registrationNumber})',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 13.5,
                               color: palette.textSecondary,
                             ),
@@ -306,7 +306,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 children: [
                   Text(
                     'Estimate Line Items (${_items.length})',
-                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   ElevatedButton.icon(
                     onPressed: _openAddItems,
@@ -328,11 +328,11 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
-                      title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                      title: Text(item.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                       subtitle: Text('${item.quantity} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}'),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary),
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: palette.primary),
                       ),
                     ),
                   );
@@ -447,10 +447,10 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Estimated Total:', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                        Text('Estimated Total:', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
                         Text(
                           CurrencyFormatter.format(grandTotal),
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: palette.primary,
@@ -490,7 +490,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.inter(
               fontSize: 13,
               color: palette.textSecondary,
             ),
@@ -499,7 +499,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         const SizedBox(width: 8),
         Text(
           value,
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.inter(
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
             color: color ?? palette.textPrimary,

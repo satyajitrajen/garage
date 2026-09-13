@@ -278,7 +278,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Job Card' : 'New Job Card',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
@@ -312,7 +312,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                         children: [
                           Text(
                             vehicle?.registrationNumber ?? 'Vehicle',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.5,
@@ -321,7 +321,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                           const SizedBox(height: 2),
                           Text(
                             '${vehicle?.displayName ?? '—'} • ${customer?.name ?? '—'}',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 13.5,
                               color: palette.textSecondary,
                             ),
@@ -330,7 +330,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                             const SizedBox(height: 2),
                             Text(
                               '${widget.existing!.jobCardNumber} • customer & vehicle locked',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 color: palette.textMuted,
                               ),
@@ -429,14 +429,14 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                             children: [
                               Text(
                                 'Promised Delivery Time',
-                                style: GoogleFonts.poppins(
+                                style: GoogleFonts.inter(
                                   fontSize: 11.5,
                                   color: palette.textMuted,
                                 ),
                               ),
                               Text(
                                 AppDateFormatter.formatDateTime(_promisedDate),
-                                style: GoogleFonts.poppins(
+                                style: GoogleFonts.inter(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -455,7 +455,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               // Customer Complaints / Demands
               Text(
                 'Customer Complaints & Voice',
-                style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               Row(
@@ -497,7 +497,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                         Expanded(
                           child: Text(
                             entry.value,
-                            style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w500),
+                            style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w500),
                           ),
                         ),
                         GestureDetector(
@@ -514,7 +514,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               // Inspection Checklist
               Text(
                 'Inspection & Vehicle Health Checklist',
-                style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               Container(
@@ -529,7 +529,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     final checked = _inspectionChecklist[key] ?? true;
                     return CheckboxListTile(
                       value: checked,
-                      title: Text(key, style: GoogleFonts.poppins(fontSize: 13.5)),
+                      title: Text(key, style: GoogleFonts.inter(fontSize: 13.5)),
                       activeColor: palette.paid,
                       dense: true,
                       contentPadding: EdgeInsets.zero,
@@ -550,7 +550,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                 children: [
                   Text(
                     'Work Items & Parts (${_selectedItems.length})',
-                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   // A billed job locks its items; the disabled button carries
                   // the same explanatory tooltip as the detail screen.
@@ -573,11 +573,11 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     margin: const EdgeInsets.only(bottom: 6),
                     child: ListTile(
                       dense: true,
-                      title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                      title: Text(item.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                       subtitle: Text('${item.quantity} x ${CurrencyFormatter.format(item.unitPrice)}'),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary),
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: palette.primary),
                       ),
                     ),
                   );

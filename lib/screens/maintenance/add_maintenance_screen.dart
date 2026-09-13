@@ -161,7 +161,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       children: [
                         Text(
                           'Add Custom Item / Service',
-                          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
                         ),
                         IconButton(
                           icon: const Icon(Icons.close_rounded),
@@ -231,7 +231,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     const SizedBox(height: 14),
                     Text(
                       'Category',
-                      style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 6),
                     Wrap(
@@ -260,7 +260,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       activeColor: palette.primary,
                       title: Text(
                         'Count as Labour / Service Charge',
-                        style: GoogleFonts.poppins(fontSize: 14),
+                        style: GoogleFonts.inter(fontSize: 14),
                       ),
                       onChanged: (val) {
                         setSheetState(() => _customIsLabour = val ?? false);
@@ -313,14 +313,14 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(widget.title, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
         actions: [
           TextButton.icon(
             onPressed: _showAddCustomItemSheet,
             icon: Icon(Icons.add_circle_outline_rounded, color: palette.primary),
             label: Text(
               'Custom Item',
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.inter(
                 color: palette.primary,
                 fontWeight: FontWeight.w600,
               ),
@@ -344,7 +344,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                   children: [
                     Text(
                       'Selected Work Items (${_currentItems.length})',
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: palette.textPrimary,
@@ -360,7 +360,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         ),
                         child: Text(
                           'Clear All',
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 12.5,
                             color: palette.pending,
                             fontWeight: FontWeight.w600,
@@ -401,7 +401,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                   Expanded(
                                     child: Text(
                                       item.name,
-                                      style: GoogleFonts.poppins(
+                                      style: GoogleFonts.inter(
                                         fontSize: 12.5,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -420,7 +420,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                 children: [
                                   Text(
                                     CurrencyFormatter.format(item.totalAmount),
-                                    style: GoogleFonts.poppins(
+                                    style: GoogleFonts.inter(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w800,
                                       color: palette.primary,
@@ -443,7 +443,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                         padding: const EdgeInsets.symmetric(horizontal: 6),
                                         child: Text(
                                           formatQuantity(item.quantity),
-                                          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13),
+                                          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
                                         ),
                                       ),
                                       GestureDetector(
@@ -491,7 +491,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
             unselectedLabelColor: palette.textMuted,
             indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5),
             tabs: [
               const Tab(text: 'All Items'),
               Tab(text: ItemCategory.sparePart.displayName),
@@ -536,7 +536,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                           children: [
                             Text(
                               'Parts: ${CurrencyFormatter.format(partsSubtotal)}',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 color: palette.textSecondary,
                               ),
@@ -544,7 +544,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                             const SizedBox(width: 8),
                             Text(
                               'Labour: ${CurrencyFormatter.format(labourSubtotal)}',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 color: palette.textSecondary,
                               ),
@@ -554,7 +554,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         const SizedBox(height: 2),
                         Text(
                           CurrencyFormatter.format(totalAmount),
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: palette.primary,
@@ -599,7 +599,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
       return Center(
         child: Text(
           'No items found in this category',
-          style: GoogleFonts.poppins(color: context.palette.textMuted),
+          style: GoogleFonts.inter(color: context.palette.textMuted),
         ),
       );
     }
@@ -627,19 +627,19 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
             ),
             title: Text(
               item.name,
-              style: GoogleFonts.poppins(fontSize: 14.5, fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w700),
             ),
             subtitle: Row(
               children: [
                 Text(
                   item.category.displayName,
-                  style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
+                  style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted),
                 ),
                 if (item.partNumber != null) ...[
                   const SizedBox(width: 8),
                   Text(
                     '• ${item.partNumber}',
-                    style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
+                    style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted),
                   ),
                 ],
               ],
@@ -653,7 +653,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                   children: [
                     Text(
                       CurrencyFormatter.format(item.unitPrice),
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: palette.primary,
@@ -661,7 +661,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     ),
                     Text(
                       'per ${item.unit}',
-                      style: GoogleFonts.poppins(fontSize: 11, color: palette.textMuted),
+                      style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
                     ),
                   ],
                 ),

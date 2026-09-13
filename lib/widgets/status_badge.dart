@@ -215,7 +215,7 @@ class StatusBadge extends StatelessWidget {
           ],
           Text(
             label,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.inter(
               color: resolvedColor,
               fontSize: isCompact ? 9.5 : 10.5,
               fontWeight: FontWeight.w700,

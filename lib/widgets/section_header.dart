@@ -32,7 +32,7 @@ class SectionHeader extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.inter(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w700,
                   color: palette.textPrimary,
@@ -43,7 +43,7 @@ class SectionHeader extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle!,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                     color: palette.textSecondary,
@@ -68,7 +68,7 @@ class SectionHeader extends StatelessWidget {
               children: [
                 Text(
                   actionText!,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: palette.accent,

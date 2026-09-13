@@ -75,7 +75,7 @@ class StaffListScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Staff & Technicians',
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
@@ -110,7 +110,7 @@ class StaffListScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Total Team (${staffMembers.length})',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 12,
                           color: palette.textSecondary,
                         ),
@@ -118,7 +118,7 @@ class StaffListScreen extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         'Payroll: ${CurrencyFormatter.format(totalMonthlyPayroll)}/mo',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
@@ -189,7 +189,7 @@ class StaffListScreen extends StatelessWidget {
                                       backgroundColor: palette.primary.withValues(alpha: 0.15),
                                       child: Text(
                                         staff.name.substring(0, 1).toUpperCase(),
-                                        style: GoogleFonts.poppins(
+                                        style: GoogleFonts.inter(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w800,
                                           color: palette.primary,
@@ -203,7 +203,7 @@ class StaffListScreen extends StatelessWidget {
                                         children: [
                                           Text(
                                             staff.name,
-                                            style: GoogleFonts.poppins(
+                                            style: GoogleFonts.inter(
                                               fontSize: 16.5,
                                               fontWeight: FontWeight.w700,
                                               color: palette.textPrimary,
@@ -218,7 +218,7 @@ class StaffListScreen extends StatelessWidget {
                                             ),
                                             child: Text(
                                               staff.role.displayName,
-                                              style: GoogleFonts.poppins(
+                                              style: GoogleFonts.inter(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w600,
                                                 color: palette.accent,
@@ -233,7 +233,7 @@ class StaffListScreen extends StatelessWidget {
                                       children: [
                                         Text(
                                           CurrencyFormatter.format(staff.monthlySalary),
-                                          style: GoogleFonts.poppins(
+                                          style: GoogleFonts.inter(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w800,
                                             color: palette.textPrimary,
@@ -241,7 +241,7 @@ class StaffListScreen extends StatelessWidget {
                                         ),
                                         Text(
                                           'per month',
-                                          style: GoogleFonts.poppins(fontSize: 10.5, color: palette.textMuted),
+                                          style: GoogleFonts.inter(fontSize: 10.5, color: palette.textMuted),
                                         ),
                                       ],
                                     ),
@@ -260,17 +260,17 @@ class StaffListScreen extends StatelessWidget {
                                         const SizedBox(width: 4),
                                         Text(
                                           '$activeJobsCount Active Jobs',
-                                          style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w500),
+                                          style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w500),
                                         ),
                                       ],
                                     ),
                                     Row(
                                       children: [
-                                        Text('Today: ', style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted)),
+                                        Text('Today: ', style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted)),
                                         if (todayAttendance != null)
                                           StatusBadge.fromAttendanceStatus(todayAttendance.status)
                                         else
-                                          Text('Not Marked', style: GoogleFonts.poppins(fontSize: 12, color: palette.pending, fontWeight: FontWeight.w600)),
+                                          Text('Not Marked', style: GoogleFonts.inter(fontSize: 12, color: palette.pending, fontWeight: FontWeight.w600)),
                                       ],
                                     ),
                                   ],
@@ -319,7 +319,7 @@ class StaffListScreen extends StatelessWidget {
                                           label: const Text('Salary Slip'),
                                           style: OutlinedButton.styleFrom(
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                            textStyle: GoogleFonts.poppins(fontSize: 12),
+                                            textStyle: GoogleFonts.inter(fontSize: 12),
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -334,7 +334,7 @@ class StaffListScreen extends StatelessWidget {
                                           label: const Text('Attendance'),
                                           style: ElevatedButton.styleFrom(
                                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                            textStyle: GoogleFonts.poppins(fontSize: 12),
+                                            textStyle: GoogleFonts.inter(fontSize: 12),
                                           ),
                                         ),
                                       ],

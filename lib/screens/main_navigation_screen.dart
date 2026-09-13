@@ -183,7 +183,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                             child: Text(
                               '${badgeCount > 9 ? '9+' : badgeCount}',
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 9,
                                 height: 1,
                                 fontWeight: FontWeight.w700,
@@ -198,7 +198,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 const SizedBox(height: 3),
                 Text(
                   label,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected

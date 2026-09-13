@@ -35,7 +35,7 @@ class GradientButton extends StatelessWidget {
     // encodes "content on the banner gradient", so the literals stay.
     final contentColor = textColor ?? (isDark ? Colors.white : const Color(0xFF0F172A));
 
-    final effectiveTextStyle = GoogleFonts.poppins(
+    final effectiveTextStyle = GoogleFonts.inter(
       fontSize: 13.5,
       fontWeight: FontWeight.w700,
       color: isEnabled ? contentColor : contentColor.withValues(alpha: 0.5),
@@ -159,7 +159,7 @@ class GradientFloatingActionButton extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 DefaultTextStyle(
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     color: isDark ? Colors.white : const Color(0xFF0F172A),

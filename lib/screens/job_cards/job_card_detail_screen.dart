@@ -163,10 +163,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(jobCard.jobCardNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 18)),
+            Text(jobCard.jobCardNumber, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 18)),
             Text(
               'Created ${AppDateFormatter.formatDate(jobCard.createdAt)}',
-              style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
+              style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted),
             ),
           ],
         ),
@@ -208,7 +208,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                 children: [
                   Text(
                     'Update Live Status',
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.inter(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w700,
                       color: palette.textSecondary,
@@ -262,7 +262,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     children: [
                       Text(
                         vehicle?.registrationNumber ?? 'Vehicle',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
@@ -276,7 +276,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                         ),
                         child: Text(
                           vehicle?.fuelType.displayName ?? '',
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: palette.primary,
@@ -288,7 +288,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   const SizedBox(height: 4),
                   Text(
                     '${vehicle?.displayName ?? ""} • ${customer?.name ?? ""}',
-                    style: GoogleFonts.poppins(fontSize: 14.5, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 12),
                   const Divider(),
@@ -308,7 +308,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                       const SizedBox(width: 6),
                       Text(
                         'Promised: ${AppDateFormatter.formatDateTime(jobCard.promisedDeliveryDate)}',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: palette.primary,
@@ -326,7 +326,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                         Expanded(
                           child: Text(
                             'Est. cost note: ${jobCard.estimatedCostNote}',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: palette.textSecondary,
@@ -348,7 +348,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                         Expanded(
                           child: Text(
                             'Completed: ${AppDateFormatter.formatDateTime(jobCard.completedAt!)}',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: palette.paid,
@@ -379,7 +379,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                 children: [
                   Text(
                     'Reported Complaints (${jobCard.customerComplaints.length})',
-                    style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 10),
                   ...jobCard.customerComplaints.map((c) {
@@ -393,7 +393,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                           Expanded(
                             child: Text(
                               c,
-                              style: GoogleFonts.poppins(fontSize: 13.5),
+                              style: GoogleFonts.inter(fontSize: 13.5),
                             ),
                           ),
                         ],
@@ -423,7 +423,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Text(
                       'Inspection Checklist '
                       '(${jobCard.inspectionChecklist.values.where((v) => v).length}/${jobCard.inspectionChecklist.length})',
-                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
+                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 10),
                     ...jobCard.inspectionChecklist.entries.map((entry) {
@@ -442,7 +442,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                             Expanded(
                               child: Text(
                                 entry.key,
-                                style: GoogleFonts.poppins(
+                                style: GoogleFonts.inter(
                                   fontSize: 13.5,
                                   color: done ? palette.textPrimary : palette.textMuted,
                                 ),
@@ -475,12 +475,12 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   children: [
                     Text(
                       'Supervisor Notes',
-                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
+                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       jobCard.supervisorNotes!,
-                      style: GoogleFonts.poppins(fontSize: 13.5, height: 1.4),
+                      style: GoogleFonts.inter(fontSize: 13.5, height: 1.4),
                     ),
                   ],
                 ),
@@ -505,7 +505,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     children: [
                       Text(
                         'Services & Parts (${jobCard.items.length})',
-                        style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
                       ),
                       // A billed job locks its items so they can no longer
                       // diverge from the invoice; the disabled button carries
@@ -529,7 +529,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Center(
                       child: Text(
                         'No maintenance items added yet. Tap "Add / Edit Items" to add parts & labour.',
-                        style: GoogleFonts.poppins(color: palette.textMuted, fontSize: 13),
+                        style: GoogleFonts.inter(color: palette.textMuted, fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -548,18 +548,18 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                                 children: [
                                   Text(
                                     item.name,
-                                    style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600),
                                   ),
                                   Text(
                                     '${item.quantity} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}',
-                                    style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
+                                    style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted),
                                   ),
                                 ],
                               ),
                             ),
                             Text(
                               CurrencyFormatter.format(item.totalAmount),
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: palette.textPrimary,
@@ -587,29 +587,29 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('Parts Subtotal:', style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary))),
+                        Expanded(child: Text('Parts Subtotal:', style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary))),
                         const SizedBox(width: 8),
-                        Text(CurrencyFormatter.format(jobCard.partsTotal), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text(CurrencyFormatter.format(jobCard.partsTotal), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('Labour Subtotal:', style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary))),
+                        Expanded(child: Text('Labour Subtotal:', style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary))),
                         const SizedBox(width: 8),
-                        Text(CurrencyFormatter.format(jobCard.labourTotal), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text(CurrencyFormatter.format(jobCard.labourTotal), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('Estimated Grand Total:', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700))),
+                        Expanded(child: Text('Estimated Grand Total:', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700))),
                         const SizedBox(width: 8),
                         Text(
                           CurrencyFormatter.format(jobCard.grandTotal),
-                          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w800, color: palette.primary),
+                          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: palette.primary),
                         ),
                       ],
                     ),
@@ -669,7 +669,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.inter(
             fontSize: 11.5,
             color: palette.textMuted,
           ),
@@ -677,7 +677,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
         const SizedBox(height: 2),
         Text(
           value,
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w700,
             color: palette.textPrimary,

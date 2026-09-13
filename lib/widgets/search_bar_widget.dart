@@ -51,13 +51,13 @@ class CustomSearchBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               onChanged: onChanged,
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.inter(
                 fontSize: 15,
                 color: isDark ? Colors.white : AppColors.textPrimary,
               ),
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: GoogleFonts.poppins(
+                hintStyle: GoogleFonts.inter(
                   color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
                   fontSize: 14,
                 ),

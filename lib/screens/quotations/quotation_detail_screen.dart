@@ -199,7 +199,7 @@ class QuotationDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(quote.quotationNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(quote.quotationNumber, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
             icon: const Icon(Icons.share_rounded),
@@ -263,7 +263,7 @@ class QuotationDetailScreen extends StatelessWidget {
                               profile.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                                 color: palette.primary,
@@ -275,7 +275,7 @@ class QuotationDetailScreen extends StatelessWidget {
                                 profile.tagline.trim(),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.poppins(
+                                style: GoogleFonts.inter(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
                                   color: palette.textSecondary,
@@ -285,7 +285,7 @@ class QuotationDetailScreen extends StatelessWidget {
                             const SizedBox(height: 2),
                             Text(
                               'ESTIMATE / QUOTATION',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.2,
@@ -296,7 +296,7 @@ class QuotationDetailScreen extends StatelessWidget {
                               'GSTIN: ${profile.gstin}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 11,
                                 color: palette.textMuted,
                               ),
@@ -305,7 +305,7 @@ class QuotationDetailScreen extends StatelessWidget {
                               '${profile.addressLine}, ${profile.city}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 11,
                                 color: palette.textMuted,
                               ),
@@ -314,7 +314,7 @@ class QuotationDetailScreen extends StatelessWidget {
                               'Phone: ${profile.phone}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 11,
                                 color: palette.textMuted,
                               ),
@@ -324,7 +324,7 @@ class QuotationDetailScreen extends StatelessWidget {
                                 'Email: ${profile.email.trim()}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.poppins(
+                                style: GoogleFonts.inter(
                                   fontSize: 11,
                                   color: palette.textMuted,
                                 ),
@@ -337,11 +337,11 @@ class QuotationDetailScreen extends StatelessWidget {
                         children: [
                           Text(
                             quote.quotationNumber,
-                            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
                           ),
                           Text(
                             AppDateFormatter.formatDate(quote.createdAt),
-                            style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
+                            style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted),
                           ),
                         ],
                       ),
@@ -359,19 +359,19 @@ class QuotationDetailScreen extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('ESTIMATE FOR:', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: palette.textMuted)),
+                          Text('ESTIMATE FOR:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: palette.textMuted)),
                           const SizedBox(height: 2),
-                          Text(customer?.name ?? '', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
-                          Text(customer?.phone ?? '', style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary)),
+                          Text(customer?.name ?? '', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+                          Text(customer?.phone ?? '', style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary)),
                         ],
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('VEHICLE:', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: palette.textMuted)),
+                          Text('VEHICLE:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: palette.textMuted)),
                           const SizedBox(height: 2),
-                          Text(vehicle?.registrationNumber ?? '', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
-                          Text('${vehicle?.displayName ?? ""} • ${quote.kmReading} KM', style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary)),
+                          Text(vehicle?.registrationNumber ?? '', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+                          Text('${vehicle?.displayName ?? ""} • ${quote.kmReading} KM', style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary)),
                         ],
                       ),
                     ],
@@ -389,19 +389,19 @@ class QuotationDetailScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           flex: 3,
-                          child: Text('DESCRIPTION', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('DESCRIPTION', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 1,
-                          child: Text('QTY', textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('QTY', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('RATE', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('RATE', textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('AMOUNT', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('AMOUNT', textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                       ],
                     ),
@@ -419,25 +419,25 @@ class QuotationDetailScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(item.name, style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                                Text(item.name, style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600)),
                                 Text(
                                   item.isLabour ? 'Labour' : 'Part (${item.category.displayName})',
-                                  style: GoogleFonts.poppins(fontSize: 11, color: palette.textMuted),
+                                  style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
                                 ),
                               ],
                             ),
                           ),
                           Expanded(
                             flex: 1,
-                            child: Text(formatQuantity(item.quantity), textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: 13)),
+                            child: Text(formatQuantity(item.quantity), textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 13)),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(CurrencyFormatter.format(item.unitPrice), textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: 13)),
+                            child: Text(CurrencyFormatter.format(item.unitPrice), textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 13)),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(CurrencyFormatter.format(item.taxableAmount), textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w700)),
+                            child: Text(CurrencyFormatter.format(item.taxableAmount), textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700)),
                           ),
                         ],
                       ),
@@ -455,10 +455,10 @@ class QuotationDetailScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Net Estimated Total:', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w800)),
+                      Text('Net Estimated Total:', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
                       Text(
                         CurrencyFormatter.format(quote.grandTotal),
-                        style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w900, color: palette.primary),
+                        style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w900, color: palette.primary),
                       ),
                     ],
                   ),
@@ -477,7 +477,7 @@ class QuotationDetailScreen extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           'Valid until ${AppDateFormatter.formatDate(quote.validUntil)} (${quote.validityDays} days)',
-                          style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w500, color: palette.accent),
+                          style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w500, color: palette.accent),
                         ),
                       ],
                     ),
@@ -574,7 +574,7 @@ class QuotationDetailScreen extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       'This estimate is ${quote.status.displayName.toLowerCase()} — no further actions',
-                      style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w600, color: palette.textMuted),
+                      style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: palette.textMuted),
                     ),
                   ],
                 ),
@@ -595,11 +595,11 @@ class QuotationDetailScreen extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary),
+              style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary),
             ),
           ),
           const SizedBox(width: 8),
-          Text(val, style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
+          Text(val, style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
         ],
       ),
     );

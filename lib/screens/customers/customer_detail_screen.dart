@@ -173,7 +173,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(customer.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(customer.name, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -225,7 +225,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                       backgroundColor: palette.primary.withValues(alpha: 0.15),
                       child: Text(
                         customer.name.substring(0, 1).toUpperCase(),
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
                           color: palette.primary,
@@ -239,7 +239,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                         children: [
                           Text(
                             customer.name,
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 19,
                               fontWeight: FontWeight.w700,
                               color: palette.textPrimary,
@@ -248,7 +248,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                           const SizedBox(height: 3),
                           Text(
                             customer.phone,
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 14,
                               color: palette.textSecondary,
                             ),
@@ -257,7 +257,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                             const SizedBox(height: 2),
                             Text(
                               customer.email!,
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 12.5,
                                 color: palette.textMuted,
                               ),
@@ -303,7 +303,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                       Expanded(
                         child: Text(
                           customer.address!,
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 13,
                             color: palette.textSecondary,
                           ),
@@ -322,7 +322,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                     ),
                     child: Text(
                       'GSTIN: ${customer.gstin!.trim()}',
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,
@@ -341,7 +341,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                       Expanded(
                         child: Text(
                           customer.notes!.trim(),
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 12.5,
                             fontStyle: FontStyle.italic,
                             color: palette.textSecondary,
@@ -371,7 +371,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                             const SizedBox(width: 8),
                             Text(
                               'Outstanding Balance Dues:',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
                                 color: palette.pending,
@@ -381,7 +381,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                         ),
                         Text(
                           CurrencyFormatter.format(outstandingDues),
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                             color: palette.pending,
@@ -401,7 +401,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             labelColor: palette.primary,
             unselectedLabelColor: palette.textMuted,
             indicatorColor: palette.primary,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14),
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
             tabs: [
               Tab(text: 'Vehicles (${vehicles.length})'),
               Tab(text: 'Job Cards (${customerJobCards.length})'),
@@ -443,7 +443,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
           children: [
             Text(
               'Registered Fleet',
-              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             ElevatedButton.icon(
               onPressed: _addVehicle,
@@ -469,7 +469,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                     children: [
                       Text(
                         v.registrationNumber,
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
@@ -483,7 +483,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                         ),
                         child: Text(
                           v.fuelType.displayName,
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
                             color: palette.primary,
@@ -495,20 +495,20 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                   const SizedBox(height: 6),
                   Text(
                     v.displayName,
-                    style: GoogleFonts.poppins(fontSize: 14.5, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       Text(
                         '${v.currentKm} KM',
-                        style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary),
+                        style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary),
                       ),
                       if (v.year != null) ...[
                         const SizedBox(width: 12),
                         Text(
                           '${v.year} Model',
-                          style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary),
+                          style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary),
                         ),
                       ],
                     ],
@@ -566,7 +566,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
     final palette = context.palette;
     if (jobCards.isEmpty) {
       return Center(
-        child: Text('No job cards recorded yet', style: GoogleFonts.poppins(color: palette.textMuted)),
+        child: Text('No job cards recorded yet', style: GoogleFonts.inter(color: palette.textMuted)),
       );
     }
     return ListView.builder(
@@ -585,11 +585,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             },
             title: Text(
               jc.jobCardNumber,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
             ),
             subtitle: Text(
               AppDateFormatter.formatDate(jc.createdAt),
-              style: GoogleFonts.poppins(fontSize: 12.5),
+              style: GoogleFonts.inter(fontSize: 12.5),
             ),
             trailing: StatusBadge.fromJobStatus(jc.status),
           ),
@@ -602,7 +602,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
     final palette = context.palette;
     if (invoices.isEmpty) {
       return Center(
-        child: Text('No invoices recorded yet', style: GoogleFonts.poppins(color: palette.textMuted)),
+        child: Text('No invoices recorded yet', style: GoogleFonts.inter(color: palette.textMuted)),
       );
     }
     return ListView.builder(
@@ -621,11 +621,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             },
             title: Text(
               inv.invoiceNumber,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
             ),
             subtitle: Text(
               '${CurrencyFormatter.format(inv.grandTotal)} • ${AppDateFormatter.formatDate(inv.invoiceDate)}',
-              style: GoogleFonts.poppins(fontSize: 13),
+              style: GoogleFonts.inter(fontSize: 13),
             ),
             // Same small overdue chip as the invoices list, so a bill past
             // its due date is flagged wherever the invoice appears.
@@ -641,7 +641,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                     ),
                     child: Text(
                       'Overdue',
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         color: palette.onPrimary,

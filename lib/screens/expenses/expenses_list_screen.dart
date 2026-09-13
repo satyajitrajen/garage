@@ -106,7 +106,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
       appBar: AppBar(
         title: Text(
           'Garage Expenses',
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
@@ -145,7 +145,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                     children: [
                       Text(
                         'This Month Expenses',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           color: palette.textSecondary,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
@@ -154,7 +154,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                       const SizedBox(height: 4),
                       Text(
                         CurrencyFormatter.format(provider.thisMonthExpenses),
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           color: palette.textPrimary,
@@ -179,7 +179,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                       children: [
                         Text(
                           'Today\'s Expenses',
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             color: palette.textSecondary,
                             fontSize: 11.5,
                             fontWeight: FontWeight.w500,
@@ -188,7 +188,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                         const SizedBox(height: 4),
                         Text(
                           CurrencyFormatter.format(provider.todayExpenses),
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: palette.textPrimary,
@@ -301,7 +301,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                   children: [
                                     Text(
                                       exp.title,
-                                      style: GoogleFonts.poppins(
+                                      style: GoogleFonts.inter(
                                         fontSize: 14.5,
                                         fontWeight: FontWeight.w700,
                                         color: palette.textPrimary,
@@ -313,7 +313,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                         StatusBadge.forExpenseCategory(exp.category, palette: palette),
                                         if (exp.vendorName != null) ...[
                                           const SizedBox(width: 6),
-                                          Text(exp.vendorName!, style: GoogleFonts.poppins(fontSize: 11.5, color: palette.textMuted)),
+                                          Text(exp.vendorName!, style: GoogleFonts.inter(fontSize: 11.5, color: palette.textMuted)),
                                         ],
                                       ],
                                     ),
@@ -322,7 +322,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                       children: [
                                         Text(
                                           AppDateFormatter.formatDate(exp.expenseDate),
-                                          style: GoogleFonts.poppins(fontSize: 11, color: palette.textMuted),
+                                          style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
                                         ),
                                         const SizedBox(width: 8),
                                         Container(
@@ -335,7 +335,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                           ),
                                           child: Text(
                                             exp.paymentMode.shortName,
-                                            style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w600),
+                                            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600),
                                           ),
                                         ),
                                       ],
@@ -350,7 +350,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                                 children: [
                                   Text(
                                     CurrencyFormatter.format(exp.amount),
-                                    style: GoogleFonts.poppins(
+                                    style: GoogleFonts.inter(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800,
                                       color: palette.pending,

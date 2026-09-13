@@ -156,7 +156,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Garage Expense' : 'Add Garage Expense', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(_isEditing ? 'Edit Garage Expense' : 'Add Garage Expense', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
@@ -168,7 +168,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // Expense Category Picker
               Text(
                 'Expense Category *',
-                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -217,7 +217,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
                   labelText: 'Amount Spent (₹) *',
                   prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.primary),
@@ -254,14 +254,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             children: [
                               Text(
                                 'Expense Date',
-                                style: GoogleFonts.poppins(
+                                style: GoogleFonts.inter(
                                   fontSize: 11.5,
                                   color: palette.textMuted,
                                 ),
                               ),
                               Text(
                                 AppDateFormatter.formatDate(_expenseDate),
-                                style: GoogleFonts.poppins(fontSize: 14.5, fontWeight: FontWeight.w600),
+                                style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -277,7 +277,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // Paid Via (Payment Mode)
               Text(
                 'Paid Via Mode',
-                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Wrap(

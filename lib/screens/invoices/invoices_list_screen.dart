@@ -76,7 +76,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Invoices & Billing', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text('Invoices & Billing', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
             icon: const Icon(Icons.note_add_rounded),
@@ -130,7 +130,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             unselectedLabelColor: palette.textMuted,
             indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5),
             tabs: const [
               Tab(text: 'All Invoices'),
               Tab(text: 'Paid'),
@@ -161,7 +161,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
         children: [
           Text(
             label,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.inter(
               fontSize: 11,
               color: palette.textSecondary,
             ),
@@ -169,7 +169,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
           const SizedBox(height: 2),
           Text(
             value,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w800,
               color: color ?? palette.textPrimary,
@@ -239,7 +239,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                     children: [
                       Text(
                         inv.invoiceNumber,
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: palette.accent,
@@ -257,7 +257,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                               ),
                               child: Text(
                                 'Overdue',
-                                style: GoogleFonts.poppins(
+                                style: GoogleFonts.inter(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white,
@@ -282,7 +282,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                           children: [
                             Text(
                               customer?.name ?? 'Customer',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
                                 color: palette.textPrimary,
@@ -291,7 +291,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                             const SizedBox(height: 2),
                             Text(
                               '${vehicle?.registrationNumber ?? ""} • ${vehicle?.displayName ?? ""}',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: palette.textSecondary,
                               ),
@@ -304,7 +304,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                         children: [
                           Text(
                             CurrencyFormatter.format(inv.grandTotal),
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: palette.textPrimary,
@@ -313,7 +313,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                           if (inv.balanceDue > 0)
                             Text(
                               'Due: ${CurrencyFormatter.format(inv.balanceDue)}',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
                                 color: palette.pending,
@@ -322,7 +322,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                           else
                             Text(
                               'Paid in Full',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
                                 color: palette.paid,
@@ -340,7 +340,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                     children: [
                       Text(
                         AppDateFormatter.formatDate(inv.invoiceDate),
-                        style: GoogleFonts.poppins(fontSize: 11.5, color: palette.textMuted),
+                        style: GoogleFonts.inter(fontSize: 11.5, color: palette.textMuted),
                       ),
                       if (inv.balanceDue > 0)
                         InkWell(
@@ -367,7 +367,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                                 const SizedBox(width: 4),
                                 Text(
                                   'Collect',
-                                  style: GoogleFonts.poppins(
+                                  style: GoogleFonts.inter(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
                                     color: palette.paid,
@@ -384,7 +384,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
                             const SizedBox(width: 4),
                             Text(
                               'Paid via ${inv.payments.isEmpty ? '—' : inv.payments.last.mode.shortName}',
-                              style: GoogleFonts.poppins(fontSize: 11.5, color: palette.paid, fontWeight: FontWeight.w600),
+                              style: GoogleFonts.inter(fontSize: 11.5, color: palette.paid, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),

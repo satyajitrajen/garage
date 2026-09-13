@@ -81,7 +81,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.staff.name} - Attendance', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text('${widget.staff.name} - Attendance', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
             icon: const Icon(Icons.receipt_rounded),
@@ -119,7 +119,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                   ),
                   Text(
                     AppDateFormatter.formatMonthYear(_currentMonth),
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.inter(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
                       color: palette.textPrimary,
@@ -168,7 +168,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                         child: Text(
                           day,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
                             color: isSunday ? palette.pending : palette.textMuted,
@@ -242,7 +242,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                             children: [
                               Text(
                                 '$dayNum',
-                                style: GoogleFonts.poppins(
+                                style: GoogleFonts.inter(
                                   fontSize: 13,
                                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                                   color: isSunday ? palette.pending : palette.textPrimary,
@@ -286,7 +286,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                     children: [
                       Text(
                         AppDateFormatter.formatDayDate(_selectedDate),
-                        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
                       ),
                       if (selectedRecord != null)
                         Container(
@@ -297,7 +297,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                           ),
                           child: Text(
                             'Status: ${selectedRecord.status.displayName}',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: palette.primary,
@@ -381,7 +381,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
           children: [
             Text(
               count,
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
                 color: color,
@@ -390,7 +390,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
             const SizedBox(height: 2),
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: context.palette.textPrimary,

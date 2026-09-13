@@ -70,7 +70,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
       appBar: AppBar(
         title: Text(
           widget.isSelectionMode ? 'Select Customer' : 'Customers',
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
@@ -119,7 +119,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
               children: [
                 Text(
                   '${customers.length} Customers Found',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: palette.textSecondary,
@@ -127,7 +127,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                 ),
                 Text(
                   'Tap to select / view',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 12,
                     color: palette.primary,
                     fontWeight: FontWeight.w500,
@@ -178,7 +178,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                   backgroundColor: palette.primary.withOpacity(0.12),
                                   child: Text(
                                     customer.name.substring(0, 1).toUpperCase(),
-                                    style: GoogleFonts.poppins(
+                                    style: GoogleFonts.inter(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w700,
                                       color: palette.primary,
@@ -192,7 +192,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                     children: [
                                       Text(
                                         customer.name,
-                                        style: GoogleFonts.poppins(
+                                        style: GoogleFonts.inter(
                                           fontSize: 14.5,
                                           fontWeight: FontWeight.w700,
                                           color: palette.textPrimary,
@@ -209,7 +209,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                           const SizedBox(width: 4),
                                           Text(
                                             customer.phone,
-                                            style: GoogleFonts.poppins(
+                                            style: GoogleFonts.inter(
                                               fontSize: 12,
                                               color: palette.textSecondary,
                                             ),
@@ -238,7 +238,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                                 const SizedBox(width: 4),
                                                 Text(
                                                   '${vehicles.length} ${vehicles.length == 1 ? "Vehicle" : "Vehicles"}',
-                                                  style: GoogleFonts.poppins(
+                                                  style: GoogleFonts.inter(
                                                     fontSize: 10.5,
                                                     fontWeight: FontWeight.w600,
                                                     color: palette.textSecondary,
@@ -256,7 +256,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                                ),
                                                child: Text(
                                                  vehicles.first.registrationNumber,
-                                                 style: GoogleFonts.poppins(
+                                                 style: GoogleFonts.inter(
                                                    fontSize: 10.5,
                                                    fontWeight: FontWeight.w700,
                                                    color: palette.accent,
@@ -281,7 +281,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                                          ),
                                          child: Text(
                                            'Due: ${CurrencyFormatter.format(outstandingBalance)}',
-                                           style: GoogleFonts.poppins(
+                                           style: GoogleFonts.inter(
                                              fontSize: 11,
                                              fontWeight: FontWeight.w700,
                                              color: palette.pending,

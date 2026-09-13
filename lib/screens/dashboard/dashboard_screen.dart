@@ -61,7 +61,7 @@ class DashboardScreen extends StatelessWidget {
                     provider.profile.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.inter(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
@@ -70,7 +70,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   Text(
                     AppDateFormatter.formatDayDate(today),
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: palette.textMuted,
@@ -163,7 +163,7 @@ class DashboardScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               'GARAGE STATUS: ',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white70,
@@ -177,7 +177,7 @@ class DashboardScreen extends StatelessWidget {
                                     : '${activeJobs.length} vehicle(s) in workshop',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.poppins(
+                                style: GoogleFonts.inter(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   color: palette.ready,
@@ -332,7 +332,7 @@ class DashboardScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       'Quick Service Wizard',
-                                      style: GoogleFonts.poppins(
+                                      style: GoogleFonts.inter(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w700,
                                         color: Colors.white,
@@ -340,7 +340,7 @@ class DashboardScreen extends StatelessWidget {
                                     ),
                                     Text(
                                       'Create job card, bill & collect payment in 60s',
-                                      style: GoogleFonts.poppins(
+                                      style: GoogleFonts.inter(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
                                         color: Colors.white.withValues(alpha: 0.85),
@@ -486,7 +486,7 @@ class DashboardScreen extends StatelessWidget {
                   child: Center(
                     child: Text(
                       'All bays clear • No vehicles currently under repair',
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         color: palette.textMuted,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -556,7 +556,7 @@ class DashboardScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       '${vehicle?.registrationNumber ?? "Vehicle"} • ${vehicle?.displayName ?? ""}',
-                                      style: GoogleFonts.poppins(
+                                      style: GoogleFonts.inter(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w700,
                                         color: palette.textPrimary,
@@ -570,7 +570,7 @@ class DashboardScreen extends StatelessWidget {
                                         Flexible(
                                           child: Text(
                                             '${customer?.name ?? ""} • In Bay',
-                                            style: GoogleFonts.poppins(
+                                            style: GoogleFonts.inter(
                                               fontSize: 11.5,
                                               color: palette.textMuted,
                                               fontWeight: FontWeight.w500,
@@ -606,7 +606,7 @@ class DashboardScreen extends StatelessWidget {
               // -------------------------------------------------------------
               Text(
                 'Workshop Modules',
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.inter(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w600,
                   color: palette.textSecondary,
@@ -753,11 +753,11 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     title: Text(
                       inv.invoiceNumber,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5),
                     ),
                     subtitle: Text(
                       '${customer?.name ?? ""} • ${vehicle?.registrationNumber ?? ""}',
-                      style: GoogleFonts.poppins(fontSize: 12, color: palette.textMuted),
+                      style: GoogleFonts.inter(fontSize: 12, color: palette.textMuted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -770,11 +770,11 @@ class DashboardScreen extends StatelessWidget {
                           children: [
                             Text(
                               CurrencyFormatter.format(inv.grandTotal),
-                              style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 13.5),
+                              style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 13.5),
                             ),
                             Text(
                               isCancelled ? 'Cancelled' : hasDue ? 'Due' : 'Paid',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: isCancelled
@@ -794,7 +794,7 @@ class DashboardScreen extends StatelessWidget {
                                 ),
                                 child: Text(
                                   'Overdue',
-                                  style: GoogleFonts.poppins(
+                                  style: GoogleFonts.inter(
                                     fontSize: 9,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
@@ -867,7 +867,7 @@ class DashboardScreen extends StatelessWidget {
                   Expanded(
                     child: Text(
                       value,
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: palette.textPrimary,
@@ -883,7 +883,7 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 label,
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.inter(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   color: palette.textMuted,
@@ -895,7 +895,7 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.inter(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w500,
                   color: palette.textSecondary,
@@ -952,7 +952,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     Text(
                       count,
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: context.palette.textPrimary,
@@ -962,7 +962,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 Text(
                   title,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: context.palette.textPrimary,
@@ -1009,7 +1009,7 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   label,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -1032,7 +1032,7 @@ class DashboardScreen extends StatelessWidget {
           decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
         ),
         const SizedBox(width: 4),
-        Text(title, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600)),
+        Text(title, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -1082,7 +1082,7 @@ class DashboardScreen extends StatelessWidget {
               children: [
                 Text(
                   'Weekly Revenue vs Expenses',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
                     color: palette.textPrimary,
@@ -1116,7 +1116,7 @@ class DashboardScreen extends StatelessWidget {
                           if (index >= 0 && index < days.length) {
                             return Text(
                               days[index],
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 11,
                                 color: palette.textMuted,
                               ),

@@ -68,7 +68,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Quotations & Estimates', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text('Quotations & Estimates', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
             icon: const Icon(Icons.note_add_rounded),
@@ -99,7 +99,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
             unselectedLabelColor: palette.textMuted,
             indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5),
             tabs: const [
               Tab(text: 'All Estimates'),
               Tab(text: 'Sent'),
@@ -180,7 +180,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                     children: [
                       Text(
                         quote.quotationNumber,
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: palette.accent,
@@ -198,7 +198,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                         children: [
                           Text(
                             customer?.name ?? '',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 14.5,
                               fontWeight: FontWeight.w700,
                               color: palette.textPrimary,
@@ -207,7 +207,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                           const SizedBox(height: 2),
                           Text(
                             '${vehicle?.registrationNumber ?? ""} • ${vehicle?.displayName ?? ""}',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               color: palette.textSecondary,
                             ),
@@ -219,7 +219,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                         children: [
                           Text(
                             CurrencyFormatter.format(quote.grandTotal),
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: palette.textPrimary,
@@ -227,7 +227,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                           ),
                           Text(
                             '${quote.items.length} items',
-                            style: GoogleFonts.poppins(fontSize: 11, color: palette.textMuted),
+                            style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
                           ),
                         ],
                       ),
@@ -241,11 +241,11 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
                     children: [
                       Text(
                         'Created: ${AppDateFormatter.formatDate(quote.createdAt)}',
-                        style: GoogleFonts.poppins(fontSize: 11.5, color: palette.textMuted),
+                        style: GoogleFonts.inter(fontSize: 11.5, color: palette.textMuted),
                       ),
                       Text(
                         'Valid: ${quote.validityDays} Days',
-                        style: GoogleFonts.poppins(fontSize: 11.5, color: palette.accent, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(fontSize: 11.5, color: palette.accent, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),

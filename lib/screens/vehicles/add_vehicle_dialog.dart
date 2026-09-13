@@ -134,7 +134,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                   children: [
                     Text(
                       isEditing ? 'Edit Vehicle' : 'Add New Vehicle',
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: palette.textPrimary,
@@ -224,7 +224,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                 // Fuel Type Selector
                 Text(
                   'Fuel Type',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: palette.textSecondary,

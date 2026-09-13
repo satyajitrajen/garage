@@ -69,7 +69,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Job Cards & Workshop', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text('Job Cards & Workshop', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_task_rounded),
@@ -103,7 +103,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
             unselectedLabelColor: palette.textMuted,
             indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5),
             tabs: const [
               Tab(text: 'All Jobs'),
               Tab(text: 'In Progress'),
@@ -188,7 +188,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                     children: [
                       Text(
                         jc.jobCardNumber,
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: palette.accent,
@@ -207,7 +207,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                           children: [
                             Text(
                               vehicle?.registrationNumber ?? 'Unknown Plate',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.2,
@@ -217,7 +217,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                             const SizedBox(height: 2),
                             Text(
                               '${vehicle?.displayName ?? ""} • ${customer?.name ?? ""}',
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: palette.textSecondary,
                               ),
@@ -231,7 +231,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                           children: [
                             Text(
                               CurrencyFormatter.format(jc.grandTotal),
-                              style: GoogleFonts.poppins(
+                              style: GoogleFonts.inter(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w800,
                                 color: palette.textPrimary,
@@ -239,7 +239,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                             ),
                             Text(
                               '${jc.items.length} items',
-                              style: GoogleFonts.poppins(fontSize: 11, color: palette.textMuted),
+                              style: GoogleFonts.inter(fontSize: 11, color: palette.textMuted),
                             ),
                           ],
                         ),
@@ -257,7 +257,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                           const SizedBox(width: 4),
                           Text(
                             staff?.name ?? 'Unassigned',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 11.5,
                               color: palette.textSecondary,
                             ),
@@ -270,7 +270,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                           const SizedBox(width: 4),
                           Text(
                             AppDateFormatter.formatRelative(jc.promisedDeliveryDate),
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
                               color: palette.accent,

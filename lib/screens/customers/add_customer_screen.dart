@@ -200,7 +200,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       appBar: AppBar(
         title: Text(
           isEditing ? 'Edit Customer' : 'Add New Customer',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
         ),
       ),
       body: Form(
@@ -256,7 +256,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 activeColor: palette.primary,
                 title: Text(
                   'WhatsApp number is same as Mobile',
-                  style: GoogleFonts.poppins(fontSize: 13.5),
+                  style: GoogleFonts.inter(fontSize: 13.5),
                 ),
                 onChanged: (val) => setState(() => _sameAsPhone = val ?? true),
               ),
@@ -429,7 +429,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 // Fuel Type
                 Text(
                   'Fuel Type',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: palette.textSecondary,
@@ -583,7 +583,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         const SizedBox(width: 8),
         Text(
           title,
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: context.palette.textPrimary,

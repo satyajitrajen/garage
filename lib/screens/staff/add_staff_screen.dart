@@ -102,7 +102,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
       appBar: AppBar(
         title: Text(
           widget.staffToEdit != null ? 'Edit Employee' : 'Add Garage Staff',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
         ),
       ),
       body: Form(
@@ -157,7 +157,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               TextFormField(
                 controller: _salaryController,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
                   labelText: 'Monthly Base Salary (₹) *',
                   hintText: 'e.g. 24000',

@@ -146,7 +146,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Direct Tax Invoice', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text('Create Direct Tax Invoice', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
@@ -180,12 +180,12 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                         children: [
                           Text(
                             widget.customer.name,
-                            style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${widget.vehicle.displayName} (${widget.vehicle.registrationNumber})',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 13.5,
                               color: palette.textSecondary,
                             ),
@@ -204,7 +204,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 children: [
                   Text(
                     'Bill Line Items (${_items.length})',
-                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   ElevatedButton.icon(
                     onPressed: _openAddItems,
@@ -226,11 +226,11 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
-                      title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                      title: Text(item.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                       subtitle: Text('${item.quantity} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}'),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary),
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: palette.primary),
                       ),
                     ),
                   );
@@ -317,10 +317,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Net Payable Total:', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                        Text('Net Payable Total:', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
                         Text(
                           CurrencyFormatter.format(grandTotal),
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
                             color: palette.primary,
@@ -360,11 +360,11 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.poppins(fontSize: 13, color: palette.textSecondary),
+            style: GoogleFonts.inter(fontSize: 13, color: palette.textSecondary),
           ),
         ),
         const SizedBox(width: 8),
-        Text(value, style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
+        Text(value, style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
       ],
     );
   }

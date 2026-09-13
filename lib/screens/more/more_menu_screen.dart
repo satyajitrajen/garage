@@ -28,7 +28,7 @@ class MoreMenuScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'More Options',
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
@@ -71,7 +71,7 @@ class MoreMenuScreen extends StatelessWidget {
                     children: [
                       Text(
                         profile.name,
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           color: palette.textPrimary,
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
@@ -81,7 +81,7 @@ class MoreMenuScreen extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         'GSTIN: ${profile.gstin} • ${profile.city}',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           color: palette.textSecondary,
                           fontSize: 11.5,
                         ),
@@ -138,7 +138,7 @@ class MoreMenuScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Quick Service Wizard',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -146,7 +146,7 @@ class MoreMenuScreen extends StatelessWidget {
                           ),
                           Text(
                             'Step-by-step: Customer → Vehicle → Service → Bill',
-                            style: GoogleFonts.poppins(
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                               color: Colors.white.withValues(alpha: 0.85),
@@ -249,16 +249,16 @@ class MoreMenuScreen extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Select Staff Member', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700)),
+                        Text('Select Staff Member', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 4),
-                        Text('Choose a member to view attendance calendar or salary slip', style: GoogleFonts.poppins(fontSize: 12.5, color: palette.textMuted)),
+                        Text('Choose a member to view attendance calendar or salary slip', style: GoogleFonts.inter(fontSize: 12.5, color: palette.textMuted)),
                         const SizedBox(height: 16),
                         ...provider.staff.map((s) => ListTile(
                           leading: CircleAvatar(
                             backgroundColor: palette.primary.withValues(alpha: 0.12),
                             child: Text(s.name.substring(0, 1).toUpperCase(), style: TextStyle(fontWeight: FontWeight.bold, color: palette.primary)),
                           ),
-                          title: Text(s.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                          title: Text(s.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                           subtitle: Text(s.role.displayName),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -317,11 +317,11 @@ class MoreMenuScreen extends StatelessWidget {
                   ),
                   title: Text(
                     'Quick Expense Entry',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13.5),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13.5),
                   ),
                   subtitle: Text(
                     'Add workshop expense receipt',
-                    style: GoogleFonts.poppins(fontSize: 11.5, color: palette.textMuted),
+                    style: GoogleFonts.inter(fontSize: 11.5, color: palette.textMuted),
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded, size: 18),
                   onTap: () {
@@ -345,7 +345,7 @@ class MoreMenuScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
         title,
-        style: GoogleFonts.poppins(
+        style: GoogleFonts.inter(
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: context.palette.textMuted,
@@ -388,11 +388,11 @@ class MoreMenuScreen extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.5),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5),
         ),
         subtitle: Text(
           subtitle,
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.inter(
             fontSize: 11.5,
             color: context.palette.textSecondary,
           ),
@@ -408,7 +408,7 @@ class MoreMenuScreen extends StatelessWidget {
                 ),
                 child: Text(
                   trailing,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
                     color: color,
