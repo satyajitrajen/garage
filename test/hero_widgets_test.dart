@@ -28,5 +28,9 @@ void main() {
     expect(find.text('Quick Service'), findsOneWidget);
     expect(find.text('New Job Card'), findsOneWidget);
     expect(find.text('Start Quick Service'), findsOneWidget);
+
+    await tester.tap(find.text('New Job Card'));
+    await tester.pump();
+    expect(find.text('Create Job Card'), findsOneWidget);
   });
 }

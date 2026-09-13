@@ -6,6 +6,7 @@ import '../models/vehicle.dart';
 import '../providers/garage_provider.dart';
 import '../theme/app_dimens.dart';
 import '../theme/app_palette.dart';
+import '../utils/app_snack_bar.dart';
 import '../screens/workflow/quick_service_wizard.dart';
 import '../screens/job_cards/create_job_card_screen.dart';
 
@@ -68,7 +69,7 @@ class _BookServiceCardState extends State<BookServiceCard> {
     final vehicles = provider.getVehiclesForCustomer(customer.id);
     if (!mounted) return;
     if (vehicles.isEmpty) {
-      ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+      showAppSnackBar(context, 'No vehicles for ${customer.name}', type: SnackBarType.info);
       return;
     }
     final selected = await showModalBottomSheet<Vehicle>(
@@ -313,23 +314,26 @@ class _BookServiceCardState extends State<BookServiceCard> {
     required bool selected,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
-      child: Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? palette.primary : palette.surface,
-          borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
-          border: selected ? null : Border.all(color: palette.border),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-              fontSize: 12.5, fontWeight: FontWeight.w600,
-              color: selected ? palette.onPrimary : palette.textPrimary),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
+        child: Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? palette.primary : palette.surface,
+            borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
+            border: selected ? null : Border.all(color: palette.border),
+          ),
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+                fontSize: 12.5, fontWeight: FontWeight.w600,
+                color: selected ? palette.onPrimary : palette.textPrimary),
+          ),
         ),
       ),
     );
