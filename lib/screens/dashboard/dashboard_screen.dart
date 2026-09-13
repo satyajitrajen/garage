@@ -10,6 +10,7 @@ import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
+import '../../widgets/book_service_card.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_badge.dart';
 import '../customers/customers_list_screen.dart';
@@ -364,6 +365,8 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+              const BookServiceCard(),
               const SizedBox(height: 20),
 
               // -------------------------------------------------------------

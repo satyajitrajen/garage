@@ -19,7 +19,10 @@ import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
 
 class QuickServiceWizard extends StatefulWidget {
-  const QuickServiceWizard({super.key});
+  final Customer? initialCustomer;
+  final Vehicle? initialVehicle;
+
+  const QuickServiceWizard({super.key, this.initialCustomer, this.initialVehicle});
 
   @override
   State<QuickServiceWizard> createState() => _QuickServiceWizardState();
@@ -37,6 +40,21 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
   String _searchQuery = '';
   Invoice? _generatedInvoice;
   bool _isGeneratingBill = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final customer = widget.initialCustomer;
+    final vehicle = widget.initialVehicle;
+    if (customer != null) _selectedCustomer = customer;
+    if (vehicle != null) {
+      _selectedVehicle = vehicle;
+      _kmController.text = vehicle.currentKm.toString();
+      _currentStep = 2;
+    } else if (customer != null) {
+      _currentStep = 1;
+    }
+  }
 
   @override
   void dispose() {
