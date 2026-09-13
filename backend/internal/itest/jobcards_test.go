@@ -178,6 +178,14 @@ func TestJobCardItemEndpoints(t *testing.T) {
 		t.Fatalf("upsert-by-id produced: %+v", cards)
 	}
 
+	// The same item id under a second job card of the same garage misses the
+	// job-card-scoped UPDATE and hits the PK on INSERT → 409.
+	_, _, jc2 := createJobCard(t, owner.AccessToken, garageID, jobCardBody("JC-3002", customer.ID, vehicle.ID))
+	status, _ = doJSON(t, "POST", "/api/jobcards/"+jc2.ID+"/items", owner.AccessToken, garageID, item)
+	if status != 409 {
+		t.Fatalf("duplicate item id: status %d", status)
+	}
+
 	// Delete → 204; deleting again → 404.
 	status, _ = doJSON(t, "DELETE", "/api/jobcards/"+jc.ID+"/items/"+saved.ID, owner.AccessToken, garageID, nil)
 	if status != 204 {
@@ -188,8 +196,10 @@ func TestJobCardItemEndpoints(t *testing.T) {
 		t.Fatalf("delete missing item: status %d", status)
 	}
 	cards = fetchJobCards(t, owner.AccessToken, garageID)
-	if len(cards[0].Items) != 0 {
-		t.Fatalf("items after delete: %+v", cards[0].Items)
+	for _, c := range cards {
+		if c.ID == jc.ID && len(c.Items) != 0 {
+			t.Fatalf("items after delete: %+v", c.Items)
+		}
 	}
 }
 

@@ -186,6 +186,10 @@ func (s *Server) upsertJobCardItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	saved, err := s.Store.UpsertItem(r.Context(), "job_card_items", jobCardID, it)
+	if errors.Is(err, store.ErrDuplicate) {
+		httputil.Error(w, 409, "conflict", "item id already exists")
+		return
+	}
 	if err != nil {
 		httputil.Error(w, 500, "internal", "could not save job card item")
 		return
