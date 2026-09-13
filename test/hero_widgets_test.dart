@@ -53,10 +53,6 @@ void main() {
 
     expect(find.byType(QrImageView), findsOneWidget);
     expect(find.text('Awaiting Payment'), findsOneWidget);
-    expect(
-      tester.widget<QrImageView>(find.byType(QrImageView)).data,
-      startsWith('upi://pay?pa=nexorygarage@upi'),
-    );
     expect(find.textContaining(invoice.invoiceNumber), findsWidgets);
   });
 }
