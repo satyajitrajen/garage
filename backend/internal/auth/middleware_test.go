@@ -87,6 +87,27 @@ func TestRequireAuth(t *testing.T) {
 		}
 	})
 
+	t.Run("bearer scheme is case-insensitive", func(t *testing.T) {
+		token, _ := issuer.Issue("u-1", time.Now())
+		r := newRequest(t, "/api/me", nil, "", "")
+		r.Header.Set("Authorization", "bearer "+token)
+		rr := httptest.NewRecorder()
+		h.ServeHTTP(rr, r)
+		if rr.Code != 200 {
+			t.Fatalf("status = %d body %s", rr.Code, rr.Body.String())
+		}
+	})
+
+	t.Run("user lookup failure is 401", func(t *testing.T) {
+		token, _ := issuer.Issue("u-1", time.Now())
+		h := RequireAuth(issuer, fakeUsers{err: errors.New("db down")})(http.HandlerFunc(ctxHandler))
+		rr := httptest.NewRecorder()
+		h.ServeHTTP(rr, newRequest(t, "/api/me", nil, token, ""))
+		if rr.Code != 401 || !strings.Contains(rr.Body.String(), "user no longer exists") {
+			t.Fatalf("status = %d body %s", rr.Code, rr.Body.String())
+		}
+	})
+
 	t.Run("expired token is 401", func(t *testing.T) {
 		token, _ := issuer.Issue("u-1", time.Now().Add(-AccessTokenTTL-time.Minute))
 		rr := httptest.NewRecorder()

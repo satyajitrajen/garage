@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -45,9 +46,10 @@ func RequireAuth(issuer *TokenIssuer, users UserProvider) func(http.Handler) htt
 	}
 }
 
+// RFC 6750: the auth-scheme token is case-insensitive.
 func cutBearer(header string) (string, bool) {
 	const prefix = "Bearer "
-	if len(header) <= len(prefix) || header[:len(prefix)] != prefix {
+	if len(header) <= len(prefix) || !strings.EqualFold(header[:len(prefix)], prefix) {
 		return "", false
 	}
 	return header[len(prefix):], true
