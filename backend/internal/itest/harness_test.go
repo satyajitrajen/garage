@@ -66,3 +66,5 @@ func truncate(t *testing.T) {
 		t.Fatalf("truncate: %v", err)
 	}
 }
+
+func boolPtr(b bool) *bool { return &b }
