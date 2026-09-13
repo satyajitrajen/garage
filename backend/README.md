@@ -66,6 +66,21 @@ external needed. The first run downloads the Postgres binaries.
 | `PATCH`/`DELETE /api/garages/{garageId}/members/{userId}` | bearer + garage + `staff.manage` | edit permissions/active flag; password reset and member deletion are owner-only |
 | `GET /api/garages/{garageId}/settings` | bearer + garage + `settings.manage` | lazily creates the defaults row |
 | `PATCH /api/garages/{garageId}/settings` | bearer + garage + `settings.manage` | partial merge — see "Garage settings semantics" |
+| `GET`/`POST /api/customers` · `PUT`/`DELETE /api/customers/{customerId}` | bearer + garage + `customers.manage` | newest-first lists; delete blocked by dues or invoice/job-card history |
+| `GET`/`POST /api/vehicles` · `PUT`/`DELETE /api/vehicles/{vehicleId}` | bearer + garage + `vehicles.manage` | delete blocked once documents reference the vehicle |
+| `GET`/`POST /api/staff` · `PUT`/`DELETE /api/staff/{staffId}` | bearer + garage + `staff.manage` | workshop roster — distinct from members (app logins) |
+| `GET`/`POST /api/attendance` | bearer + garage + `attendance.manage` | POST upserts by (staff, day) — idempotent |
+| `GET`/`POST /api/salary-advances` · `POST /api/salary-advances/settle` | bearer + garage + `advances.manage` | settle `{staff_id, month, year}` marks and returns the settled advances |
+| `GET`/`POST /api/jobcards` · `PUT /api/jobcards/{jobCardId}` | bearer + garage + `jobcards.manage` | responses embed items; PUT replaces items wholesale |
+| `POST /api/jobcards/{jobCardId}/status` | bearer + garage + `jobcards.manage` | delivered stamps completedAt, cancelled keeps it, others clear it |
+| `POST /api/jobcards/{jobCardId}/items` · `DELETE /api/jobcards/{jobCardId}/items/{itemId}` | bearer + garage + `jobcards.manage` | item POST upserts by item id |
+| `GET`/`POST /api/quotations` · `PUT /api/quotations/{quotationId}` | bearer + garage + `quotations.manage` | responses embed items |
+| `POST /api/quotations/{quotationId}/status` | bearer + garage + `quotations.manage` | `converted` allowed only from `approved` (422) |
+| `GET`/`POST /api/invoices` · `PUT /api/invoices/{invoiceId}` | bearer + garage + `invoices.manage` | embeds items + payments; number immutable |
+| `POST /api/invoices/{invoiceId}/cancel` | bearer + garage + `invoices.manage` | only when unpaid and not already cancelled |
+| `POST /api/invoices/{invoiceId}/payments` | bearer + garage + `payments.record` | append-only; amount in (0, balanceDue + 0.01] |
+| `GET`/`POST /api/expenses` · `PUT`/`DELETE /api/expenses/{expenseId}` | bearer + garage + `expenses.manage` | expenseDate is a `YYYY-MM-DD` string |
+| `GET /api/catalog` | bearer + garage (any member) | read-only; ships empty (CRUD out of scope) |
 
 Garage-scoped routes need `Authorization: Bearer <access token>` and
 `X-Garage-Id: <garage uuid>` headers; a mismatch between the header and the
@@ -126,9 +141,42 @@ Every error response is `{"error":{"code":"...","message":"..."}}` with one of:
   (`default_tax_percent: 18`), so Dart `fromJson` must use
   `(x as num).toDouble()` — never `as double` — for tax and options fields.
 
+## Domain semantics
+
+Business rules mirror the Flutter provider (`lib/providers/garage_provider.dart`)
+and mock repository so the app's behavior is unchanged when it talks to the
+server:
+
+- **Document numbers** (`jobCardNumber`, `quotationNumber`, `invoiceNumber`)
+  are client-generated and unique per garage (`409 conflict` on collision);
+  they are immutable on PUT.
+- **Item children** (job-card / quotation / invoice items) are replaced
+  wholesale on PUT. The client may supply item ids: empty ids get server
+  uuids, supplied ids are preserved, and the single-item POST upserts by id.
+- **Job card status:** `delivered` stamps `completedAt` with now,
+  `cancelled` keeps any previous value, every other status clears it
+  (mirrors `MockGarageRepository.updateJobStatus`).
+- **Invoice cancel** is reachable two ways — `POST /invoices/{id}/cancel`
+  and a PUT whose payload sets `cancelledAt` (the provider's path) — and
+  both enforce: not already cancelled, and total paid ≤ 0 (`422`).
+- **Payments** are append-only with amount in `(0, balanceDue + 0.01]` on a
+  non-cancelled invoice (`422` otherwise).
+- **Quotation status** transitions freely except `converted`, which is only
+  reachable from `approved` (`422`).
+- **Customer delete** is blocked (`409`) while the customer has outstanding
+  dues (any non-cancelled invoice with balance due > 0.01) OR any
+  invoice/job-card history; **vehicle delete** is blocked once job cards or
+  invoices reference the vehicle. Deleting a customer cascades their
+  vehicles; deleting a staff member cascades attendance/advances and nulls
+  their assignments.
+- **Attendance** POST upserts per (staff, day) — resending a day replaces it.
+- **Catalog** is read-only and ships empty per garage; it exists so the
+  client can prefill maintenance items (out of scope to create from the API).
+
 ## Phase status
 
-Phase 1 of 3 is complete: auth, members, settings, migrations, tests.
-Pending: Phase 2 domain CRUD (customers, vehicles, job cards, quotations,
-invoices, payments, expenses, attendance, advances) and Phase 3 connecting
-the Flutter app.
+Phases 1 and 2 of 3 are complete: auth, members, settings, and all domain
+CRUD (customers, vehicles, staff, attendance, advances, job cards,
+quotations, invoices, payments, expenses, catalog) with integration tests.
+Pending: Phase 3 connecting the Flutter app (`lib/data/api/` HTTP repository,
+login gate, permission-gated UI).
