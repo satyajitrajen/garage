@@ -24,7 +24,7 @@
 | `lib/theme/app_text.dart` | Create — the 8-token scale |
 | `test/theme/app_text_test.dart` | Create — pins the 8 values |
 | `lib/theme/app_theme.dart` | Modify — all literals → tokens, import added |
-| `lib/screens/**` (25 files with `fontSize:`) | Modify — literals → tokens, import added |
+| `lib/screens/**` (26 files with `fontSize:`) | Modify — literals → tokens, import added |
 | `lib/widgets/**` (6 files) | Modify — literals → tokens, import added |
 | `lib/utils/app_snack_bar.dart` | Modify — literals → tokens, import added |
 | `sweep_font_sizes.mjs` (repo root) | Create in Task 1 as an untracked one-shot tool; used by Tasks 1–2; deleted in Task 5 |
@@ -189,12 +189,12 @@ git commit -m "feat: add AppText token scale and realign theme text sizes"
 ### Task 2: Sweep all remaining fontSize literals onto tokens
 
 **Files:**
-- Modify: 25 files under `lib/screens/`, 6 under `lib/widgets/`, 1 under `lib/utils/` (all files containing `fontSize:` — exactly the list from `grep -rln "fontSize:" lib/screens lib/widgets lib/utils`)
+- Modify: 26 files under `lib/screens/`, 6 under `lib/widgets/`, 1 under `lib/utils/` (all files containing `fontSize:` — exactly the list from `grep -rln "fontSize:" lib/screens lib/widgets lib/utils`; 33 total, plus 2 conditional `fontSize:` expressions hand-fixed in Step 2b)
 
 - [ ] **Step 1: Record the input file list**
 
 Run: `grep -rln "fontSize:" lib/screens lib/widgets lib/utils | sort | tee /tmp/font-sweep-input.txt && wc -l < /tmp/font-sweep-input.txt`
-Expected: 32 files.
+Expected: 33 files.
 
 - [ ] **Step 2: Run the script per depth**
 
@@ -203,7 +203,7 @@ Run each as its own Bash call:
 ```bash
 node sweep_font_sizes.mjs lib/screens "import '../../theme/app_text.dart';"
 ```
-Expected: `done: 25 files`.
+Expected: `done: 26 files`.
 
 ```bash
 node sweep_font_sizes.mjs lib/widgets "import '../theme/app_text.dart';"
@@ -214,6 +214,15 @@ Expected: `done: 6 files`.
 node sweep_font_sizes.mjs lib/utils "import '../theme/app_text.dart';"
 ```
 Expected: `done: 1 files` (only `app_snack_bar.dart` contains `fontSize:`).
+
+- [ ] **Step 2b: Hand-fix the two conditional fontSize expressions**
+
+The script's regex only matches plain numeric literals; these two ternary sites must be fixed by hand (both branches of each ternary map to the same token, so the conditional disappears):
+
+- `lib/screens/invoices/invoice_preview_screen.dart` — `fontSize: highlight ? 13 : 12.5,` becomes `fontSize: AppText.caption,` (13→caption, 12.5→caption).
+- `lib/widgets/status_badge.dart` — `fontSize: isCompact ? 9.5 : 10.5,` becomes `fontSize: AppText.micro,` (9.5 and 10.5 both nearest micro; nothing maps below micro). Both files already receive their import from the Step 2 script run (status_badge.dart is touched because it still contains the `fontSize:` string, so the script inserts its import even though it has no plain numeric to replace).
+
+Verify afterward: `grep -rn "fontSize:" lib/ | grep -v "AppText\." | grep -v "app_text.dart"` → no output.
 
 - [ ] **Step 3: Type-scale gate**
 
@@ -237,7 +246,7 @@ git add lib/screens lib/widgets lib/utils/app_snack_bar.dart
 git commit -m "refactor: sweep all fontSize literals onto AppText tokens"
 ```
 
-(`git add lib/screens lib/widgets` here is a plan-sanctioned full sweep — 32 files across 3 directories is exactly what this task changed. Verify with `git status` first that nothing unexpected is staged.)
+(`git add lib/screens lib/widgets` here is a plan-sanctioned full sweep — 33 files across 3 directories is exactly what this task changed. Verify with `git status` first that nothing unexpected is staged.)
 
 ---
 
