@@ -1329,6 +1329,10 @@ git commit -m "feat: semantic AppPalette theme extension, AppDimens, shared help
 | `Color(0xFF1E293B)` / `Color(0xFF131927)` / `Color(0xFF1A2234)` | `context.palette.surface` / `.card` (pick by role) |
 | `Color(0xFF121726)` selected chip | `context.palette.textPrimary` (dark navy in light, light chip on dark gradient) |
 | `Color(0xFFE2E8F0)` / `Color(0xFFCBD5E1)` | `context.palette.border` / `.textMuted` |
+| `Color(0xFF334155)` (text/icon role) | `context.palette.textSecondary` |
+| `Color(0xFF334155)` (border/divider role) | `context.palette.textMuted` |
+| `Color(0xFF475569)` (text/icon role) | `context.palette.textSecondary` |
+| `Color(0xFF475569)` (border role) | `context.palette.textMuted` |
 | `isDark ? AppColors.cardGradientDark : AppColors.bannerGradient` | `context.palette.bannerGradient` |
 | `Color(0xFF0284C7)` inline | `context.palette.primary` |
 | Status-colored `ElevatedButton` | explicit `backgroundColor: <status>, foregroundColor: Colors.white` |
