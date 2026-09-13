@@ -2491,8 +2491,12 @@ func TestGarageIsolation(t *testing.T) {
 	}
 
 	status, data = doJSON(t, "GET", "/api/garages/"+aGarage+"/members", a.AccessToken, "", nil)
-	if status != 400 {
-		t.Fatalf("missing garage header: status %d body %s", status, data)
+	// RequireGarage falls back to the {garageId} URL segment when the header
+	// is absent, so this must succeed (corrected from the original 400 — the
+	// fallback is pinned by the middleware unit test "url param used when
+	// header missing").
+	if status != 200 {
+		t.Fatalf("url-param garage fallback: status %d body %s", status, data)
 	}
 }
 ```

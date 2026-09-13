@@ -41,6 +41,17 @@ func NewRouter(s *Server) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(auth.RequireAuth(s.Issuer, s.Store))
 			r.Get("/me", s.handleMe)
+
+			r.Route("/garages/{garageId}", func(r chi.Router) {
+				r.Use(auth.RequireGarage(s.Store))
+				r.Route("/members", func(r chi.Router) {
+					r.Use(auth.RequirePermission("staff.manage"))
+					r.Get("/", s.listMembers)
+					r.Post("/", s.createMember)
+					r.Patch("/{userId}", s.updateMember)
+					r.Delete("/{userId}", s.deleteMember)
+				})
+			})
 		})
 	})
 
