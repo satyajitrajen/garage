@@ -37,7 +37,7 @@ class StatusBadge extends StatelessWidget {
     this.icon,
     this.isCompact = false,
     required this.paletteColor,
-  }) : color = const Color(0x00000000); // placeholder; resolved from palette in build
+  }) : color = Colors.transparent; // placeholder; resolved from palette in build
 
   factory StatusBadge.fromInvoiceStatus(InvoiceStatus status) {
     switch (status) {
