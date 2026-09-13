@@ -17,6 +17,9 @@ type TokenIssuer struct {
 }
 
 func NewTokenIssuer(secret string) *TokenIssuer {
+	if secret == "" {
+		panic("auth: JWT secret must not be empty")
+	}
 	return &TokenIssuer{secret: []byte(secret)}
 }
 
@@ -35,7 +38,7 @@ func (t *TokenIssuer) Verify(tokenStr string) (string, error) {
 			return nil, errors.New("unexpected signing method")
 		}
 		return t.secret, nil
-	})
+	}, jwt.WithExpirationRequired())
 	if err != nil || !parsed.Valid {
 		return "", errors.New("invalid token")
 	}
