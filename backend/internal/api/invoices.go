@@ -101,6 +101,9 @@ func (s *Server) createInvoice(w http.ResponseWriter, r *http.Request) {
 // and totalPaid ≤ 0 (mirroring cancelInvoice's `totalPaidAmount > 0` throw).
 func (s *Server) cancelGuard(ctx context.Context, garageID, invoiceID string) refCheck {
 	m, err := s.Store.InvoiceMoneyFor(ctx, garageID, invoiceID)
+	if errors.Is(err, store.ErrNotFound) {
+		return refCheck{404, "not_found", "invoice not found"}
+	}
 	if err != nil {
 		return refCheck{500, "internal", "could not load invoice money"}
 	}

@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"garage-backend/internal/models"
 )
 
@@ -113,6 +115,13 @@ func TestInvoiceCancelRules(t *testing.T) {
 	status, data = doJSON(t, "PUT", "/api/invoices/"+paid.ID, owner.AccessToken, garageID, paid)
 	if status != 422 {
 		t.Fatalf("PUT cancel on paid: status %d body %s", status, data)
+	}
+	// PUT cancel on a nonexistent invoice → 404, not 500.
+	body := invoiceBody("INV-2003", customer.ID, vehicle.ID)
+	body["cancelledAt"] = time.Time{}
+	status, data = doJSON(t, "PUT", "/api/invoices/"+uuid.New().String(), owner.AccessToken, garageID, body)
+	if status != 404 {
+		t.Fatalf("PUT cancel missing invoice: status %d body %s", status, data)
 	}
 }
 
