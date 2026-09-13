@@ -51,6 +51,11 @@ func NewRouter(s *Server) http.Handler {
 					r.Patch("/{userId}", s.updateMember)
 					r.Delete("/{userId}", s.deleteMember)
 				})
+				r.Route("/settings", func(r chi.Router) {
+					r.Use(auth.RequirePermission("settings.manage"))
+					r.Get("/", s.getSettings)
+					r.Patch("/", s.patchSettings)
+				})
 			})
 		})
 	})
