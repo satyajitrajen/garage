@@ -11,12 +11,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 
+	"garage-backend/internal/api"
+	"garage-backend/internal/auth"
 	"garage-backend/internal/config"
+	"garage-backend/internal/store"
 	"garage-backend/migrations"
 )
 
@@ -38,15 +40,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	r := chi.NewRouter()
-	r.Get("/api/health", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	handler := api.NewRouter(&api.Server{
+		Store:  store.New(pool),
+		Issuer: auth.NewTokenIssuer(cfg.JWTSecret),
 	})
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           r,
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	go func() {
