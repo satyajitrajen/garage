@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_dimens.dart';
+import '../theme/app_palette.dart';
 
 class CustomSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -20,19 +21,13 @@ class CustomSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Container(
       decoration: BoxDecoration(
-        // Deliberate hand-rolled per-brightness pair kept verbatim (widget
-        // stays AppColors-anchored; converting to palette slots would shift
-        // the dark-mode surface and border tones with no golden to verify).
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-        ),
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusInput),
+        border: Border.all(color: palette.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -43,9 +38,9 @@ class CustomSearchBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 14, right: 10),
-            child: Icon(Icons.search_rounded, color: AppColors.textMuted, size: 22),
+          Padding(
+            padding: const EdgeInsets.only(left: 14, right: 10),
+            child: Icon(Icons.search_rounded, color: palette.textMuted, size: 22),
           ),
           Expanded(
             child: TextField(
@@ -53,12 +48,12 @@ class CustomSearchBar extends StatelessWidget {
               onChanged: onChanged,
               style: GoogleFonts.inter(
                 fontSize: 15,
-                color: isDark ? Colors.white : AppColors.textPrimary,
+                color: palette.textPrimary,
               ),
               decoration: InputDecoration(
                 hintText: hintText,
                 hintStyle: GoogleFonts.inter(
-                  color: isDark ? const Color(0xFF64748B) : AppColors.textMuted,
+                  color: palette.textMuted,
                   fontSize: 14,
                 ),
                 border: InputBorder.none,
@@ -71,7 +66,7 @@ class CustomSearchBar extends StatelessWidget {
           ),
           if (controller.text.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textMuted),
+              icon: Icon(Icons.close_rounded, size: 18, color: palette.textMuted),
               onPressed: () {
                 controller.clear();
                 onChanged?.call('');
@@ -82,7 +77,7 @@ class CustomSearchBar extends StatelessWidget {
             Container(
               height: 24,
               width: 1,
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              color: palette.border,
             ),
             trailing!,
           ],

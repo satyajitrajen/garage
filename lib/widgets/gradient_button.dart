@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_dimens.dart';
+import '../theme/app_palette.dart';
 
 class GradientButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -21,23 +21,19 @@ class GradientButton extends StatelessWidget {
     this.padding,
     this.width,
     this.height,
-    this.borderRadius = 16,
+    this.borderRadius = AppDimens.radiusButton,
     this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
     final isEnabled = onPressed != null;
-
-    // Content ink on the fixed banner gradient (AppColors, a deliberate
-    // both-themes anchor like the dashboard navy chips); no palette slot
-    // encodes "content on the banner gradient", so the literals stay.
-    final contentColor = textColor ?? (isDark ? Colors.white : const Color(0xFF0F172A));
+    final contentColor = textColor ?? palette.onPrimary;
 
     final effectiveTextStyle = GoogleFonts.inter(
-      fontSize: 13.5,
-      fontWeight: FontWeight.w700,
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
       color: isEnabled ? contentColor : contentColor.withValues(alpha: 0.5),
     );
 
@@ -47,24 +43,8 @@ class GradientButton extends StatelessWidget {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark ? AppColors.cardGradientDark : AppColors.bannerGradient,
-            stops: AppColors.bannerGradientStops,
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
+          color: palette.primary,
           borderRadius: BorderRadius.circular(borderRadius),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.8),
-            width: 1.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFA7F3D0).withValues(alpha: isDark ? 0.15 : 0.35),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
         ),
         child: Material(
           color: Colors.transparent,
@@ -72,7 +52,7 @@ class GradientButton extends StatelessWidget {
             onTap: onPressed,
             borderRadius: BorderRadius.circular(borderRadius),
             child: Padding(
-              padding: padding ?? const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              padding: padding ?? const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               child: Row(
                 mainAxisSize: width == null ? MainAxisSize.min : MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -115,30 +95,12 @@ class GradientFloatingActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Same both-themes gradient anchor as GradientButton above: content ink
-    // (white / navy) and the glow tint (bannerGradient's last stop) stay as
-    // literals because the FAB rides the fixed AppColors gradient.
+    final palette = context.palette;
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark ? AppColors.cardGradientDark : AppColors.bannerGradient,
-          stops: AppColors.bannerGradientStops,
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: palette.primary,
         borderRadius: BorderRadius.circular(AppDimens.radiusFAB),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: isDark ? 0.15 : 0.8),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFA7F3D0).withValues(alpha: isDark ? 0.2 : 0.45),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: AppDimens.accentGlow(palette.primary),
       ),
       child: Material(
         color: Colors.transparent,
@@ -151,18 +113,15 @@ class GradientFloatingActionButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconTheme(
-                  data: IconThemeData(
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    size: 20,
-                  ),
+                  data: IconThemeData(color: palette.onPrimary, size: 20),
                   child: icon,
                 ),
                 const SizedBox(width: 8),
                 DefaultTextStyle(
                   style: GoogleFonts.inter(
                     fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    fontWeight: FontWeight.w600,
+                    color: palette.onPrimary,
                   ),
                   child: label,
                 ),
