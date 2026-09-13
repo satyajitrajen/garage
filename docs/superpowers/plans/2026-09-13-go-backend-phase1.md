@@ -138,7 +138,7 @@ git commit -m "feat(backend): module scaffold and env config"
 - Create: `backend/migrations/0001_init.sql`
 - Create: `backend/migrations/embed.go`
 - Create: `backend/internal/httputil/httputil.go`
-- Create: `backend/internal/itest/harness.go`
+- Create: `backend/internal/itest/harness_test.go`
 - Create: `backend/internal/itest/migrations_test.go`
 - Create: `backend/cmd/server/main.go`
 - Create: `backend/.gitignore`
@@ -168,13 +168,10 @@ Create `backend/migrations/embed.go`:
 // run goose itself on boot with no external files.
 package migrations
 
-import (
-	"embed"
-	"io/fs"
-)
+import "embed"
 
 //go:embed *.sql
-var FS fs.FS
+var FS embed.FS
 ```
 
 Create `backend/migrations/0001_init.sql` (stub — no statements yet):
@@ -184,7 +181,7 @@ Create `backend/migrations/0001_init.sql` (stub — no statements yet):
 -- +goose Down
 ```
 
-Create `backend/internal/itest/harness.go`:
+Create `backend/internal/itest/harness_test.go`:
 
 ```go
 package itest
@@ -522,7 +519,7 @@ Expected: no output, exit 0.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add backend/go.mod backend/go.sum backend/migrations/0001_init.sql backend/migrations/embed.go backend/internal/httputil/httputil.go backend/internal/itest/harness.go backend/internal/itest/migrations_test.go backend/cmd/server/main.go backend/.gitignore
+git add backend/go.mod backend/go.sum backend/migrations/0001_init.sql backend/migrations/embed.go backend/internal/httputil/httputil.go backend/internal/itest/harness_test.go backend/internal/itest/migrations_test.go backend/cmd/server/main.go backend/.gitignore
 git commit -m "feat(backend): schema migrations, embedded-postgres test harness, server skeleton"
 ```
 
@@ -1320,11 +1317,11 @@ git commit -m "feat(backend): shared models and auth/permission middleware"
 - Create: `backend/internal/store/memberships.go`
 - Test: `backend/internal/itest/store_users_test.go`
 - Test: `backend/internal/itest/store_members_test.go`
-- Modify: `backend/internal/itest/harness.go` (add boolPtr helper)
+- Modify: `backend/internal/itest/harness_test.go` (add boolPtr helper)
 
 - [ ] **Step 1: Add boolPtr to the harness**
 
-Append to `backend/internal/itest/harness.go`:
+Append to `backend/internal/itest/harness_test.go`:
 
 ```go
 func boolPtr(b bool) *bool { return &b }
@@ -1843,7 +1840,7 @@ Expected: no output, exit 0.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add backend/internal/store/store.go backend/internal/store/users.go backend/internal/store/garages.go backend/internal/store/memberships.go backend/internal/itest/harness.go backend/internal/itest/store_users_test.go backend/internal/itest/store_members_test.go
+git add backend/internal/store/store.go backend/internal/store/users.go backend/internal/store/garages.go backend/internal/store/memberships.go backend/internal/itest/harness_test.go backend/internal/itest/store_users_test.go backend/internal/itest/store_members_test.go
 git commit -m "feat(backend): users, garages and memberships store"
 ```
 
@@ -2149,7 +2146,7 @@ git commit -m "feat(backend): refresh token rotation and garage settings store"
 - Create: `backend/internal/api/router.go`
 - Create: `backend/internal/api/auth.go`
 - Modify: `backend/cmd/server/main.go` (serve `api.NewRouter`)
-- Modify: `backend/internal/itest/harness.go` (add HTTP test server + request helpers)
+- Modify: `backend/internal/itest/harness_test.go` (add HTTP test server + request helpers)
 - Test: `backend/internal/itest/auth_flow_test.go`
 
 - [ ] **Step 1: Add the cors dependency**
@@ -2161,7 +2158,7 @@ go mod tidy
 
 - [ ] **Step 2: Extend the harness with the HTTP test server and helpers**
 
-Replace `backend/internal/itest/harness.go` in full with:
+Replace `backend/internal/itest/harness_test.go` in full with:
 
 ```go
 package itest
@@ -2839,7 +2836,7 @@ Expected: no output, exit 0.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add backend/go.mod backend/go.sum backend/internal/api/router.go backend/internal/api/auth.go backend/cmd/server/main.go backend/internal/itest/harness.go backend/internal/itest/auth_flow_test.go
+git add backend/go.mod backend/go.sum backend/internal/api/router.go backend/internal/api/auth.go backend/cmd/server/main.go backend/internal/itest/harness_test.go backend/internal/itest/auth_flow_test.go
 git commit -m "feat(backend): register/login/refresh/logout/me endpoints"
 ```
 
