@@ -131,6 +131,13 @@ func NewRouter(s *Server) http.Handler {
 				r.Put("/{invoiceId}", s.updateInvoice)
 				r.Post("/{invoiceId}/cancel", s.cancelInvoice)
 			})
+			// Own top-level Route block (NOT nested in /invoices) because
+			// payments.record is a different permission than invoices.manage.
+			r.Route("/invoices/{invoiceId}/payments", func(r chi.Router) {
+				r.Use(auth.RequireGarage(s.Store))
+				r.Use(auth.RequirePermission("payments.record"))
+				r.Post("/", s.recordPayment)
+			})
 			// Catalog is readable by any member of the garage (spec §5).
 			r.Route("/catalog", func(r chi.Router) {
 				r.Use(auth.RequireGarage(s.Store))

@@ -94,6 +94,17 @@ func (s *Store) PaymentsByGarage(ctx context.Context, garageID string) (map[stri
 	return pays, rows.Err()
 }
 
+// CreatePayment inserts an append-only payment row (spec §8: payments are
+// never edited or deleted). payment_date is server-stamped by the DB default
+// now(); garage scoping is enforced by the caller, which resolves the invoice
+// through InvoiceMoneyFor before recording.
+func (s *Store) CreatePayment(ctx context.Context, invoiceID string, p models.Payment) (models.Payment, error) {
+	return scanPayment(s.Pool.QueryRow(ctx,
+		`INSERT INTO payments (invoice_id, customer_id, amount, mode, transaction_ref, notes, received_by)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING `+paymentColumns,
+		invoiceID, p.CustomerID, p.Amount, p.Mode, p.TransactionRef, p.Notes, p.ReceivedBy))
+}
+
 func (s *Store) ListInvoices(ctx context.Context, garageID string) ([]models.Invoice, error) {
 	rows, err := s.Pool.Query(ctx,
 		`SELECT `+invoiceColumns+` FROM invoices WHERE garage_id = $1 ORDER BY created_at DESC, id`, garageID)
