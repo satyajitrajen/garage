@@ -132,7 +132,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: palette.paperHeaderBg,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppDimens.radiusCard)),
+                      borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
                     ),
                     child: Column(
                       children: [
@@ -174,7 +174,6 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         Container(
                           height: 34,
                           padding: const EdgeInsets.symmetric(horizontal: 14),
-                          alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: palette.cardAlt,
                             borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
@@ -695,8 +694,8 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
   }
 
   String _qrPayload(Invoice invoice, GarageProfile profile) {
-    if (invoice.balanceDue > 0 && profile.upiId.isNotEmpty) {
-      return 'upi://pay?pa=${profile.upiId}'
+    if (invoice.balanceDue > 0 && profile.upiId.trim().isNotEmpty) {
+      return 'upi://pay?pa=${profile.upiId.trim()}'
           '&pn=${Uri.encodeComponent(profile.name)}'
           '&am=${invoice.balanceDue.toStringAsFixed(2)}&cu=INR';
     }
