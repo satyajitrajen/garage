@@ -64,6 +64,7 @@ void main() {
       };
       final c = customerFromJson(wire);
       expect(c.whatsappNumber, isNull);
+      expect(c.createdAt.isUtc, isFalse);
       expect(c.createdAt.isAtSameMomentAs(DateTime.parse('2026-09-13T04:30:00Z')), isTrue);
       final back = customerToJson(c);
       expect(back['name'], 'Ravi Kumar');
@@ -146,10 +147,7 @@ void main() {
       expect(back['role'], 'headMechanic');
       expect(back['joiningDate'], '2026-08-15');
       expect(back['monthlySalary'], 22000.0);
-      final reparsed = staffFromJson({
-        ...back,
-        'createdAt': '2026-09-13T04:30:00Z',
-      });
+      final reparsed = staffFromJson(back);
       expect(reparsed.role, StaffRole.headMechanic);
       expect(reparsed.joiningDate, DateTime(2026, 8, 15));
       expect(reparsed.isActive, isTrue);

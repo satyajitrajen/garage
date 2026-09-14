@@ -20,8 +20,12 @@ import '../../models/vehicle.dart';
 String _instant(DateTime d) => d.toUtc().toIso8601String();
 DateTime _instantFrom(String s) => DateTime.parse(s).toLocal();
 
-String _day(DateTime d) =>
-    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+/// Formats the LOCAL calendar day of [d] (normalizing UTC inputs, since
+/// day-grained wire fields must be the garage's wall-clock date).
+String _day(DateTime d) {
+  final l = d.toLocal();
+  return '${l.year.toString().padLeft(4, '0')}-${l.month.toString().padLeft(2, '0')}-${l.day.toString().padLeft(2, '0')}';
+}
 
 DateTime _dayFrom(String s) => DateTime.parse(s);
 
