@@ -13,7 +13,12 @@
 library;
 
 import '../../models/customer.dart';
+import '../../models/expense.dart';
+import '../../models/invoice.dart';
+import '../../models/job_card.dart';
 import '../../models/maintenance_item.dart';
+import '../../models/payment.dart';
+import '../../models/quotation.dart';
 import '../../models/staff.dart';
 import '../../models/vehicle.dart';
 
@@ -197,4 +202,196 @@ SalaryAdvance salaryAdvanceFromJson(Map<String, dynamic> j) => SalaryAdvance(
       date: _dayFrom(j['date'] as String),
       reason: _str(j, 'reason'),
       isDeducted: j['isDeducted'] as bool,
+    );
+
+// ----- optional-instant helper (first use below) -----
+
+DateTime? _instantOpt(Map<String, dynamic> j, String key) =>
+    j[key] == null ? null : _instantFrom(j[key] as String);
+
+// ----- JobCard -----
+
+Map<String, dynamic> jobCardToJson(JobCard jc) => {
+      'id': jc.id,
+      'jobCardNumber': jc.jobCardNumber,
+      'customerId': jc.customerId,
+      'vehicleId': jc.vehicleId,
+      'customerComplaints': jc.customerComplaints,
+      'inspectionChecklist': jc.inspectionChecklist,
+      'fuelLevel': jc.fuelLevel,
+      'kmReading': jc.kmReading,
+      'assignedStaffId': jc.assignedStaffId,
+      'status': jc.status.name,
+      'promisedDeliveryDate': _instant(jc.promisedDeliveryDate),
+      'completedAt': jc.completedAt == null ? null : _instant(jc.completedAt!),
+      'items': [for (final it in jc.items) maintenanceItemToJson(it)],
+      'createdAt': _instant(jc.createdAt),
+      'estimatedCostNote': jc.estimatedCostNote,
+      'supervisorNotes': jc.supervisorNotes,
+    };
+
+JobCard jobCardFromJson(Map<String, dynamic> j) => JobCard(
+      id: j['id'] as String,
+      jobCardNumber: j['jobCardNumber'] as String,
+      customerId: j['customerId'] as String,
+      vehicleId: j['vehicleId'] as String,
+      customerComplaints: [
+        for (final s in (j['customerComplaints'] as List)) s as String
+      ],
+      inspectionChecklist: (j['inspectionChecklist'] as Map?)?.cast<String, bool>(),
+      fuelLevel: j['fuelLevel'] as String,
+      kmReading: _int(j['kmReading']),
+      assignedStaffId: _str(j, 'assignedStaffId'),
+      status: JobStatus.values.byName(j['status'] as String),
+      promisedDeliveryDate: _instantFrom(j['promisedDeliveryDate'] as String),
+      createdAt: _instantFrom(j['createdAt'] as String),
+      completedAt: _instantOpt(j, 'completedAt'),
+      items: [
+        for (final it in (j['items'] as List? ?? []))
+          maintenanceItemFromJson(it as Map<String, dynamic>)
+      ],
+      estimatedCostNote: _str(j, 'estimatedCostNote'),
+      supervisorNotes: _str(j, 'supervisorNotes'),
+    );
+
+// ----- Quotation -----
+
+Map<String, dynamic> quotationToJson(Quotation q) => {
+      'id': q.id,
+      'quotationNumber': q.quotationNumber,
+      'customerId': q.customerId,
+      'vehicleId': q.vehicleId,
+      'kmReading': q.kmReading,
+      'items': [for (final it in q.items) maintenanceItemToJson(it)],
+      'overallDiscount': q.overallDiscount,
+      'taxPercent': q.taxPercent,
+      'validityDays': q.validityDays,
+      'status': q.status.name,
+      'notes': q.notes,
+    };
+
+Quotation quotationFromJson(Map<String, dynamic> j) => Quotation(
+      id: j['id'] as String,
+      quotationNumber: j['quotationNumber'] as String,
+      customerId: j['customerId'] as String,
+      vehicleId: j['vehicleId'] as String,
+      kmReading: _int(j['kmReading']),
+      items: [
+        for (final it in (j['items'] as List? ?? []))
+          maintenanceItemFromJson(it as Map<String, dynamic>)
+      ],
+      overallDiscount: _dbl(j['overallDiscount']),
+      taxPercent: _dbl(j['taxPercent']),
+      validityDays: _int(j['validityDays']),
+      status: QuotationStatus.values.byName(j['status'] as String),
+      notes: _str(j, 'notes'),
+      createdAt: _instantFrom(j['createdAt'] as String),
+      validUntil: _instantFrom(j['validUntil'] as String),
+    );
+
+// ----- Payment -----
+
+Map<String, dynamic> paymentToJson(Payment p) => {
+      'id': p.id,
+      'invoiceId': p.invoiceId,
+      'customerId': p.customerId,
+      'amount': p.amount,
+      'mode': p.mode.name,
+      'transactionRef': p.transactionRef,
+      'notes': p.notes,
+      'receivedBy': p.receivedBy,
+    };
+
+Payment paymentFromJson(Map<String, dynamic> j) => Payment(
+      id: j['id'] as String,
+      invoiceId: j['invoiceId'] as String,
+      customerId: _str(j, 'customerId'),
+      amount: _dbl(j['amount']),
+      mode: PaymentMode.values.byName(j['mode'] as String),
+      transactionRef: _str(j, 'transactionRef'),
+      paymentDate: _instantFrom(j['paymentDate'] as String),
+      notes: _str(j, 'notes'),
+      receivedBy: _str(j, 'receivedBy'),
+    );
+
+// ----- Invoice -----
+
+Map<String, dynamic> invoiceToJson(Invoice inv) => {
+      'id': inv.id,
+      'invoiceNumber': inv.invoiceNumber,
+      'jobCardId': inv.jobCardId,
+      'customerId': inv.customerId,
+      'vehicleId': inv.vehicleId,
+      'kmReading': inv.kmReading,
+      'items': [for (final it in inv.items) maintenanceItemToJson(it)],
+      'discountAmount': inv.discountAmount,
+      'taxPercent': inv.taxPercent,
+      'invoiceDate': _instant(inv.invoiceDate),
+      'dueDate': inv.dueDate == null ? null : _instant(inv.dueDate!),
+      'cancelledAt': inv.cancelledAt == null ? null : _instant(inv.cancelledAt!),
+      'notes': inv.notes,
+      'termsAndConditions': inv.termsAndConditions,
+    };
+
+Invoice invoiceFromJson(Map<String, dynamic> j) => Invoice(
+      id: j['id'] as String,
+      invoiceNumber: j['invoiceNumber'] as String,
+      jobCardId: _str(j, 'jobCardId'),
+      customerId: j['customerId'] as String,
+      vehicleId: j['vehicleId'] as String,
+      kmReading: _int(j['kmReading']),
+      items: [
+        for (final it in (j['items'] as List? ?? []))
+          maintenanceItemFromJson(it as Map<String, dynamic>)
+      ],
+      discountAmount: _dbl(j['discountAmount']),
+      taxPercent: _dbl(j['taxPercent']),
+      payments: [
+        for (final p in (j['payments'] as List? ?? []))
+          paymentFromJson(p as Map<String, dynamic>)
+      ],
+      invoiceDate: _instantFrom(j['invoiceDate'] as String),
+      dueDate: _instantOpt(j, 'dueDate'),
+      cancelledAt: _instantOpt(j, 'cancelledAt'),
+      notes: _str(j, 'notes'),
+      termsAndConditions: _str(j, 'termsAndConditions'),
+    );
+
+// ----- Expense -----
+
+Map<String, dynamic> expenseToJson(GarageExpense e) => {
+      'id': e.id,
+      'title': e.title,
+      'category': e.category.name,
+      'amount': e.amount,
+      'expenseDate': _day(e.expenseDate),
+      'paymentMode': e.paymentMode.name,
+      'vendorName': e.vendorName,
+      'notes': e.notes,
+      'receiptPath': e.receiptPath,
+    };
+
+GarageExpense expenseFromJson(Map<String, dynamic> j) => GarageExpense(
+      id: j['id'] as String,
+      title: j['title'] as String,
+      category: ExpenseCategory.values.byName(j['category'] as String),
+      amount: _dbl(j['amount']),
+      expenseDate: _dayFrom(j['expenseDate'] as String),
+      paymentMode: PaymentMode.values.byName(j['paymentMode'] as String),
+      vendorName: _str(j, 'vendorName'),
+      notes: _str(j, 'notes'),
+      receiptPath: _str(j, 'receiptPath'),
+    );
+
+// ----- Catalog -----
+
+MaintenanceItem catalogItemFromJson(Map<String, dynamic> j) => MaintenanceItem(
+      id: j['id'] as String,
+      name: j['name'] as String,
+      category: ItemCategory.values.byName(j['category'] as String),
+      unitPrice: _dbl(j['unitPrice']),
+      unit: j['unit'] as String,
+      isLabour: j['isLabour'] as bool,
+      partNumber: _str(j, 'partNumber'),
+      notes: _str(j, 'notes'),
     );
