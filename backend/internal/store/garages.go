@@ -30,7 +30,6 @@ func (s *Store) RegisterOwner(ctx context.Context, email, passwordHash, name, ga
 		`INSERT INTO garages (name) VALUES ($1) RETURNING id`, garageName).Scan(&garageID); err != nil {
 		return models.User{}, models.Membership{}, mapPGError(err)
 	}
-
 	if _, err := tx.Exec(ctx,
 		`INSERT INTO memberships (garage_id, user_id, role, permissions) VALUES ($1, $2, 'owner', $3)`,
 		garageID, u.ID, ownerPermissions); err != nil {
@@ -45,4 +44,16 @@ func (s *Store) RegisterOwner(ctx context.Context, email, passwordHash, name, ga
 		Permissions: ownerPermissions, IsActive: true,
 	}
 	return u, m, nil
+}
+
+// SetGarageTrial sets the trial window for a newly registered garage.
+func (s *Store) SetGarageTrial(ctx context.Context, garageID string, trialDays int) error {
+	if trialDays <= 0 {
+		trialDays = 14
+	}
+	_, err := s.Pool.Exec(ctx,
+		`UPDATE garages SET plan_tier='trial', subscription_status='trialing',
+		 trial_ends_at = now() + ($2 || ' days')::interval WHERE id = $1`,
+		garageID, itoa(trialDays))
+	return mapPGError(err)
 }

@@ -26,13 +26,24 @@ granular permissions, PostgreSQL storage. The Flutter app is its only client.
 
 1. Install PostgreSQL (EDB installer on Windows).
 2. Create a database: `createdb garage`
-3. Set environment variables:
+3. Set environment variables (see `.env.example` for the full list):
 
    | Variable       | Meaning                              | Example                                         |
    |----------------|--------------------------------------|-------------------------------------------------|
    | `PORT`         | HTTP port (default 8080)             | `8080`                                          |
    | `DATABASE_URL` | Postgres connection string (required)| `postgres://postgres:pw@localhost:5432/garage?sslmode=disable` |
-   | `JWT_SECRET`   | HS256 signing secret (required)      | any long random string                          |
+   | `JWT_SECRET`   | HS256 signing secret, min 16 chars (required) | `openssl rand -hex 32`                |
+   | `CORS_ALLOWED_ORIGINS` | Comma-separated origins (default `*` for dev; set explicit origins in prod) | `https://app.example.com` |
+   | `APP_BASE_URL` | Public app URL used in email links (default `http://localhost:8080`) | `https://app.example.com` |
+   | `TRIAL_DAYS`   | Trial length for new garages (default 14) | `14`                                     |
+   | `SUPERADMIN_EMAILS` | Comma-separated owner emails promoted to superadmin on register | `owner@example.com` |
+   | `SMTP_HOST/PORT/USER/PASS/FROM` | SMTP for verify/reset/invite mail; unset = log-only (dev) | `smtp.mailgun.org` |
+   | `RAZORPAY_KEY_ID/KEY_SECRET/WEBHOOK_SECRET` | Razorpay credentials; unset = manual billing | — |
+   | `RAZORPAY_PLAN_MONTHLY/PLAN_YEARLY` | Razorpay plan ids returned by checkout | `plan_xxx` |
+
+   Production: `docker compose up -d` (postgres + server + Caddy TLS, see
+   `Caddyfile`). Nightly `pg_dump` recommended; health probes: liveness
+   `GET /api/health`, readiness `GET /api/ready` (DB ping, 503 when down).
 
 ## Run
 
@@ -40,7 +51,10 @@ granular permissions, PostgreSQL storage. The Flutter app is its only client.
 go run ./cmd/server
 ```
 
-Migrations run automatically on boot. Health check: `GET /api/health`.
+Migrations run automatically on boot. Health check: `GET /api/health`
+(liveness, always 200) and `GET /api/ready` (pings the DB, 503 when
+unreachable — use it as the readiness probe). The server sets 5s header /
+15s read / 30s write / 60s idle timeouts and logs JSON via slog.
 
 ## Test
 
@@ -81,6 +95,29 @@ external needed. The first run downloads the Postgres binaries.
 | `POST /api/invoices/{invoiceId}/payments` | bearer + garage + `payments.record` | append-only; amount in (0, balanceDue + 0.01] |
 | `GET`/`POST /api/expenses` · `PUT`/`DELETE /api/expenses/{expenseId}` | bearer + garage + `expenses.manage` | expenseDate is a `YYYY-MM-DD` string |
 | `GET /api/catalog` | bearer + garage (any member) | read-only; ships empty (CRUD out of scope) |
+| `POST /api/auth/verify-request` · `POST /api/auth/verify` | none (rate-limited) | email verification: request (always 200) + confirm `{token}` |
+| `POST /api/auth/forgot` · `POST /api/auth/reset` | none (rate-limited) | password reset: request (always 200) + `{token, password≥8}`; revokes sessions |
+| `POST /api/garages/{garageId}/invites` · `DELETE /api/garages/{garageId}/invites/{inviteId}` | bearer + garage + `staff.manage` | invite by email (7d expiry, mailed link); revoke |
+| `GET /api/invites/{token}` | none | public invite preview |
+| `POST /api/invites/{token}/accept` | bearer | join the garage as a member |
+| `GET /api/garages/{garageId}/doc-numbers/next?kind=jobcard\|quotation\|invoice` | bearer + garage | server-allocated number (JC-/EST-/INV-YYYY-); POST with empty number auto-assigns |
+| `GET /api/garages/{garageId}/billing` | bearer + garage | plan, status, trial window, Razorpay key id |
+| `POST /api/garages/{garageId}/billing/checkout` | bearer + garage | `{plan: monthly\|yearly}` → key + plan id (or manual instructions when unconfigured) |
+| `POST /api/garages/{garageId}/billing/cancel` | bearer + garage, owner-only | mark subscription cancelled |
+| `POST /api/billing/webhooks/razorpay` | HMAC `X-Razorpay-Signature` | idempotent (event id dedupe); activated→active, halted/failed→past_due, cancelled→cancelled |
+| `GET /api/admin/garages` · `POST /api/admin/garages/{id}/suspend\|unsuspend` | superadmin | tenant list (paginated) + suspension (writes → 402, reads stay 200) |
+| `GET /api/admin/metrics` · `GET /api/admin/audit?garage_id=` | superadmin | tenant counts by status + audit trail |
+
+Lists accept optional `?limit=&offset=` (defaults 50, max 200) and return
+`{"items","total","limit","offset"}`; without params the legacy
+`{"items":[...]}` shape is preserved.
+
+Writes on `/customers /vehicles /staff /attendance /salary-advances
+/jobcards /quotations /invoices /expenses` pass a subscription gate: reads
+always work, but mutating calls return `402 payment_required` when the trial
+expired or the garage is suspended/cancelled (`past_due` keeps a 72-hour
+grace window anchored to the last status change; repeat webhooks don't
+extend it). New `402`/`429` codes extend the error envelope.
 
 Garage-scoped routes need `Authorization: Bearer <access token>` and
 `X-Garage-Id: <garage uuid>` headers; a mismatch between the header and the
@@ -175,8 +212,17 @@ server:
 
 ## Phase status
 
-Phases 1 and 2 of 3 are complete: auth, members, settings, and all domain
-CRUD (customers, vehicles, staff, attendance, advances, job cards,
-quotations, invoices, payments, expenses, catalog) with integration tests.
-Pending: Phase 3 connecting the Flutter app (`lib/data/api/` HTTP repository,
-login gate, permission-gated UI).
+Phases 1–3 are complete: auth, members, settings, and all domain CRUD
+(customers, vehicles, staff, attendance, advances, job cards, quotations,
+invoices, payments, expenses, catalog) with integration tests, plus the
+Flutter app's HTTP repository (`lib/data/api/`), login gate, garage
+switcher, and permission-gated UI.
+
+Run the app against the backend:
+
+```bash
+flutter run --dart-define=USE_MOCK=false \
+  --dart-define=API_BASE_URL=http://localhost:8080
+```
+
+Default `flutter run` still uses the in-memory mock (no setup).

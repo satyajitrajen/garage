@@ -46,6 +46,20 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, 500, "internal", "could not register")
 		return
 	}
+	// SaaS provisioning: trial window + subscription row + optional superadmin.
+	trialDays := s.Config.TrialDays
+	if trialDays <= 0 {
+		trialDays = 14
+	}
+	_ = s.Store.SetGarageTrial(r.Context(), membership.GarageID, trialDays)
+	_, _ = s.Store.EnsureSubscription(r.Context(), membership.GarageID, trialDays)
+	for _, e := range s.Config.SuperadminEmails {
+		if e != "" && e == user.Email {
+			_ = s.Store.SetSuperadmin(r.Context(), user.ID, true)
+			break
+		}
+	}
+	s.Store.Audit(r.Context(), membership.GarageID, user.ID, "auth.register", "garage", membership.GarageID, nil)
 	s.writeSession(w, r, 201, user, []models.Membership{membership})
 }
 

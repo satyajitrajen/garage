@@ -1,0 +1,6 @@
+# Reverse-proxy for the SaaS API. Replace api.example.com with your domain.
+# Caddy issues/renews TLS automatically. Razorpay webhooks hit
+# https://api.example.com/api/billing/webhooks/razorpay.
+api.example.com {
+	reverse_proxy server:8080
+}

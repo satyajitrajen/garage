@@ -1,1 +1,4 @@
 .embedded-pg/
+.embedded-pg-bin/
+.env
+*.exe

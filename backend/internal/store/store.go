@@ -16,6 +16,18 @@ var (
 	ErrDuplicate = errors.New("duplicate")
 )
 
+// Payment guard sentinels for the atomic record path.
+var (
+	errCancelled = errors.New("invoice is cancelled")
+	errOverpaid  = errors.New("payment exceeds balance due")
+)
+
+// IsCancelled reports the atomic-payment cancelled guard.
+func IsCancelled(err error) bool { return errors.Is(err, errCancelled) }
+
+// IsOverpaid reports the atomic-payment overpay guard.
+func IsOverpaid(err error) bool { return errors.Is(err, errOverpaid) }
+
 type Store struct {
 	Pool *pgxpool.Pool
 }

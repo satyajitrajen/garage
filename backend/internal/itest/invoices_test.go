@@ -136,11 +136,11 @@ func TestInvoiceValidationAndTenancy(t *testing.T) {
 	_, _, aJob := createJobCard(t, a.AccessToken, aGarage,
 		jobCardBody("JC-I1", aCustomer.ID, aVehicle.ID))
 
-	// Empty number → 400.
+	// Empty number → server assigns one (doc sequences, SaaS multi-user safe).
 	body := invoiceBody("", aCustomer.ID, aVehicle.ID)
-	status, _, _ := createInvoice(t, a.AccessToken, aGarage, body)
-	if status != 400 {
-		t.Fatalf("empty number: %d", status)
+	status, _, auto := createInvoice(t, a.AccessToken, aGarage, body)
+	if status != 201 || auto.InvoiceNumber == "" {
+		t.Fatalf("empty number: %d (want 201 with assigned number)", status)
 	}
 	// Malformed jobCardId → 400.
 	body = invoiceBody("INV-3001", aCustomer.ID, aVehicle.ID)

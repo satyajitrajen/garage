@@ -70,8 +70,41 @@ func (s *Store) ItemsOfParent(ctx context.Context, itemsTable, parentID string) 
 	return items, rows.Err()
 }
 
+// ItemsOfParents returns items for exactly the given parent ids, keyed by
+// parent id. Paginated list endpoints use this so a page never hydrates the
+// whole garage's children.
+func (s *Store) ItemsOfParents(ctx context.Context, itemsTable string, parentIDs []string) (map[string][]models.MaintenanceItem, error) {
+	p, err := itemParentOf(itemsTable)
+	if err != nil {
+		return nil, err
+	}
+	items := map[string][]models.MaintenanceItem{}
+	if len(parentIDs) == 0 {
+		return items, nil
+	}
+	rows, err := s.Pool.Query(ctx,
+		`SELECT `+itemColumns+`, `+p.fkColumn+` FROM `+itemsTable+`
+		 WHERE `+p.fkColumn+` = ANY($1) ORDER BY created_at, id`, parentIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var parentID string
+		var it models.MaintenanceItem
+		if err := rows.Scan(&it.ID, &it.Name, &it.Category, &it.UnitPrice, &it.Quantity,
+			&it.Unit, &it.DiscountPercent, &it.TaxPercent, &it.IsLabour, &it.PartNumber,
+			&it.Notes, &it.AssignedStaffID, &parentID); err != nil {
+			return nil, err
+		}
+		items[parentID] = append(items[parentID], it)
+	}
+	return items, rows.Err()
+}
+
 // ItemsByGarage returns every item of the given items table for documents in
-// the garage, keyed by parent document id (list endpoints attach them).
+// the garage, keyed by parent document id (legacy unbounded list endpoints
+// attach them; paginated endpoints prefer ItemsOfParents).
 func (s *Store) ItemsByGarage(ctx context.Context, itemsTable, garageID string) (map[string][]models.MaintenanceItem, error) {
 	p, err := itemParentOf(itemsTable)
 	if err != nil {

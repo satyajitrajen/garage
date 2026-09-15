@@ -76,3 +76,37 @@ func (s *Server) checkItemStaffRef(ctx context.Context, garageID string, it mode
 	}
 	return refCheck{}
 }
+
+// validateItemNumbers guards the money fields the DB numeric(12,2) columns
+// would otherwise accept silently (negatives, >100% rates).
+func validateItemNumbers(it models.MaintenanceItem) (string, int) {
+	if it.UnitPrice < 0 {
+		return "unitPrice cannot be negative", 400
+	}
+	if it.Quantity <= 0 {
+		return "quantity must be positive", 400
+	}
+	if it.DiscountPercent < 0 || it.DiscountPercent > 100 {
+		return "discountPercent must be between 0 and 100", 400
+	}
+	if it.TaxPercent < 0 || it.TaxPercent > 100 {
+		return "taxPercent must be between 0 and 100", 400
+	}
+	if !models.ValidValue(it.Category, models.ItemCategories...) {
+		return "invalid category \"" + it.Category + "\"", 400
+	}
+	return "", 0
+}
+
+// validateItems runs name + number checks over a document's item array.
+func validateItems(items []models.MaintenanceItem) (string, int) {
+	for _, it := range items {
+		if it.Name == "" {
+			return "item name is required", 400
+		}
+		if msg, code := validateItemNumbers(it); msg != "" {
+			return msg, code
+		}
+	}
+	return "", 0
+}

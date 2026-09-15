@@ -22,6 +22,9 @@ func validateJobCard(jc models.JobCard) (string, int) {
 	if jc.PromisedDeliveryDate.IsZero() {
 		return "promisedDeliveryDate is required", 400
 	}
+	if jc.KmReading < 0 {
+		return "kmReading cannot be negative", 400
+	}
 	return "", 0
 }
 
@@ -47,6 +50,15 @@ func normalizeJobCard(jc *models.JobCard) {
 }
 
 func (s *Server) listJobCards(w http.ResponseWriter, r *http.Request) {
+	if limit, offset, ok := pageParams(r); ok {
+		items, total, err := s.Store.ListJobCardsPage(r.Context(), auth.GarageID(r.Context()), limit, offset)
+		if err != nil {
+			httputil.Error(w, 500, "internal", "could not list job cards")
+			return
+		}
+		httputil.JSON(w, 200, map[string]any{"items": items, "total": total, "limit": limit, "offset": offset})
+		return
+	}
 	items, err := s.Store.ListJobCards(r.Context(), auth.GarageID(r.Context()))
 	if err != nil {
 		httputil.Error(w, 500, "internal", "could not list job cards")
@@ -61,11 +73,23 @@ func (s *Server) createJobCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	normalizeJobCard(&jc)
+	garageID := auth.GarageID(r.Context())
+	if jc.JobCardNumber == "" {
+		num, err := s.Store.NextDocNumber(r.Context(), garageID, "jobcard")
+		if err != nil {
+			httputil.Error(w, 500, "internal", "could not assign job card number")
+			return
+		}
+		jc.JobCardNumber = num
+	}
 	if msg, status := validateJobCard(jc); msg != "" {
 		httputil.Error(w, status, "invalid_request", msg)
 		return
 	}
-	garageID := auth.GarageID(r.Context())
+	if msg, status := validateItems(jc.Items); msg != "" {
+		httputil.Error(w, status, "invalid_request", msg)
+		return
+	}
 	if rc := s.checkRefs(r.Context(), garageID, jc.CustomerID, jc.VehicleID, jc.AssignedStaffID); rc.status != 0 {
 		httputil.Error(w, rc.status, rc.code, rc.message)
 		return
@@ -100,6 +124,10 @@ func (s *Server) updateJobCard(w http.ResponseWriter, r *http.Request) {
 	}
 	normalizeJobCard(&jc)
 	if msg, status := validateJobCard(jc); msg != "" {
+		httputil.Error(w, status, "invalid_request", msg)
+		return
+	}
+	if msg, status := validateItems(jc.Items); msg != "" {
 		httputil.Error(w, status, "invalid_request", msg)
 		return
 	}
@@ -172,6 +200,10 @@ func (s *Server) upsertJobCardItem(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, 400, "invalid_request", "invalid category \""+it.Category+"\"")
 		return
 	}
+	if msg, status := validateItemNumbers(it); msg != "" {
+		httputil.Error(w, status, "invalid_request", msg)
+		return
+	}
 	garageID := auth.GarageID(r.Context())
 	if _, err := s.Store.JobCardByID(r.Context(), garageID, jobCardID); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
@@ -206,6 +238,16 @@ func (s *Server) deleteJobCardItem(w http.ResponseWriter, r *http.Request) {
 	}
 	if _, err := parseID(itemID); err != nil {
 		httputil.Error(w, 404, "not_found", "item not found")
+		return
+	}
+	// Garage-scoping: a valid id from another garage must 404, not delete.
+	// (DeleteItem alone is only scoped by parent id.)
+	if _, err := s.Store.JobCardByID(r.Context(), auth.GarageID(r.Context()), jobCardID); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			httputil.Error(w, 404, "not_found", "job card not found")
+			return
+		}
+		httputil.Error(w, 500, "internal", "could not load job card")
 		return
 	}
 	err := s.Store.DeleteItem(r.Context(), "job_card_items", jobCardID, itemID)

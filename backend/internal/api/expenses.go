@@ -38,6 +38,15 @@ func validateExpense(e *models.Expense) (string, int) {
 }
 
 func (s *Server) listExpenses(w http.ResponseWriter, r *http.Request) {
+	if limit, offset, ok := pageParams(r); ok {
+		items, total, err := s.Store.ListExpensesPage(r.Context(), auth.GarageID(r.Context()), limit, offset)
+		if err != nil {
+			httputil.Error(w, 500, "internal", "could not list expenses")
+			return
+		}
+		httputil.JSON(w, 200, map[string]any{"items": items, "total": total, "limit": limit, "offset": offset})
+		return
+	}
 	items, err := s.Store.ListExpenses(r.Context(), auth.GarageID(r.Context()))
 	if err != nil {
 		httputil.Error(w, 500, "internal", "could not list expenses")

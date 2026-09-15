@@ -23,6 +23,15 @@ func validateQuotation(q models.Quotation) (string, int) {
 	if q.ValidityDays <= 0 {
 		return "validityDays must be positive", 400
 	}
+	if q.KmReading < 0 {
+		return "kmReading cannot be negative", 400
+	}
+	if q.OverallDiscount < 0 {
+		return "overallDiscount cannot be negative", 400
+	}
+	if q.TaxPercent < 0 || q.TaxPercent > 100 {
+		return "taxPercent must be between 0 and 100", 400
+	}
 	return "", 0
 }
 
@@ -56,11 +65,23 @@ func (s *Server) createQuotation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	normalizeQuotation(&q)
+	garageID := auth.GarageID(r.Context())
+	if q.QuotationNumber == "" {
+		num, err := s.Store.NextDocNumber(r.Context(), garageID, "quotation")
+		if err != nil {
+			httputil.Error(w, 500, "internal", "could not assign quotation number")
+			return
+		}
+		q.QuotationNumber = num
+	}
 	if msg, status := validateQuotation(q); msg != "" {
 		httputil.Error(w, status, "invalid_request", msg)
 		return
 	}
-	garageID := auth.GarageID(r.Context())
+	if msg, status := validateItems(q.Items); msg != "" {
+		httputil.Error(w, status, "invalid_request", msg)
+		return
+	}
 	if rc := s.checkRefs(r.Context(), garageID, q.CustomerID, q.VehicleID, nil); rc.status != 0 {
 		httputil.Error(w, rc.status, rc.code, rc.message)
 		return
@@ -95,6 +116,10 @@ func (s *Server) updateQuotation(w http.ResponseWriter, r *http.Request) {
 	}
 	normalizeQuotation(&q)
 	if msg, status := validateQuotation(q); msg != "" {
+		httputil.Error(w, status, "invalid_request", msg)
+		return
+	}
+	if msg, status := validateItems(q.Items); msg != "" {
 		httputil.Error(w, status, "invalid_request", msg)
 		return
 	}

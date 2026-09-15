@@ -20,6 +20,9 @@ func validateStaff(st models.Staff) (string, int) {
 	if !models.ValidValue(st.Role, models.StaffRoles...) {
 		return "invalid role \"" + st.Role + "\"", 400
 	}
+	if st.MonthlySalary < 0 {
+		return "monthlySalary cannot be negative", 400
+	}
 	if _, err := time.Parse("2006-01-02", st.JoiningDate); err != nil {
 		return "joining_date must be YYYY-MM-DD", 400
 	}

@@ -36,11 +36,21 @@ func TestMain(m *testing.M) {
 }
 
 func runTests(m *testing.M) int {
+	// BinariesPath points at a stable pre-extracted dir: Start() wipes the
+	// runtime path every run and its pg_ctl existence check misses the
+	// Windows .exe, which would otherwise force a full re-extract (flaky
+	// file locks) on every invocation. Seed the dir once from the cached
+	// .embedded-pg archive; it is gitignored and never wiped.
+	binaries, err := filepath.Abs(filepath.Join("..", ".embedded-pg-bin"))
+	if err != nil {
+		panic("binaries path: " + err.Error())
+	}
 	pg := embeddedpostgres.NewDatabase(
 		embeddedpostgres.DefaultConfig().
 			Port(testDBPort).
 			Database("garage_test").
-			RuntimePath(filepath.Join("..", ".embedded-pg")),
+			RuntimePath(filepath.Join("..", ".embedded-pg")).
+			BinariesPath(binaries),
 	)
 	if err := pg.Start(); err != nil {
 		panic("start embedded postgres: " + err.Error())
@@ -68,7 +78,7 @@ func runTests(m *testing.M) int {
 
 	ts = httptest.NewServer(api.NewRouter(&api.Server{
 		Store:  store.New(pool),
-		Issuer: auth.NewTokenIssuer("test-secret"),
+		Issuer: auth.NewTokenIssuer("test-secret-16-chars"),
 	}))
 	defer ts.Close()
 
@@ -81,7 +91,9 @@ func truncate(t *testing.T) {
 		`TRUNCATE users, garages, memberships, refresh_tokens, garage_settings,
 		customers, vehicles, staff_members, attendance_records, salary_advances,
 		job_cards, job_card_items, quotations, quotation_items, invoices,
-		invoice_items, payments, expenses, catalog_items CASCADE`); err != nil {
+		invoice_items, payments, expenses, catalog_items,
+		email_verifications, password_resets, garage_invites, doc_sequences,
+		audit_log, subscriptions, subscription_events CASCADE`); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 }

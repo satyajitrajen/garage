@@ -21,6 +21,8 @@ import '../../models/payment.dart';
 import '../../models/quotation.dart';
 import '../../models/staff.dart';
 import '../../models/vehicle.dart';
+import '../app_config.dart';
+import '../garage_profile.dart';
 
 String _instant(DateTime d) => d.toUtc().toIso8601String();
 DateTime _instantFrom(String s) => DateTime.parse(s).toLocal();
@@ -39,9 +41,6 @@ int _int(dynamic v) => (v as num).toInt();
 
 String? _str(Map<String, dynamic> j, String key) => j[key] as String?;
 
-// NOTE: the _instantOpt helper is intentionally NOT here — it has no use
-// until Task 4's job-card/invoice codecs and would trip the unused_element
-// lint at this task's analyze gate. Task 4 adds it alongside its first use.
 // ----- MaintenanceItem -----
 
 Map<String, dynamic> maintenanceItemToJson(MaintenanceItem it) => {
@@ -236,7 +235,7 @@ JobCard jobCardFromJson(Map<String, dynamic> j) => JobCard(
       customerId: j['customerId'] as String,
       vehicleId: j['vehicleId'] as String,
       customerComplaints: [
-        for (final s in (j['customerComplaints'] as List)) s as String
+        for (final s in (j['customerComplaints'] as List? ?? [])) s as String
       ],
       inspectionChecklist: (j['inspectionChecklist'] as Map?)?.cast<String, bool>(),
       fuelLevel: j['fuelLevel'] as String,
@@ -394,4 +393,33 @@ MaintenanceItem catalogItemFromJson(Map<String, dynamic> j) => MaintenanceItem(
       isLabour: j['isLabour'] as bool,
       partNumber: _str(j, 'partNumber'),
       notes: _str(j, 'notes'),
+    );
+
+// ----- Garage settings (snake_case, Phase 1 wire format) -----
+
+GarageProfile profileFromJson(Map<String, dynamic> j) => GarageProfile(
+      name: j['name'] as String,
+      tagline: j['tagline'] as String,
+      addressLine: j['address_line'] as String,
+      city: j['city'] as String,
+      phone: j['phone'] as String,
+      email: j['email'] as String,
+      gstin: j['gstin'] as String,
+      upiId: j['upi_id'] as String,
+    );
+
+AppConfig appConfigFromSettings(Map<String, dynamic> j) => AppConfig(
+      defaultTaxPercent: _dbl(j['default_tax_percent']),
+      taxPercentOptions: [
+        for (final v in (j['tax_percent_options'] as List)) _dbl(v)
+      ],
+      invoiceDueDays: _int(j['invoice_due_days']),
+      quotationValidityOptions: [
+        for (final v in (j['quotation_validity_options'] as List)) _int(v)
+      ],
+      workingDaysPerMonth: _int(j['working_days_per_month']),
+      promisedDeliveryHours: _int(j['promised_delivery_hours']),
+      invoiceNotes: j['invoice_notes'] as String,
+      invoiceTerms: j['invoice_terms'] as String,
+      defaultReceivedBy: j['default_received_by'] as String,
     );

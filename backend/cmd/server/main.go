@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,42 +18,71 @@ import (
 	"garage-backend/internal/api"
 	"garage-backend/internal/auth"
 	"garage-backend/internal/config"
+	"garage-backend/internal/mail"
 	"garage-backend/internal/store"
 	"garage-backend/migrations"
 )
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("config load failed", "err", err)
+		os.Exit(1)
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("db pool failed", "err", err)
+		os.Exit(1)
 	}
 	defer pool.Close()
 
+	// Fail fast when the DB is unreachable instead of serving 500s.
+	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	if err := pool.Ping(pingCtx); err != nil {
+		cancel()
+		logger.Error("database ping failed", "err", err)
+		os.Exit(1)
+	}
+	cancel()
+
 	if err := migrate(cfg.DatabaseURL); err != nil {
-		log.Fatal(err)
+		logger.Error("migrate failed", "err", err)
+		os.Exit(1)
 	}
 
-	handler := api.NewRouter(&api.Server{
+	var sender mail.Sender = mail.LogSender{}
+	if cfg.SMTPHost != "" {
+		sender = mail.SMTPSender{
+			Host: cfg.SMTPHost, Port: cfg.SMTPPort,
+			User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom,
+		}
+	}
+
+	handler := api.NewRouterWithOrigins(&api.Server{
 		Store:  store.New(pool),
 		Issuer: auth.NewTokenIssuer(cfg.JWTSecret),
-	})
+		Config: cfg,
+		Mail:   sender,
+	}, cfg.AllowedOrigins)
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 	go func() {
-		log.Printf("garage server listening on :%s", cfg.Port)
+		logger.Info("garage server listening", "port", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatal(err)
+			logger.Error("listen failed", "err", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -61,7 +90,7 @@ func main() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Printf("shutdown: %v", err)
+		logger.Info("shutdown", "err", err)
 	}
 }
 

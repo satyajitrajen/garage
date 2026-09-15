@@ -22,6 +22,12 @@ func validateInvoice(inv models.Invoice) (string, int) {
 	if inv.DiscountAmount < 0 {
 		return "discountAmount cannot be negative", 400
 	}
+	if inv.TaxPercent < 0 || inv.TaxPercent > 100 {
+		return "taxPercent must be between 0 and 100", 400
+	}
+	if inv.KmReading < 0 {
+		return "kmReading cannot be negative", 400
+	}
 	return "", 0
 }
 
@@ -56,6 +62,15 @@ func (s *Server) checkInvoiceRefs(ctx context.Context, garageID string, inv mode
 }
 
 func (s *Server) listInvoices(w http.ResponseWriter, r *http.Request) {
+	if limit, offset, ok := pageParams(r); ok {
+		items, total, err := s.Store.ListInvoicesPage(r.Context(), auth.GarageID(r.Context()), limit, offset)
+		if err != nil {
+			httputil.Error(w, 500, "internal", "could not list invoices")
+			return
+		}
+		httputil.JSON(w, 200, map[string]any{"items": items, "total": total, "limit": limit, "offset": offset})
+		return
+	}
 	items, err := s.Store.ListInvoices(r.Context(), auth.GarageID(r.Context()))
 	if err != nil {
 		httputil.Error(w, 500, "internal", "could not list invoices")
@@ -70,11 +85,23 @@ func (s *Server) createInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	normalizeInvoice(&inv)
+	garageID := auth.GarageID(r.Context())
+	if inv.InvoiceNumber == "" {
+		num, err := s.Store.NextDocNumber(r.Context(), garageID, "invoice")
+		if err != nil {
+			httputil.Error(w, 500, "internal", "could not assign invoice number")
+			return
+		}
+		inv.InvoiceNumber = num
+	}
 	if msg, status := validateInvoice(inv); msg != "" {
 		httputil.Error(w, status, "invalid_request", msg)
 		return
 	}
-	garageID := auth.GarageID(r.Context())
+	if msg, status := validateItems(inv.Items); msg != "" {
+		httputil.Error(w, status, "invalid_request", msg)
+		return
+	}
 	if rc := s.checkInvoiceRefs(r.Context(), garageID, inv); rc.status != 0 {
 		httputil.Error(w, rc.status, rc.code, rc.message)
 		return
@@ -128,6 +155,10 @@ func (s *Server) updateInvoice(w http.ResponseWriter, r *http.Request) {
 	}
 	normalizeInvoice(&inv)
 	if msg, status := validateInvoice(inv); msg != "" {
+		httputil.Error(w, status, "invalid_request", msg)
+		return
+	}
+	if msg, status := validateItems(inv.Items); msg != "" {
 		httputil.Error(w, status, "invalid_request", msg)
 		return
 	}

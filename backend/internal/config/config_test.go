@@ -4,7 +4,7 @@ import "testing"
 
 func TestLoadRequiresDatabaseURL(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
-	t.Setenv("JWT_SECRET", "s")
+	t.Setenv("JWT_SECRET", "long-enough-test-secret")
 	if _, err := Load(); err == nil || err.Error() != "DATABASE_URL is required" {
 		t.Fatalf("want DATABASE_URL error, got %v", err)
 	}
@@ -18,9 +18,17 @@ func TestLoadRequiresJWTSecret(t *testing.T) {
 	}
 }
 
+func TestLoadRejectsShortJWTSecret(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("JWT_SECRET", "short")
+	if _, err := Load(); err == nil {
+		t.Fatal("want JWT_SECRET length error, got nil")
+	}
+}
+
 func TestLoadDefaultsPort(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
-	t.Setenv("JWT_SECRET", "s")
+	t.Setenv("JWT_SECRET", "long-enough-test-secret")
 	t.Setenv("PORT", "")
 	cfg, err := Load()
 	if err != nil {
@@ -33,7 +41,7 @@ func TestLoadDefaultsPort(t *testing.T) {
 
 func TestLoadPortOverride(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
-	t.Setenv("JWT_SECRET", "s")
+	t.Setenv("JWT_SECRET", "long-enough-test-secret")
 	t.Setenv("PORT", "3000")
 	cfg, err := Load()
 	if err != nil {

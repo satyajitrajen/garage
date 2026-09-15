@@ -36,6 +36,15 @@ func validateVehicle(v models.Vehicle) (string, int) {
 }
 
 func (s *Server) listVehicles(w http.ResponseWriter, r *http.Request) {
+	if limit, offset, ok := pageParams(r); ok {
+		items, total, err := s.Store.ListVehiclesPage(r.Context(), auth.GarageID(r.Context()), limit, offset)
+		if err != nil {
+			httputil.Error(w, 500, "internal", "could not list vehicles")
+			return
+		}
+		httputil.JSON(w, 200, map[string]any{"items": items, "total": total, "limit": limit, "offset": offset})
+		return
+	}
 	items, err := s.Store.ListVehicles(r.Context(), auth.GarageID(r.Context()))
 	if err != nil {
 		httputil.Error(w, 500, "internal", "could not list vehicles")

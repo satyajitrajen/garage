@@ -13,6 +13,15 @@ import (
 )
 
 func (s *Server) listCustomers(w http.ResponseWriter, r *http.Request) {
+	if limit, offset, ok := pageParams(r); ok {
+		items, total, err := s.Store.ListCustomersPage(r.Context(), auth.GarageID(r.Context()), limit, offset)
+		if err != nil {
+			httputil.Error(w, 500, "internal", "could not list customers")
+			return
+		}
+		httputil.JSON(w, 200, map[string]any{"items": items, "total": total, "limit": limit, "offset": offset})
+		return
+	}
 	items, err := s.Store.ListCustomers(r.Context(), auth.GarageID(r.Context()))
 	if err != nil {
 		httputil.Error(w, 500, "internal", "could not list customers")

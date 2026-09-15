@@ -94,6 +94,31 @@ func (s *Store) PaymentsByGarage(ctx context.Context, garageID string) (map[stri
 	return pays, rows.Err()
 }
 
+// PaymentsByInvoices returns payments for exactly the given invoice ids,
+// keyed by invoice id. Paginated list endpoints use this so a page never
+// hydrates the whole garage's payments.
+func (s *Store) PaymentsByInvoices(ctx context.Context, invoiceIDs []string) (map[string][]models.Payment, error) {
+	pays := map[string][]models.Payment{}
+	if len(invoiceIDs) == 0 {
+		return pays, nil
+	}
+	rows, err := s.Pool.Query(ctx,
+		`SELECT `+paymentColumns+` FROM payments
+		 WHERE invoice_id = ANY($1) ORDER BY payment_date, id`, invoiceIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		p, err := scanPayment(rows)
+		if err != nil {
+			return nil, err
+		}
+		pays[p.InvoiceID] = append(pays[p.InvoiceID], p)
+	}
+	return pays, rows.Err()
+}
+
 // CreatePayment inserts an append-only payment row (spec §8: payments are
 // never edited or deleted). payment_date is server-stamped by the DB default
 // now(); garage scoping is enforced by the caller, which resolves the invoice
@@ -103,6 +128,52 @@ func (s *Store) CreatePayment(ctx context.Context, invoiceID string, p models.Pa
 		`INSERT INTO payments (invoice_id, customer_id, amount, mode, transaction_ref, notes, received_by)
 		 VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING `+paymentColumns,
 		invoiceID, p.CustomerID, p.Amount, p.Mode, p.TransactionRef, p.Notes, p.ReceivedBy))
+}
+
+// RecordPaymentAtomically locks the invoice row, re-checks the balance inside
+// the same transaction that inserts the payment, and returns the saved row.
+// This closes the concurrent-double-pay race where two requests both read
+// Due() > 0 before either inserts.
+func (s *Store) RecordPaymentAtomically(ctx context.Context, garageID, invoiceID string, p models.Payment) (models.Payment, error) {
+	tx, err := s.Pool.Begin(ctx)
+	if err != nil {
+		return models.Payment{}, err
+	}
+	defer tx.Rollback(context.WithoutCancel(ctx))
+
+	var m models.InvoiceMoney
+	err = tx.QueryRow(ctx,
+		`SELECT i.cancelled_at,
+		        COALESCE(item_sums.gross, 0), i.discount_amount, i.tax_percent,
+		        COALESCE(paid_sums.paid, 0)
+		 FROM invoices i
+		 LEFT JOIN (SELECT invoice_id,
+		                   SUM(unit_price * quantity * (1 - discount_percent / 100)) AS gross
+		            FROM invoice_items GROUP BY invoice_id) item_sums
+		            ON item_sums.invoice_id = i.id
+		 LEFT JOIN (SELECT invoice_id, SUM(amount) AS paid
+		            FROM payments GROUP BY invoice_id) paid_sums
+		            ON paid_sums.invoice_id = i.id
+		 WHERE i.garage_id = $1 AND i.id = $2 FOR UPDATE OF i`,
+		garageID, invoiceID).Scan(
+		&m.CancelledAt, &m.Gross, &m.Discount, &m.TaxPercent, &m.Paid)
+	if err != nil {
+		return models.Payment{}, mapPGError(err)
+	}
+	if m.CancelledAt != nil {
+		return models.Payment{}, errCancelled
+	}
+	if p.Amount <= 0 || p.Amount > m.Due()+0.01 {
+		return models.Payment{}, errOverpaid
+	}
+	saved, err := scanPayment(tx.QueryRow(ctx,
+		`INSERT INTO payments (invoice_id, customer_id, amount, mode, transaction_ref, notes, received_by)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING `+paymentColumns,
+		invoiceID, p.CustomerID, p.Amount, p.Mode, p.TransactionRef, p.Notes, p.ReceivedBy))
+	if err != nil {
+		return models.Payment{}, mapPGError(err)
+	}
+	return saved, tx.Commit(ctx)
 }
 
 func (s *Store) ListInvoices(ctx context.Context, garageID string) ([]models.Invoice, error) {

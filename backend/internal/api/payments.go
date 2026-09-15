@@ -61,6 +61,8 @@ func (s *Server) recordPayment(w http.ResponseWriter, r *http.Request) {
 	} else {
 		req.CustomerID = nil
 	}
+	// Fast pre-check for a clean 404/422 before taking the row lock; the
+	// atomic insert below re-validates under lock against races.
 	m, err := s.Store.InvoiceMoneyFor(r.Context(), garageID, invoiceID)
 	if errors.Is(err, store.ErrNotFound) {
 		httputil.Error(w, 404, "not_found", "invoice not found")
@@ -78,7 +80,7 @@ func (s *Server) recordPayment(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, 422, "unprocessable", "payment exceeds balance due")
 		return
 	}
-	p, err := s.Store.CreatePayment(r.Context(), invoiceID, models.Payment{
+	p, err := s.Store.RecordPaymentAtomically(r.Context(), garageID, invoiceID, models.Payment{
 		CustomerID:     req.CustomerID,
 		Amount:         req.Amount,
 		Mode:           req.Mode,
@@ -86,6 +88,18 @@ func (s *Server) recordPayment(w http.ResponseWriter, r *http.Request) {
 		Notes:          req.Notes,
 		ReceivedBy:     req.ReceivedBy,
 	})
+	if errors.Is(err, store.ErrNotFound) {
+		httputil.Error(w, 404, "not_found", "invoice not found")
+		return
+	}
+	if store.IsCancelled(err) {
+		httputil.Error(w, 422, "unprocessable", "invoice is cancelled")
+		return
+	}
+	if store.IsOverpaid(err) {
+		httputil.Error(w, 422, "unprocessable", "payment exceeds balance due")
+		return
+	}
 	if err != nil {
 		httputil.Error(w, 500, "internal", "could not record payment")
 		return
