@@ -1,9 +1,14 @@
 package itest
 
 import (
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"garage-backend/internal/api"
 	"garage-backend/internal/auth"
 	"garage-backend/internal/store"
 )
@@ -172,13 +177,15 @@ func TestInviteFlow(t *testing.T) {
 		t.Fatalf("existing member invite: %d", status)
 	}
 
-	// Seed a second invite with a known token, preview publicly, accept as new user.
+	// Seed a second invite with a known token, preview publicly, accept as
+	// new user. The invite names the joiner's address: acceptance is bound
+	// to the invited email (F4).
 	raw, hash, _ := auth.RawToken()
 	var ownerID string
 	if err := pool.QueryRow(ctx, `SELECT id FROM users WHERE email='owner-saas-inv@test.dev'`).Scan(&ownerID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.CreateInvite(ctx, gid, "joiner@test.dev", "staff", auth.DefaultStaffPermissions, hash, ownerID); err != nil {
+	if _, err := s.CreateInvite(ctx, gid, "owner-saas-joiner@test.dev", "staff", auth.DefaultStaffPermissions, hash, ownerID); err != nil {
 		t.Fatalf("seed invite: %v", err)
 	}
 	status, data = doJSON(t, "GET", "/api/invites/"+raw, "", "", nil)
@@ -242,8 +249,8 @@ func TestSubscriptionGateAndBilling(t *testing.T) {
 		t.Fatalf("unsuspended write: status %d body %s", status, data)
 	}
 
-	// Webhook activation (no secret configured in tests → signature skipped).
-	status, data = doJSON(t, "POST", "/api/billing/webhooks/razorpay", "", "", map[string]any{
+	// Webhook activation (signed with the harness webhook secret).
+	status, data = postWebhook(t, map[string]any{
 		"id": "evt_test_1", "event": "subscription.activated",
 		"payload": map[string]any{"subscription": map[string]any{
 			"id": "sub_test_1", "notes": map[string]any{"garage_id": gid}}},
@@ -256,7 +263,7 @@ func TestSubscriptionGateAndBilling(t *testing.T) {
 		t.Fatalf("webhook status: %+v err=%v", sub, err)
 	}
 	// Replay is idempotent.
-	if status, _ := doJSON(t, "POST", "/api/billing/webhooks/razorpay", "", "", map[string]any{
+	if status, _ := postWebhook(t, map[string]any{
 		"id": "evt_test_1", "event": "subscription.activated",
 		"payload": map[string]any{"subscription": map[string]any{
 			"id": "sub_test_1", "notes": map[string]any{"garage_id": gid}}},
@@ -268,7 +275,7 @@ func TestSubscriptionGateAndBilling(t *testing.T) {
 	if err := s.SuspendGarage(ctx, gid, true); err != nil {
 		t.Fatal(err)
 	}
-	status, data = doJSON(t, "POST", "/api/billing/webhooks/razorpay", "", "", map[string]any{
+	status, data = postWebhook(t, map[string]any{
 		"id": "evt_test_2", "event": "subscription.charged",
 		"payload": map[string]any{"subscription": map[string]any{
 			"id": "sub_test_1", "notes": map[string]any{"garage_id": gid}}},
@@ -341,5 +348,150 @@ func TestAdminIsolation(t *testing.T) {
 	}
 	if status, _ := doJSON(t, "GET", "/api/admin/audit?garage_id="+gid, owner.AccessToken, "", nil); status != 200 {
 		t.Fatalf("audit: %d", status)
+	}
+}
+
+// TestWebhookFailsClosedWithoutSecret pins the F1 fix: with the webhook
+// secret unset the endpoint must refuse unsigned requests instead of
+// processing them.
+func TestWebhookFailsClosedWithoutSecret(t *testing.T) {
+	truncate(t)
+	owner := registerOwner(t, "saas-hook0")
+	gid := owner.Memberships[0].GarageID
+	s := store.New(pool)
+
+	// Stand-up a second server with an empty Config (the shared harness
+	// server carries a webhook secret).
+	unconfigured := httptest.NewServer(api.NewRouter(&api.Server{
+		Store:  s,
+		Issuer: auth.NewTokenIssuer("test-secret-16-chars"),
+	}))
+	defer unconfigured.Close()
+
+	resp, err := http.Post(unconfigured.URL+"/api/billing/webhooks/razorpay",
+		"application/json", strings.NewReader(`{"id":"evt_unsigned","event":"subscription.activated"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != 503 {
+		t.Fatalf("webhook without secret: status %d body %s", resp.StatusCode, data)
+	}
+	if code, message := decodeError(t, data); code != "internal" || message != "webhook not configured" {
+		t.Fatalf("error = %s / %s", code, message)
+	}
+	sub, err := s.SubscriptionByGarage(ctx, gid)
+	if err != nil || sub.Status != "trialing" {
+		t.Fatalf("subscription must stay trialing, got %+v err=%v", sub, err)
+	}
+
+	// With the secret set, a missing/invalid signature is 401 and ignored.
+	status, data := doJSON(t, "POST", "/api/billing/webhooks/razorpay", "", "", map[string]any{
+		"id": "evt_badsig", "event": "subscription.activated",
+		"payload": map[string]any{"subscription": map[string]any{
+			"id": "sub_test_1", "notes": map[string]any{"garage_id": gid}}},
+	})
+	if status != 401 {
+		t.Fatalf("bad signature: status %d body %s", status, data)
+	}
+	if code, message := decodeError(t, data); code != "unauthorized" || message != "bad webhook signature" {
+		t.Fatalf("error = %s / %s", code, message)
+	}
+	sub, err = s.SubscriptionByGarage(ctx, gid)
+	if err != nil || sub.Status != "trialing" {
+		t.Fatalf("subscription must stay trialing after bad signature, got %+v err=%v", sub, err)
+	}
+}
+
+// TestInviteOwnerRoleGuard pins the F3 fix: staff.manage alone must not be
+// able to mint OWNER invites.
+func TestInviteOwnerRoleGuard(t *testing.T) {
+	truncate(t)
+	owner := registerOwner(t, "inv-role")
+	gid := owner.Memberships[0].GarageID
+	mgr := createStaffSession(t, owner, gid, "mgr", []string{"staff.manage"})
+
+	// staff-manager (non-owner) requesting an owner invite → 403.
+	status, data := doJSON(t, "POST", "/api/garages/"+gid+"/invites", mgr.AccessToken, gid,
+		map[string]any{"email": "escalate@test.dev", "role": "owner"})
+	if status != 403 {
+		t.Fatalf("staff-manager owner invite: status %d body %s", status, data)
+	}
+	if code, message := decodeError(t, data); code != "forbidden" || message != "only the owner can invite owners" {
+		t.Fatalf("error = %s / %s", code, message)
+	}
+	// The same manager can still mint ordinary staff invites.
+	status, data = doJSON(t, "POST", "/api/garages/"+gid+"/invites", mgr.AccessToken, gid,
+		map[string]any{"email": "plain-staff@test.dev"})
+	if status != 201 {
+		t.Fatalf("staff-manager staff invite: status %d body %s", status, data)
+	}
+	var staffInvite store.Invite
+	mustUnmarshal(t, data, &staffInvite)
+	if staffInvite.Role != "staff" {
+		t.Fatalf("staff invite role = %s", staffInvite.Role)
+	}
+	// The owner may invite owners.
+	status, data = doJSON(t, "POST", "/api/garages/"+gid+"/invites", owner.AccessToken, gid,
+		map[string]any{"email": "co-owner@test.dev", "role": "owner"})
+	if status != 201 {
+		t.Fatalf("owner owner-invite: status %d body %s", status, data)
+	}
+	var ownerInvite store.Invite
+	mustUnmarshal(t, data, &ownerInvite)
+	if ownerInvite.Role != "owner" {
+		t.Fatalf("owner invite role = %s", ownerInvite.Role)
+	}
+}
+
+// TestInviteEmailMismatch pins the F4 fix: only the invited email can
+// consume an invite, and a rejected attempt must not consume it.
+func TestInviteEmailMismatch(t *testing.T) {
+	truncate(t)
+	owner := registerOwner(t, "inv-mail")
+	gid := owner.Memberships[0].GarageID
+	invitee := registerOwner(t, "inv-mail-a") // the invited user
+	other := registerOwner(t, "inv-mail-b")   // an unrelated user
+	s := store.New(pool)
+
+	// Seed the invite with a mixed-case variant of the invitee's email:
+	// matching must be case-insensitive (citext semantics).
+	raw, hash, err := auth.RawToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ownerID string
+	if err := pool.QueryRow(ctx, `SELECT id FROM users WHERE email='owner-inv-mail@test.dev'`).Scan(&ownerID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CreateInvite(ctx, gid, "Owner-Inv-Mail-A@Test.dev", "staff",
+		auth.DefaultStaffPermissions, hash, ownerID); err != nil {
+		t.Fatalf("seed invite: %v", err)
+	}
+
+	// A different authenticated user cannot consume it.
+	status, data := doJSON(t, "POST", "/api/invites/"+raw+"/accept", other.AccessToken, "", nil)
+	if status != 403 {
+		t.Fatalf("wrong-user accept: status %d body %s", status, data)
+	}
+	if code, message := decodeError(t, data); code != "forbidden" || message != "invite was issued to a different email" {
+		t.Fatalf("error = %s / %s", code, message)
+	}
+	// The invite is NOT consumed: the public preview still resolves.
+	if status, data := doJSON(t, "GET", "/api/invites/"+raw, "", "", nil); status != 200 {
+		t.Fatalf("invite consumed by wrong user: status %d body %s", status, data)
+	}
+	// The invited user can still accept.
+	status, data = doJSON(t, "POST", "/api/invites/"+raw+"/accept", invitee.AccessToken, "", nil)
+	if status != 200 {
+		t.Fatalf("invitee accept: status %d body %s", status, data)
+	}
+	// Case-insensitive match: the invitee is now a member with staff perms.
+	if status, _ := doJSON(t, "GET", "/api/customers", invitee.AccessToken, gid, nil); status != 200 {
+		t.Fatalf("invitee should be a member now: %d", status)
 	}
 }

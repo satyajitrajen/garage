@@ -125,6 +125,47 @@ func TestInvoiceCancelRules(t *testing.T) {
 	}
 }
 
+// TestInvoicePUTCannotUncancel pins the F2 fix: a PUT that omits
+// cancelledAt must leave a cancelled invoice cancelled — only
+// POST /invoices/{id}/cancel touches cancellation state.
+func TestInvoicePUTCannotUncancel(t *testing.T) {
+	truncate(t)
+	owner := registerOwner(t, "i4")
+	garageID := owner.Memberships[0].GarageID
+	_, _, customer := createCustomer(t, owner.AccessToken, garageID, customerBody("UnCancelCust"))
+	vehicle := createVehicleFor(t, owner.AccessToken, garageID, customer.ID)
+
+	_, _, inv := createInvoice(t, owner.AccessToken, garageID, invoiceBody("INV-4001", customer.ID, vehicle.ID))
+	status, data := doJSON(t, "POST", "/api/invoices/"+inv.ID+"/cancel", owner.AccessToken, garageID, nil)
+	if status != 200 {
+		t.Fatalf("cancel: status %d body %s", status, data)
+	}
+
+	// PUT without cancelledAt: normal edits apply, cancellation survives.
+	body := invoiceBody("INV-4001", customer.ID, vehicle.ID)
+	body["discountAmount"] = 250.0
+	status, data = doJSON(t, "PUT", "/api/invoices/"+inv.ID, owner.AccessToken, garageID, body)
+	if status != 200 {
+		t.Fatalf("put cancelled invoice: status %d body %s", status, data)
+	}
+	var updated models.Invoice
+	mustUnmarshal(t, data, &updated)
+	if updated.CancelledAt == nil {
+		t.Fatalf("PUT must not un-cancel the invoice: %+v", updated)
+	}
+	if updated.DiscountAmount != 250 {
+		t.Fatalf("PUT should still apply regular edits: %+v", updated)
+	}
+	// The persisted row keeps cancelled_at too (no GET-by-id route).
+	var cancelledAt *time.Time
+	if err := pool.QueryRow(ctx, `SELECT cancelled_at FROM invoices WHERE id = $1`, inv.ID).Scan(&cancelledAt); err != nil {
+		t.Fatal(err)
+	}
+	if cancelledAt == nil {
+		t.Fatal("cancelled_at was wiped by the PUT")
+	}
+}
+
 func TestInvoiceValidationAndTenancy(t *testing.T) {
 	truncate(t)
 	a := registerOwner(t, "i3a")

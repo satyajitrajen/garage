@@ -3,7 +3,10 @@ package itest
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -19,6 +22,7 @@ import (
 
 	"garage-backend/internal/api"
 	"garage-backend/internal/auth"
+	"garage-backend/internal/config"
 	"garage-backend/internal/models"
 	"garage-backend/internal/store"
 	"garage-backend/migrations"
@@ -26,6 +30,10 @@ import (
 
 const testDBPort = 54329
 const testDBURL = "postgres://postgres:postgres@localhost:54329/garage_test?sslmode=disable"
+
+// webhookSecret is the shared server's RAZORPAY_WEBHOOK_SECRET: the endpoint
+// fails closed without one, so tests sign payloads with postWebhook.
+const webhookSecret = "test-razorpay-webhook-secret"
 
 var ctx = context.Background()
 var pool *pgxpool.Pool
@@ -79,6 +87,7 @@ func runTests(m *testing.M) int {
 	ts = httptest.NewServer(api.NewRouter(&api.Server{
 		Store:  store.New(pool),
 		Issuer: auth.NewTokenIssuer("test-secret-16-chars"),
+		Config: config.Config{RazorpayWebhookSecret: webhookSecret},
 	}))
 	defer ts.Close()
 
@@ -170,6 +179,35 @@ type authResponse struct {
 	RefreshToken string              `json:"refresh_token"`
 	User         models.User         `json:"user"`
 	Memberships  []models.Membership `json:"memberships"`
+}
+
+// postWebhook posts a Razorpay webhook payload to the shared test server,
+// signing the exact bytes sent with webhookSecret (HMAC-SHA256 hex, matching
+// the handler's verification).
+func postWebhook(t *testing.T, body any) (int, []byte) {
+	t.Helper()
+	raw, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mac := hmac.New(sha256.New, []byte(webhookSecret))
+	mac.Write(raw)
+	req, err := http.NewRequest("POST", ts.URL+"/api/billing/webhooks/razorpay", bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Razorpay-Signature", hex.EncodeToString(mac.Sum(nil)))
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resp.StatusCode, data
 }
 
 func registerOwner(t *testing.T, suffix string) authResponse {

@@ -31,6 +31,11 @@ func main() {
 		logger.Error("config load failed", "err", err)
 		os.Exit(1)
 	}
+	// The webhook endpoint fails closed without this secret; warn loudly so
+	// the misconfiguration is visible at boot instead of at first webhook.
+	if cfg.RazorpayWebhookSecret == "" {
+		logger.Warn("RAZORPAY_WEBHOOK_SECRET is empty: razorpay webhooks will be rejected until configured")
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 

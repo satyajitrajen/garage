@@ -14,6 +14,9 @@ import (
 var (
 	ErrNotFound  = errors.New("not found")
 	ErrDuplicate = errors.New("duplicate")
+	// ErrForbidden marks an authorization mismatch detected in the store
+	// layer (e.g. an invite consumed by a user it was not issued to).
+	ErrForbidden = errors.New("forbidden")
 )
 
 // Payment guard sentinels for the atomic record path.

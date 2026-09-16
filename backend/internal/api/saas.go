@@ -112,6 +112,12 @@ func (s *Server) createInvite(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, 400, "invalid_request", "role must be owner or staff")
 		return
 	}
+	// Minting an OWNER invite escalates the invitee to unrestricted access,
+	// so only the garage owner may issue one (staff.manage is not enough).
+	if role == "owner" && auth.Role(r.Context()) != "owner" {
+		httputil.Error(w, 403, "forbidden", "only the owner can invite owners")
+		return
+	}
 	perms := req.Permissions
 	if perms == nil {
 		perms = auth.DefaultStaffPermissions
@@ -168,6 +174,10 @@ func (s *Server) acceptInvite(w http.ResponseWriter, r *http.Request) {
 		auth.HashToken(chi.URLParam(r, "token")), auth.UserID(r.Context()))
 	if errors.Is(err, store.ErrNotFound) {
 		httputil.Error(w, 404, "not_found", "invite not found or expired")
+		return
+	}
+	if errors.Is(err, store.ErrForbidden) {
+		httputil.Error(w, 403, "forbidden", "invite was issued to a different email")
 		return
 	}
 	if err != nil {

@@ -68,14 +68,18 @@ func (s *Server) razorpayWebhook(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, 400, "invalid_request", "body too large")
 		return
 	}
-	if s.Config.RazorpayWebhookSecret != "" {
-		mac := hmac.New(sha256.New, []byte(s.Config.RazorpayWebhookSecret))
-		mac.Write(raw)
-		want := hex.EncodeToString(mac.Sum(nil))
-		if !hmac.Equal([]byte(want), []byte(r.Header.Get("X-Razorpay-Signature"))) {
-			httputil.Error(w, 401, "unauthorized", "bad webhook signature")
-			return
-		}
+	// Fail closed: without the webhook secret no signature can be verified,
+	// so unsigned requests must never flip subscriptions to active.
+	if s.Config.RazorpayWebhookSecret == "" {
+		httputil.Error(w, 503, "internal", "webhook not configured")
+		return
+	}
+	mac := hmac.New(sha256.New, []byte(s.Config.RazorpayWebhookSecret))
+	mac.Write(raw)
+	want := hex.EncodeToString(mac.Sum(nil))
+	if !hmac.Equal([]byte(want), []byte(r.Header.Get("X-Razorpay-Signature"))) {
+		httputil.Error(w, 401, "unauthorized", "bad webhook signature")
+		return
 	}
 	var evt struct {
 		ID      string `json:"id"`

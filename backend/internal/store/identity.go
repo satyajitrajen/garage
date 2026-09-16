@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"strings"
 	"time"
 )
 
@@ -130,6 +131,16 @@ func (s *Store) AcceptInvite(ctx context.Context, tokenHash, userID string) (Inv
 		Scan(&inv.ID, &inv.GarageID, &inv.Email, &inv.Role, &inv.Permissions)
 	if err != nil {
 		return inv, mapPGError(err)
+	}
+	// Only the invited address may consume the invite. Both columns are
+	// citext, so the Go-side fold matches the case-insensitive semantics the
+	// columns are stored with.
+	var userEmail string
+	if err := tx.QueryRow(ctx, `SELECT email FROM users WHERE id = $1`, userID).Scan(&userEmail); err != nil {
+		return inv, mapPGError(err)
+	}
+	if !strings.EqualFold(userEmail, inv.Email) {
+		return inv, ErrForbidden
 	}
 	if _, err := tx.Exec(ctx,
 		`INSERT INTO memberships (garage_id, user_id, role, permissions)

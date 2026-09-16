@@ -173,8 +173,10 @@ func (s *Server) updateInvoice(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	// A PUT that sets cancelledAt is the provider's cancelInvoice path and
-	// must pass the same guard as the cancel endpoint.
+	// cancelled_at is never writable via PUT (the store ignores it), but a
+	// PUT that still carries cancelledAt — a legacy provider cancel attempt —
+	// must pass the same guard as the cancel endpoint instead of silently
+	// succeeding on already-cancelled or paid invoices.
 	if inv.CancelledAt != nil {
 		if rc := s.cancelGuard(r.Context(), garageID, inv.ID); rc.status != 0 {
 			httputil.Error(w, rc.status, rc.code, rc.message)

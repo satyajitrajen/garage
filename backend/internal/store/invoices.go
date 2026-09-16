@@ -256,7 +256,10 @@ func (s *Store) CreateInvoice(ctx context.Context, garageID string, inv models.I
 	return created, tx.Commit(ctx)
 }
 
-// invoice_number and created_at are immutable (convention 9).
+// invoice_number and created_at are immutable (convention 9), and
+// cancelled_at is never writable here: cancellation happens only through
+// MarkInvoiceCancelled (POST /invoices/{id}/cancel), so a PUT can never
+// cancel or un-cancel an invoice.
 func (s *Store) UpdateInvoice(ctx context.Context, garageID string, inv models.Invoice) (models.Invoice, error) {
 	tx, err := s.Pool.Begin(ctx)
 	if err != nil {
@@ -266,10 +269,10 @@ func (s *Store) UpdateInvoice(ctx context.Context, garageID string, inv models.I
 	updated, err := scanInvoice(tx.QueryRow(ctx,
 		`UPDATE invoices SET job_card_id=$3, customer_id=$4, vehicle_id=$5, km_reading=$6,
 		                        discount_amount=$7, tax_percent=$8, invoice_date=$9,
-		                        due_date=$10, cancelled_at=$11, notes=$12, terms_and_conditions=$13
+		                        due_date=$10, notes=$11, terms_and_conditions=$12
 		 WHERE garage_id = $1 AND id = $2 RETURNING `+invoiceColumns,
 		garageID, inv.ID, inv.JobCardID, inv.CustomerID, inv.VehicleID, inv.KmReading,
-		inv.DiscountAmount, inv.TaxPercent, inv.InvoiceDate, inv.DueDate, inv.CancelledAt,
+		inv.DiscountAmount, inv.TaxPercent, inv.InvoiceDate, inv.DueDate,
 		inv.Notes, inv.TermsAndConditions))
 	if err != nil {
 		return models.Invoice{}, mapPGError(err)
