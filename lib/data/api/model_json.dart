@@ -36,10 +36,33 @@ String _day(DateTime d) {
 
 DateTime _dayFrom(String s) => DateTime.parse(s);
 
-double _dbl(dynamic v) => (v as num).toDouble();
-int _int(dynamic v) => (v as num).toInt();
+double _dbl(dynamic v) {
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v) ?? 0.0;
+  throw FormatException('expected numeric, got $v');
+}
 
-String? _str(Map<String, dynamic> j, String key) => j[key] as String?;
+int _int(dynamic v) {
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? 0;
+  throw FormatException('expected int, got $v');
+}
+
+String? _str(Map<String, dynamic> j, String key) {
+  final v = j[key];
+  if (v == null) return null;
+  return v as String?;
+}
+
+/// Lenient enum lookup: unknown future server values fall back to [fallback]
+/// instead of throwing and taking down the whole `Future.wait` load.
+T _enumOr<T extends Enum>(List<T> values, String? name, T fallback) {
+  if (name == null) return fallback;
+  for (final v in values) {
+    if (v.name == name) return v;
+  }
+  return fallback;
+}
 
 // ----- MaintenanceItem -----
 
@@ -62,7 +85,8 @@ MaintenanceItem maintenanceItemFromJson(Map<String, dynamic> j) =>
     MaintenanceItem(
       id: j['id'] as String,
       name: j['name'] as String,
-      category: ItemCategory.values.byName(j['category'] as String),
+      category: _enumOr(
+          ItemCategory.values, j['category'] as String?, ItemCategory.custom),
       unitPrice: _dbl(j['unitPrice']),
       quantity: _dbl(j['quantity']),
       unit: j['unit'] as String,
@@ -129,7 +153,8 @@ Vehicle vehicleFromJson(Map<String, dynamic> j) => Vehicle(
       model: j['model'] as String,
       variant: _str(j, 'variant'),
       year: (j['year'] as num?)?.toInt(),
-      fuelType: FuelType.values.byName(j['fuelType'] as String),
+      fuelType:
+          _enumOr(FuelType.values, j['fuelType'] as String?, FuelType.petrol),
       currentKm: _int(j['currentKm']),
       color: _str(j, 'color'),
       chassisNumber: _str(j, 'chassisNumber'),
@@ -157,7 +182,8 @@ Map<String, dynamic> staffToJson(Staff s) => {
 Staff staffFromJson(Map<String, dynamic> j) => Staff(
       id: j['id'] as String,
       name: j['name'] as String,
-      role: StaffRole.values.byName(j['role'] as String),
+      role: _enumOr(
+          StaffRole.values, j['role'] as String?, StaffRole.helperTrainee),
       phone: j['phone'] as String,
       email: _str(j, 'email'),
       monthlySalary: _dbl(j['monthlySalary']),
@@ -181,7 +207,8 @@ AttendanceRecord attendanceFromJson(Map<String, dynamic> j) => AttendanceRecord(
       id: j['id'] as String,
       staffId: j['staffId'] as String,
       date: _dayFrom(j['date'] as String),
-      status: AttendanceStatus.values.byName(j['status'] as String),
+      status: _enumOr(AttendanceStatus.values, j['status'] as String?,
+          AttendanceStatus.present),
       notes: _str(j, 'notes'),
     );
 
@@ -241,7 +268,8 @@ JobCard jobCardFromJson(Map<String, dynamic> j) => JobCard(
       fuelLevel: j['fuelLevel'] as String,
       kmReading: _int(j['kmReading']),
       assignedStaffId: _str(j, 'assignedStaffId'),
-      status: JobStatus.values.byName(j['status'] as String),
+      status:
+          _enumOr(JobStatus.values, j['status'] as String?, JobStatus.received),
       promisedDeliveryDate: _instantFrom(j['promisedDeliveryDate'] as String),
       createdAt: _instantFrom(j['createdAt'] as String),
       completedAt: _instantOpt(j, 'completedAt'),
@@ -282,7 +310,8 @@ Quotation quotationFromJson(Map<String, dynamic> j) => Quotation(
       overallDiscount: _dbl(j['overallDiscount']),
       taxPercent: _dbl(j['taxPercent']),
       validityDays: _int(j['validityDays']),
-      status: QuotationStatus.values.byName(j['status'] as String),
+      status: _enumOr(
+          QuotationStatus.values, j['status'] as String?, QuotationStatus.draft),
       notes: _str(j, 'notes'),
       createdAt: _instantFrom(j['createdAt'] as String),
       validUntil: _instantFrom(j['validUntil'] as String),
@@ -306,7 +335,7 @@ Payment paymentFromJson(Map<String, dynamic> j) => Payment(
       invoiceId: j['invoiceId'] as String,
       customerId: _str(j, 'customerId'),
       amount: _dbl(j['amount']),
-      mode: PaymentMode.values.byName(j['mode'] as String),
+      mode: _enumOr(PaymentMode.values, j['mode'] as String?, PaymentMode.cash),
       transactionRef: _str(j, 'transactionRef'),
       paymentDate: _instantFrom(j['paymentDate'] as String),
       notes: _str(j, 'notes'),
@@ -373,10 +402,12 @@ Map<String, dynamic> expenseToJson(GarageExpense e) => {
 GarageExpense expenseFromJson(Map<String, dynamic> j) => GarageExpense(
       id: j['id'] as String,
       title: j['title'] as String,
-      category: ExpenseCategory.values.byName(j['category'] as String),
+      category: _enumOr(ExpenseCategory.values, j['category'] as String?,
+          ExpenseCategory.miscellaneous),
       amount: _dbl(j['amount']),
       expenseDate: _dayFrom(j['expenseDate'] as String),
-      paymentMode: PaymentMode.values.byName(j['paymentMode'] as String),
+      paymentMode: _enumOr(
+          PaymentMode.values, j['paymentMode'] as String?, PaymentMode.cash),
       vendorName: _str(j, 'vendorName'),
       notes: _str(j, 'notes'),
       receiptPath: _str(j, 'receiptPath'),
@@ -387,7 +418,8 @@ GarageExpense expenseFromJson(Map<String, dynamic> j) => GarageExpense(
 MaintenanceItem catalogItemFromJson(Map<String, dynamic> j) => MaintenanceItem(
       id: j['id'] as String,
       name: j['name'] as String,
-      category: ItemCategory.values.byName(j['category'] as String),
+      category: _enumOr(
+          ItemCategory.values, j['category'] as String?, ItemCategory.custom),
       unitPrice: _dbl(j['unitPrice']),
       unit: j['unit'] as String,
       isLabour: j['isLabour'] as bool,
@@ -398,28 +430,89 @@ MaintenanceItem catalogItemFromJson(Map<String, dynamic> j) => MaintenanceItem(
 // ----- Garage settings (snake_case, Phase 1 wire format) -----
 
 GarageProfile profileFromJson(Map<String, dynamic> j) => GarageProfile(
-      name: j['name'] as String,
-      tagline: j['tagline'] as String,
-      addressLine: j['address_line'] as String,
-      city: j['city'] as String,
-      phone: j['phone'] as String,
-      email: j['email'] as String,
-      gstin: j['gstin'] as String,
-      upiId: j['upi_id'] as String,
+      name: (j['name'] as String?) ?? '',
+      tagline: (j['tagline'] as String?) ?? '',
+      addressLine: (j['address_line'] as String?) ?? '',
+      city: (j['city'] as String?) ?? '',
+      phone: (j['phone'] as String?) ?? '',
+      email: (j['email'] as String?) ?? '',
+      gstin: (j['gstin'] as String?) ?? '',
+      upiId: (j['upi_id'] as String?) ?? '',
     );
 
-AppConfig appConfigFromSettings(Map<String, dynamic> j) => AppConfig(
-      defaultTaxPercent: _dbl(j['default_tax_percent']),
-      taxPercentOptions: [
-        for (final v in (j['tax_percent_options'] as List)) _dbl(v)
-      ],
-      invoiceDueDays: _int(j['invoice_due_days']),
-      quotationValidityOptions: [
-        for (final v in (j['quotation_validity_options'] as List)) _int(v)
-      ],
-      workingDaysPerMonth: _int(j['working_days_per_month']),
-      promisedDeliveryHours: _int(j['promised_delivery_hours']),
-      invoiceNotes: j['invoice_notes'] as String,
-      invoiceTerms: j['invoice_terms'] as String,
-      defaultReceivedBy: j['default_received_by'] as String,
-    );
+Map<String, dynamic> profileToJson(GarageProfile p) => {
+      'name': p.name,
+      'tagline': p.tagline,
+      'address_line': p.addressLine,
+      'city': p.city,
+      'phone': p.phone,
+      'email': p.email,
+      'gstin': p.gstin,
+      'upi_id': p.upiId,
+    };
+
+AppConfig appConfigFromSettings(Map<String, dynamic> j) {
+  // Server may return nulls on legacy rows — fall back to AppConfig defaults
+  // so a single bad field can never blank the whole settings screen.
+  const fallback = AppConfig();
+  List<double> doubles(dynamic v, List<double> dflt) {
+    if (v is! List || v.isEmpty) return dflt;
+    try {
+      return [for (final e in v) (e as num).toDouble()];
+    } catch (_) {
+      return dflt;
+    }
+  }
+
+  List<int> ints(dynamic v, List<int> dflt) {
+    if (v is! List || v.isEmpty) return dflt;
+    try {
+      return [for (final e in v) (e as num).toInt()];
+    } catch (_) {
+      return dflt;
+    }
+  }
+
+  double dblOr(dynamic v, double dflt) {
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? dflt;
+    return dflt;
+  }
+
+  int intOr(dynamic v, int dflt) {
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? dflt;
+    return dflt;
+  }
+
+  return AppConfig(
+    defaultTaxPercent:
+        dblOr(j['default_tax_percent'], fallback.defaultTaxPercent),
+    taxPercentOptions:
+        doubles(j['tax_percent_options'], fallback.taxPercentOptions),
+    invoiceDueDays: intOr(j['invoice_due_days'], fallback.invoiceDueDays),
+    quotationValidityOptions: ints(
+        j['quotation_validity_options'], fallback.quotationValidityOptions),
+    workingDaysPerMonth:
+        intOr(j['working_days_per_month'], fallback.workingDaysPerMonth),
+    promisedDeliveryHours: intOr(
+        j['promised_delivery_hours'], fallback.promisedDeliveryHours),
+    invoiceNotes: (j['invoice_notes'] as String?) ?? fallback.invoiceNotes,
+    invoiceTerms: (j['invoice_terms'] as String?) ?? fallback.invoiceTerms,
+    defaultReceivedBy:
+        (j['default_received_by'] as String?) ?? fallback.defaultReceivedBy,
+  );
+}
+
+/// PATCH body for settings (profile sent separately by the repository).
+Map<String, dynamic> configToPatchJson(AppConfig c) => {
+      'default_tax_percent': c.defaultTaxPercent,
+      'tax_percent_options': c.taxPercentOptions,
+      'invoice_due_days': c.invoiceDueDays,
+      'quotation_validity_options': c.quotationValidityOptions,
+      'working_days_per_month': c.workingDaysPerMonth,
+      'promised_delivery_hours': c.promisedDeliveryHours,
+      'invoice_notes': c.invoiceNotes,
+      'invoice_terms': c.invoiceTerms,
+      'default_received_by': c.defaultReceivedBy,
+    };

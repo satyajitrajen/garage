@@ -1,6 +1,6 @@
 {
-    "name": "garage_manager",
-    "short_name": "garage_manager",
+    "name": "NT Garage",
+    "short_name": "NT Garage",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

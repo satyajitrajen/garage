@@ -62,6 +62,25 @@ void main() {
         isTrue,
       );
     });
+
+    test('explicit checklist survives round-trip', () {
+      final jc = JobCard(
+        id: 'jc-3',
+        jobCardNumber: 'JC-1003',
+        customerId: 'c-1',
+        vehicleId: 'v-1',
+        customerComplaints: const [],
+        kmReading: 5,
+        promisedDeliveryDate: DateTime.parse('2026-09-13T04:30:00Z'),
+        createdAt: DateTime.parse('2026-09-13T04:30:00Z'),
+        inspectionChecklist: {
+          ...JobCard.defaultChecklist,
+          'AC & Heating': false,
+        },
+      );
+      final reparsed = jobCardFromJson(jobCardToJson(jc));
+      expect(reparsed.inspectionChecklist['AC & Heating'], isFalse);
+    });
   });
 
   group('Quotation codec', () {
@@ -200,6 +219,49 @@ void main() {
       });
       expect(reparsed.amount, 1200.5);
       expect(reparsed.receivedBy, 'Cashier');
+    });
+
+    test('partial payment derives partial status', () {
+      final now = DateTime.parse('2026-09-13T04:30:00Z');
+      final inv = Invoice(
+        id: 'inv-3',
+        invoiceNumber: 'INV-2026-3',
+        customerId: 'c-1',
+        vehicleId: 'v-1',
+        kmReading: 10,
+        items: [item('it-1')],
+        discountAmount: 0,
+        taxPercent: 0,
+        payments: [
+          Payment(
+            id: 'p-3',
+            invoiceId: 'inv-3',
+            amount: 100,
+            mode: PaymentMode.cash,
+            paymentDate: now,
+          ),
+        ],
+        invoiceDate: now,
+      );
+      // invoiceToJson deliberately omits payments (separate table on the
+      // backend), so the payment rides on the wire map explicitly, exactly
+      // as the repository assembles it.
+      final reparsed = invoiceFromJson({
+        ...invoiceToJson(inv),
+        'createdAt': _iso(now),
+        'payments': [
+          {
+            'id': 'p-3',
+            'invoiceId': 'inv-3',
+            'amount': 100,
+            'mode': 'cash',
+            'paymentDate': _iso(now),
+          }
+        ],
+      });
+      // Math: item 300, no discount, taxPercent 0 → grand total 300; paid
+      // 100 → balance 200 → derived partial.
+      expect(reparsed.status, InvoiceStatus.partial);
     });
   });
 

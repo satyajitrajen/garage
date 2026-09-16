@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import '../data/api/api_exception.dart';
 import '../data/app_config.dart';
 import '../data/garage_profile.dart';
 import '../data/garage_repository.dart';
@@ -27,6 +28,12 @@ class GarageProvider extends ChangeNotifier {
   GarageProfile? _profile;
   AppConfig? _config;
 
+  /// Best-effort post-commit failure from [addInvoice]'s follow-up side
+  /// effects (vehicle odometer/service date, job card delivery). Surfaces as
+  /// a warning instead of failing the save, so a retry cannot duplicate the
+  /// committed invoice. Cleared at the start of every [addInvoice].
+  String? _lastSideEffectWarning;
+
   // State collections
   List<Customer> _customers = [];
   List<Vehicle> _vehicles = [];
@@ -42,6 +49,10 @@ class GarageProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   String? get loadError => _loadError;
+
+  /// Non-null when the last [addInvoice] committed the invoice but a
+  /// follow-up side effect failed (see [addInvoice]).
+  String? get sideEffectWarning => _lastSideEffectWarning;
 
   /// Screens are gated behind the loading state in MainNavigationScreen, so
   /// accessing profile/config before load() completes is a programming error.
@@ -92,7 +103,7 @@ class GarageProvider extends ChangeNotifier {
       _loadError = null;
     } catch (e) {
       if (showLoading) {
-        _loadError = e.toString();
+        _loadError = e is ApiException ? e.userMessage : e.toString();
       }
       if (!showLoading) return; // refresh failure: keep old data on screen
     } finally {
@@ -447,22 +458,32 @@ class GarageProvider extends ChangeNotifier {
   }
 
   Future<Invoice> addInvoice(Invoice invoice) async {
+    _lastSideEffectWarning = null;
     final created = await _repo.createInvoice(invoice);
     _invoices.insert(0, created);
     _payments.insertAll(0, created.payments);
-    // Update vehicle last serviced date & km
-    final vehicle = getVehicleById(created.vehicleId);
-    if (vehicle != null) {
-      await updateVehicle(vehicle.copyWith(
-        currentKm: created.kmReading > vehicle.currentKm
-            ? created.kmReading
-            : vehicle.currentKm,
-        lastServiceDate: created.invoiceDate,
-      ));
-    }
-    // If associated with a job card, mark job card as delivered
-    if (created.jobCardId != null) {
-      await updateJobStatus(created.jobCardId!, JobStatus.delivered);
+    // The invoice is committed at this point: a failed follow-up side effect
+    // must NOT surface as an error — the caller would show a failure and the
+    // user's retry would create a second invoice. Record a warning instead
+    // (delivered to the UI with the notifyListeners cycle below).
+    try {
+      // Update vehicle last serviced date & km
+      final vehicle = getVehicleById(created.vehicleId);
+      if (vehicle != null) {
+        await updateVehicle(vehicle.copyWith(
+          currentKm: created.kmReading > vehicle.currentKm
+              ? created.kmReading
+              : vehicle.currentKm,
+          lastServiceDate: created.invoiceDate,
+        ));
+      }
+      // If associated with a job card, mark job card as delivered
+      if (created.jobCardId != null) {
+        await updateJobStatus(created.jobCardId!, JobStatus.delivered);
+      }
+    } catch (_) {
+      _lastSideEffectWarning =
+          'Invoice saved, but updating the vehicle/job card failed';
     }
     notifyListeners();
     return created;
@@ -474,6 +495,13 @@ class GarageProvider extends ChangeNotifier {
     double? taxPercent,
     String? notes,
   }) async {
+    // Provider-level duplicate guard: the detail screen hides its button once
+    // an invoice exists, but a retry that races a slow API (or lands while
+    // the side effects are still running) must fail here instead of billing
+    // the job twice.
+    if (_invoices.any((inv) => inv.jobCardId == jobCard.id)) {
+      throw Exception('This job card already has an invoice');
+    }
     if (jobCard.items.isEmpty) {
       throw Exception('Cannot invoice a job card with no work items');
     }
@@ -826,7 +854,8 @@ class GarageProvider extends ChangeNotifier {
     final advances = getAdvancesForStaff(staffId, month: month, year: year);
     final totalAdvances = advances.fold(0.0, (sum, a) => sum + a.amount);
 
-    final workingDays = config.workingDaysPerMonth;
+    final workingDays =
+        config.workingDaysPerMonth <= 0 ? 26 : config.workingDaysPerMonth;
     final dailyRate = staffMember.monthlySalary / workingDays;
     final absentDeduction = absentCount * dailyRate;
     final halfDayDeduction = halfDayCount * (dailyRate / 2);

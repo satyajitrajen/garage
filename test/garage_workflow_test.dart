@@ -14,7 +14,7 @@ import 'package:garage_manager/providers/garage_provider.dart';
 import 'package:garage_manager/services/mock_data_service.dart';
 
 void main() {
-  group('Nexory Garage State & Workflow Tests', () {
+  group('NT Garage State & Workflow Tests', () {
     late GarageProvider provider;
 
     setUp(() async {

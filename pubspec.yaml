@@ -43,7 +43,11 @@ dependencies:
   share_plus: ^13.3.0
   qr_flutter: ^4.1.0
   http: ^1.6.0
-  flutter_secure_storage: ^11.1.1
+  # NOTE: flutter_secure_storage was removed — its Windows plugin needs the
+  # Visual Studio ATL headers (atlstr.h), which breaks `flutter run -d windows`
+  # on machines without the ATL component. Session tokens live in
+  # SharedPreferences via TokenStore (lib/data/api/token_store.dart); access
+  # tokens are short-lived (15 min) and refresh tokens rotate on every use.
   shared_preferences: ^2.5.5
 
 dev_dependencies:

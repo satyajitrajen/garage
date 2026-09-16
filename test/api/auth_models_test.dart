@@ -7,13 +7,13 @@ void main() {
     test('parses snake_case wire format', () {
       final m = Membership.fromJson(const {
         'garage_id': 'g-1',
-        'garage_name': 'Nexory Garage',
+        'garage_name': 'NT Garage',
         'role': 'owner',
         'permissions': ['customers.manage', 'invoices.manage'],
         'is_active': true,
       });
       expect(m.garageId, 'g-1');
-      expect(m.garageName, 'Nexory Garage');
+      expect(m.garageName, 'NT Garage');
       expect(m.role, 'owner');
       expect(m.permissions, ['customers.manage', 'invoices.manage']);
       expect(m.isActive, isTrue);
@@ -43,7 +43,7 @@ void main() {
         'memberships': [
           {
             'garage_id': 'g-1',
-            'garage_name': 'Nexory Garage',
+            'garage_name': 'NT Garage',
             'role': 'owner',
             'permissions': ['customers.manage'],
             'is_active': true,

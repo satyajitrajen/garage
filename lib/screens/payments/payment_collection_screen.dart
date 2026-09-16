@@ -28,6 +28,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
   PaymentMode _selectedMode = PaymentMode.upi;
   bool _isFullPayment = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -57,6 +58,9 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   double _remainingDueSnapshot = 0;
 
   Future<void> _submitPayment() async {
+    // Latch: a fast double-tap on Confirm must not record the payment twice —
+    // both taps would pass the balance check before the first save lands.
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
@@ -83,6 +87,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       return;
     }
 
+    setState(() => _isSaving = true);
+
     final Payment payment;
     try {
       payment = await provider.recordPayment(
@@ -100,6 +106,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
         type: SnackBarType.error,
       );
       return;
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
 
     // Show confirmation modal / dialog
@@ -447,8 +455,15 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _submitPayment,
-                  icon: const Icon(Icons.verified_rounded),
+                  onPressed: _isSaving ? null : _submitPayment,
+                  icon: _isSaving
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.verified_rounded),
                   label: const Text('Confirm & Record Payment'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),

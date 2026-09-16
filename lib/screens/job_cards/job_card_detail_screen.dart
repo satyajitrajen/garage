@@ -104,13 +104,24 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
 
   Future<void> _changeStatus(JobCard jobCard, JobStatus newStatus) async {
     final provider = Provider.of<GarageProvider>(context, listen: false);
-    await provider.updateJobStatus(jobCard.id, newStatus);
-    if (!mounted) return;
-    showAppSnackBar(
-      context,
-      'Status changed to ${newStatus.displayName}',
-      type: SnackBarType.info,
-    );
+    try {
+      await provider.updateJobStatus(jobCard.id, newStatus);
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        'Status changed to ${newStatus.displayName}',
+        type: SnackBarType.info,
+      );
+    } catch (e) {
+      // API-path failures must surface as feedback, not as an unhandled
+      // async exception that leaves the status silently unchanged.
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: SnackBarType.error,
+      );
+    }
   }
 
   Future<void> _generateInvoice(JobCard jobCard) async {
@@ -124,15 +135,25 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
       return;
     }
     final existingInvoice = provider.invoices.where((inv) => inv.jobCardId == jobCard.id).firstOrNull;
-    final invoice = existingInvoice ?? await provider.createInvoiceFromJobCard(jobCard);
-
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => InvoicePreviewScreen(invoiceId: invoice.id),
-      ),
-    );
+    try {
+      final invoice = existingInvoice ?? await provider.createInvoiceFromJobCard(jobCard);
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => InvoicePreviewScreen(invoiceId: invoice.id),
+        ),
+      );
+    } catch (e) {
+      // Invoicing can fail on the API path (network, duplicate guard, etc.);
+      // keep the user on this screen with an error instead of crashing.
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: SnackBarType.error,
+      );
+    }
   }
 
   @override

@@ -1,0 +1,211 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import '../../data/api/api_exception.dart';
+import '../../providers/auth_provider.dart';
+import '../../theme/app_text.dart';
+import '../../utils/app_snack_bar.dart';
+
+/// SaaS subscription screen: trial countdown, plan status, Razorpay checkout
+/// entry, and cancel. The server is the source of truth; the app only opens
+/// checkout with the server-issued key/plan and relies on webhooks.
+class BillingScreen extends StatefulWidget {
+  const BillingScreen({super.key});
+
+  @override
+  State<BillingScreen> createState() => _BillingScreenState();
+}
+
+class _BillingScreenState extends State<BillingScreen> {
+  Map<String, dynamic>? _billing;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final b = await context.read<AuthProvider>().fetchBilling();
+      if (!mounted) return;
+      setState(() {
+        _billing = b;
+        _loading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.userMessage;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Could not load billing status.';
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _checkout(String plan) async {
+    try {
+      final res =
+          await context.read<AuthProvider>().startCheckout(plan: plan);
+      if (!mounted) return;
+      if (res['configured'] == false) {
+        showAppSnackBar(
+            context, (res['message'] as String?) ?? 'Payment not configured.');
+        return;
+      }
+      // Razorpay SDK wiring happens here with res['key_id'] / res['plan_id'].
+      // Until the SDK is added, show the operator what to do next.
+      showAppSnackBar(
+          context, 'Checkout ready (${res['plan']}). Complete payment to activate.');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, e.userMessage, type: SnackBarType.error);
+    } catch (_) {
+      if (!mounted) return;
+      showAppSnackBar(context, 'Checkout failed. Please try again.',
+          type: SnackBarType.error);
+    }
+  }
+
+  Future<void> _cancel() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel subscription?'),
+        content: const Text(
+            'Writes will be blocked when the subscription lapses. You can resubscribe anytime.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Keep')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Cancel')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await context.read<AuthProvider>().cancelBilling();
+      if (!mounted) return;
+      showAppSnackBar(context, 'Subscription cancelled.');
+      await _load();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, e.userMessage, type: SnackBarType.error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final isOwner = auth.isOwner;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Subscription')),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_error!),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                          onPressed: _load, child: const Text('Retry')),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _statusCard(),
+                      const SizedBox(height: 16),
+                      if (isOwner) ...[
+                        Text('Plans',
+                            style: GoogleFonts.inter(
+                                fontSize: AppText.subtitle,
+                                fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 8),
+                        _planTile('Pro Monthly', 'Billed every month',
+                            'monthly', Icons.calendar_month_rounded),
+                        const SizedBox(height: 8),
+                        _planTile('Pro Yearly', 'Two months free vs monthly',
+                            'yearly', Icons.calendar_today_rounded),
+                        const SizedBox(height: 16),
+                        OutlinedButton(
+                          onPressed: _cancel,
+                          child: const Text('Cancel subscription'),
+                        ),
+                      ] else
+                        Text(
+                          'Only the workshop owner can change the subscription.',
+                          style: GoogleFonts.inter(
+                              color: Theme.of(context).hintColor),
+                        ),
+                    ],
+                  ),
+                ),
+    );
+  }
+
+  Widget _statusCard() {
+    final b = _billing ?? {};
+    final status = (b['status'] as String?) ?? 'unknown';
+    final plan = (b['plan_tier'] as String?) ?? 'trial';
+    final trialEnds = b['trial_ends_at'] as String?;
+    String subtitle = 'Plan: $plan';
+    if (trialEnds != null && status == 'trialing') {
+      final end = DateTime.tryParse(trialEnds)?.toLocal();
+      if (end != null) {
+        final left = end.difference(DateTime.now()).inDays;
+        subtitle = 'Trial ends ${end.day}/${end.month}/${end.year}'
+            '${left < 0 ? ' (expired)' : ' ($left days left)'}';
+      }
+    }
+    Color dot = Colors.green;
+    if (status == 'trialing') dot = Colors.orange;
+    if (status == 'past_due' ||
+        status == 'cancelled' ||
+        status == 'suspended') {
+      dot = Colors.red;
+    }
+    return Card(
+      child: ListTile(
+        leading: Icon(Icons.circle, color: dot, size: 14),
+        title: Text('Status: $status',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        subtitle: Text(subtitle),
+      ),
+    );
+  }
+
+  Widget _planTile(String title, String subtitle, String plan, IconData icon) {
+    return Card(
+      child: ListTile(
+        leading: Icon(icon),
+        title: Text(title,
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+        subtitle: Text(subtitle),
+        trailing: FilledButton(
+          onPressed: () => _checkout(plan),
+          child: const Text('Subscribe'),
+        ),
+      ),
+    );
+  }
+}

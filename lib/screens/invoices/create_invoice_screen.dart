@@ -115,21 +115,42 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 
-    await provider.addInvoice(invoice);
-    if (!mounted) return;
+    try {
+      await provider.addInvoice(invoice);
+      if (!mounted) return;
 
-    showAppSnackBar(
-      context,
-      'Invoice #${invoice.invoiceNumber} created successfully!',
-      type: SnackBarType.success,
-    );
+      // The invoice itself is committed; addInvoice downgrades a failed
+      // vehicle/job-card side effect to a warning. Show it last so it is not
+      // replaced by the success message.
+      showAppSnackBar(
+        context,
+        'Invoice #${invoice.invoiceNumber} created successfully!',
+        type: SnackBarType.success,
+      );
+      if (provider.sideEffectWarning != null) {
+        showAppSnackBar(
+          context,
+          provider.sideEffectWarning!,
+          type: SnackBarType.info,
+        );
+      }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => InvoicePreviewScreen(invoiceId: invoice.id),
-      ),
-    );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => InvoicePreviewScreen(invoiceId: invoice.id),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: SnackBarType.error,
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -338,7 +359,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _saveInvoice,
+                  onPressed: _isSaving ? null : _saveInvoice,
                   icon: const Icon(Icons.check_circle_rounded),
                   label: const Text('Save & Preview Bill'),
                   style: ElevatedButton.styleFrom(

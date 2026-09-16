@@ -13,6 +13,7 @@ import '../../utils/date_formatter.dart';
 import '../../widgets/book_service_card.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_badge.dart';
+import '../../widgets/subscription_banner.dart';
 import '../customers/customers_list_screen.dart';
 import '../job_cards/job_cards_list_screen.dart';
 import '../job_cards/job_card_detail_screen.dart';
@@ -118,6 +119,9 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+
+              // SaaS subscription status (hidden when active / mock mode).
+              const SubscriptionBanner(),
 
               // -------------------------------------------------------------
               // 1. BOOK A SERVICE (HERO)

@@ -19,13 +19,25 @@ import '../invoices/invoice_preview_screen.dart';
 import 'create_quotation_screen.dart';
 import '../../theme/app_text.dart';
 
-class QuotationDetailScreen extends StatelessWidget {
+class QuotationDetailScreen extends StatefulWidget {
   final String quotationId;
 
   const QuotationDetailScreen({super.key, required this.quotationId});
 
+  @override
+  State<QuotationDetailScreen> createState() => _QuotationDetailScreenState();
+}
+
+class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
+  /// Busy latch shared by both conversions: each also flips the quotation's
+  /// status, so a second conversion racing the first could double-bill or
+  /// double-open the same estimate.
+  bool _isConverting = false;
+
   Future<void> _convertJobCard(BuildContext context, Quotation quote) async {
+    if (_isConverting) return;
     final provider = Provider.of<GarageProvider>(context, listen: false);
+    setState(() => _isConverting = true);
     try {
       final jobCard = await provider.convertQuotationToJobCard(quote);
       if (!context.mounted) return;
@@ -49,11 +61,15 @@ class QuotationDetailScreen extends StatelessWidget {
         e.toString().replaceFirst('Exception: ', ''),
         type: SnackBarType.error,
       );
+    } finally {
+      if (mounted) setState(() => _isConverting = false);
     }
   }
 
   Future<void> _convertInvoice(BuildContext context, Quotation quote) async {
+    if (_isConverting) return;
     final provider = Provider.of<GarageProvider>(context, listen: false);
+    setState(() => _isConverting = true);
     try {
       final invoice = await provider.addInvoice(
         Invoice(
@@ -62,10 +78,16 @@ class QuotationDetailScreen extends StatelessWidget {
           customerId: quote.customerId,
           vehicleId: quote.vehicleId,
           kmReading: quote.kmReading,
-          items: quote.items,
+          // Copy the items: the invoice must not alias the quotation's list
+          // (same rule convertQuotationToJobCard follows with List.from).
+          items: List.of(quote.items),
           discountAmount: quote.overallDiscount,
           taxPercent: quote.taxPercent,
           invoiceDate: DateTime.now(),
+          // Real due date so the invoice can age and become overdue, matching
+          // the direct invoice form's config-driven term.
+          dueDate:
+              DateTime.now().add(Duration(days: provider.config.invoiceDueDays)),
         ),
       );
 
@@ -85,6 +107,8 @@ class QuotationDetailScreen extends StatelessWidget {
         e.toString().replaceFirst('Exception: ', ''),
         type: SnackBarType.error,
       );
+    } finally {
+      if (mounted) setState(() => _isConverting = false);
     }
   }
 
@@ -184,7 +208,8 @@ class QuotationDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final quote = provider.quotations.where((q) => q.id == quotationId).firstOrNull;
+    final quote =
+        provider.quotations.where((q) => q.id == widget.quotationId).firstOrNull;
 
     if (quote == null) {
       return Scaffold(
@@ -496,7 +521,9 @@ class QuotationDetailScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _convertJobCard(context, quote),
+                      onPressed: _isConverting
+                          ? null
+                          : () => _convertJobCard(context, quote),
                       icon: const Icon(Icons.assignment_turned_in_rounded),
                       label: const Text('Convert to Job Card'),
                       style: ElevatedButton.styleFrom(
@@ -509,7 +536,9 @@ class QuotationDetailScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _convertInvoice(context, quote),
+                      onPressed: _isConverting
+                          ? null
+                          : () => _convertInvoice(context, quote),
                       icon: const Icon(Icons.receipt_rounded),
                       label: const Text('Direct Invoice'),
                       style: OutlinedButton.styleFrom(

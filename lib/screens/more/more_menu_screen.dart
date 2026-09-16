@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../data/api/api_config.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/permissions.dart';
+import '../../widgets/permission_gate.dart';
+import '../auth/garage_switcher.dart';
+import '../billing/billing_screen.dart';
+import '../team/members_screen.dart';
 import '../expenses/expenses_list_screen.dart';
 import '../expenses/add_expense_screen.dart';
 import '../quotations/quotations_list_screen.dart';
@@ -171,65 +178,81 @@ class MoreMenuScreen extends StatelessWidget {
           _buildSectionTitle(context, 'WORKSHOP MODULES'),
           const SizedBox(height: 8),
 
-          _buildMenuTile(
-            context,
-            icon: Icons.request_quote_rounded,
-            badgeBg: palette.badgeOrangeBg,
-            color: palette.badgeOrangeIcon,
-            title: 'Quotations / Estimates',
-            subtitle: '${provider.quotations.length} pre-service cost estimates created',
-            trailing: '${provider.quotations.length}',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const QuotationsListScreen()),
-              );
-            },
+          PermissionGate(
+            permission: Permissions.quotationsManage,
+            child: _buildMenuTile(
+              context,
+              icon: Icons.request_quote_rounded,
+              badgeBg: palette.badgeOrangeBg,
+              color: palette.badgeOrangeIcon,
+              title: 'Quotations / Estimates',
+              subtitle:
+                  '${provider.quotations.length} pre-service cost estimates created',
+              trailing: '${provider.quotations.length}',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const QuotationsListScreen()),
+                );
+              },
+            ),
           ),
           const SizedBox(height: 8),
 
-          _buildMenuTile(
-            context,
-            icon: Icons.account_balance_wallet_rounded,
-            badgeBg: palette.badgeRedBg,
-            color: palette.badgeRedIcon,
-            title: 'Garage Expenses',
-            subtitle: "Today: ${CurrencyFormatter.format(provider.todayExpenses)} • Month: ${CurrencyFormatter.formatCompact(provider.thisMonthExpenses)}",
-            trailing: '${provider.expenses.length}',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ExpensesListScreen()),
-              );
-            },
+          PermissionGate(
+            permission: Permissions.expensesManage,
+            child: _buildMenuTile(
+              context,
+              icon: Icons.account_balance_wallet_rounded,
+              badgeBg: palette.badgeRedBg,
+              color: palette.badgeRedIcon,
+              title: 'Garage Expenses',
+              subtitle:
+                  "Today: ${CurrencyFormatter.format(provider.todayExpenses)} • Month: ${CurrencyFormatter.formatCompact(provider.thisMonthExpenses)}",
+              trailing: '${provider.expenses.length}',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ExpensesListScreen()),
+                );
+              },
+            ),
           ),
           const SizedBox(height: 8),
 
-          _buildMenuTile(
-            context,
-            icon: Icons.badge_rounded,
-            badgeBg: palette.badgeBlueBg,
-            color: palette.badgeBlueIcon,
-            title: 'Staff Directory & Roles',
-            subtitle: '${provider.staff.length} team members (Mechanics, Electricians)',
-            trailing: '${provider.staff.length}',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const StaffListScreen()),
-              );
-            },
+          PermissionGate(
+            permission: Permissions.staffManage,
+            child: _buildMenuTile(
+              context,
+              icon: Icons.badge_rounded,
+              badgeBg: palette.badgeBlueBg,
+              color: palette.badgeBlueIcon,
+              title: 'Staff Directory & Roles',
+              subtitle:
+                  '${provider.staff.length} team members (Mechanics, Electricians)',
+              trailing: '${provider.staff.length}',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const StaffListScreen()),
+                );
+              },
+            ),
           ),
           const SizedBox(height: 8),
 
-          _buildMenuTile(
-            context,
-            icon: Icons.calendar_month_rounded,
-            badgeBg: palette.badgePurpleBg,
-            color: palette.badgePurpleIcon,
-            title: 'Attendance & Payroll Slips',
-            subtitle: 'Daily attendance calendar & net salary calculator',
-            onTap: () {
+          PermissionGate(
+            permission: Permissions.attendanceManage,
+            child: _buildMenuTile(
+              context,
+              icon: Icons.calendar_month_rounded,
+              badgeBg: palette.badgePurpleBg,
+              color: palette.badgePurpleIcon,
+              title: 'Attendance & Payroll Slips',
+              subtitle: 'Daily attendance calendar & net salary calculator',
+              onTap: () {
               if (provider.staff.isEmpty) {
                 Navigator.push(
                   context,
@@ -290,51 +313,69 @@ class MoreMenuScreen extends StatelessWidget {
               );
             },
           ),
+          ),
           const SizedBox(height: 20),
 
           _buildSectionTitle(context, 'PREFERENCES & ACTIONS'),
           const SizedBox(height: 8),
 
-          Container(
-            decoration: BoxDecoration(
-              color: palette.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: palette.border,
-                width: 1,
+          PermissionGate(
+            permission: Permissions.expensesManage,
+            child: Container(
+              decoration: BoxDecoration(
+                color: palette.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: palette.border,
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: palette.badgeGreenBg,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.add_circle_outline_rounded,
+                          color: palette.badgeGreenIcon, size: 18),
+                    ),
+                    title: Text(
+                      'Quick Expense Entry',
+                      style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600, fontSize: AppText.body),
+                    ),
+                    subtitle: Text(
+                      'Add workshop expense receipt',
+                      style: GoogleFonts.inter(
+                          fontSize: AppText.label, color: palette.textMuted),
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded, size: 18),
+                    onTap: () {
+                      if (!ensurePermission(
+                          context, Permissions.expensesManage)) {
+                        return;
+                      }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const AddExpenseScreen()),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: palette.badgeGreenBg,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(Icons.add_circle_outline_rounded, color: palette.badgeGreenIcon, size: 18),
-                  ),
-                  title: Text(
-                    'Quick Expense Entry',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: AppText.body),
-                  ),
-                  subtitle: Text(
-                    'Add workshop expense receipt',
-                    style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded, size: 18),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AddExpenseScreen()),
-                    );
-                  },
-                ),
-              ],
-            ),
           ),
+          if (!ApiConfig.useMock) ...[
+            const SizedBox(height: 20),
+            _buildSectionTitle(context, 'ACCOUNT'),
+            const SizedBox(height: 8),
+            _AccountSection(),
+          ],
           const SizedBox(height: 36),
         ],
       ),
@@ -417,6 +458,70 @@ class MoreMenuScreen extends StatelessWidget {
                 ),
               )
             : const Icon(Icons.chevron_right_rounded, size: 18),
+      ),
+    );
+  }
+}
+
+class _AccountSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final palette = context.palette;
+    final m = auth.currentMembership;
+    return Container(
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: palette.border),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              child: Text((auth.user?.name.isNotEmpty ?? false)
+                  ? auth.user!.name[0].toUpperCase()
+                  : '?'),
+            ),
+            title: Text(auth.user?.name ?? 'Account',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            subtitle: Text(
+              '${auth.user?.email ?? ''}${m == null ? '' : ' • ${m.role} • ${m.garageName}'}',
+              style: GoogleFonts.inter(
+                  fontSize: AppText.label, color: palette.textMuted),
+            ),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.card_membership_rounded),
+            title: const Text('Subscription & billing'),
+            trailing: const Icon(Icons.chevron_right_rounded, size: 18),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BillingScreen()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.group_rounded),
+            title: const Text('Team logins'),
+            trailing: const Icon(Icons.chevron_right_rounded, size: 18),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MembersScreen()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.swap_horiz_rounded),
+            title: const Text('Switch garage'),
+            trailing: const Icon(Icons.chevron_right_rounded, size: 18),
+            onTap: () => GarageSwitcherSheet.show(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout_rounded),
+            title: const Text('Sign out'),
+            onTap: () => auth.logout(),
+          ),
+        ],
       ),
     );
   }

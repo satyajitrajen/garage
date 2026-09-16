@@ -98,7 +98,9 @@ class JobCard {
     List<MaintenanceItem>? items,
     this.estimatedCostNote,
     this.supervisorNotes,
-  })  : inspectionChecklist = inspectionChecklist ?? defaultChecklist,
+  })  : inspectionChecklist = inspectionChecklist == null
+            ? Map<String, bool>.of(defaultChecklist)
+            : Map<String, bool>.of(inspectionChecklist),
         createdAt = createdAt ?? DateTime.now(),
         items = items ?? [];
 
@@ -122,13 +124,17 @@ class JobCard {
     String? fuelLevel,
     int? kmReading,
     String? assignedStaffId,
+    bool clearAssignedStaffId = false,
     JobStatus? status,
     DateTime? promisedDeliveryDate,
     DateTime? createdAt,
     DateTime? completedAt,
+    bool clearCompletedAt = false,
     List<MaintenanceItem>? items,
     String? estimatedCostNote,
+    bool clearEstimatedCostNote = false,
     String? supervisorNotes,
+    bool clearSupervisorNotes = false,
   }) {
     return JobCard(
       id: id ?? this.id,
@@ -139,14 +145,19 @@ class JobCard {
       inspectionChecklist: inspectionChecklist ?? this.inspectionChecklist,
       fuelLevel: fuelLevel ?? this.fuelLevel,
       kmReading: kmReading ?? this.kmReading,
-      assignedStaffId: assignedStaffId ?? this.assignedStaffId,
+      assignedStaffId:
+          clearAssignedStaffId ? null : (assignedStaffId ?? this.assignedStaffId),
       status: status ?? this.status,
       promisedDeliveryDate: promisedDeliveryDate ?? this.promisedDeliveryDate,
       createdAt: createdAt ?? this.createdAt,
-      completedAt: completedAt ?? this.completedAt,
+      completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
       items: items ?? this.items,
-      estimatedCostNote: estimatedCostNote ?? this.estimatedCostNote,
-      supervisorNotes: supervisorNotes ?? this.supervisorNotes,
+      estimatedCostNote: clearEstimatedCostNote
+          ? null
+          : (estimatedCostNote ?? this.estimatedCostNote),
+      supervisorNotes: clearSupervisorNotes
+          ? null
+          : (supervisorNotes ?? this.supervisorNotes),
     );
   }
 }

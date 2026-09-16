@@ -114,6 +114,7 @@ class Invoice {
     String? id,
     String? invoiceNumber,
     String? jobCardId,
+    bool clearJobCardId = false,
     String? customerId,
     String? vehicleId,
     int? kmReading,
@@ -123,14 +124,17 @@ class Invoice {
     List<Payment>? payments,
     DateTime? invoiceDate,
     DateTime? dueDate,
+    bool clearDueDate = false,
     DateTime? cancelledAt,
     String? notes,
+    bool clearNotes = false,
     String? termsAndConditions,
+    bool clearTerms = false,
   }) {
     return Invoice(
       id: id ?? this.id,
       invoiceNumber: invoiceNumber ?? this.invoiceNumber,
-      jobCardId: jobCardId ?? this.jobCardId,
+      jobCardId: clearJobCardId ? null : (jobCardId ?? this.jobCardId),
       customerId: customerId ?? this.customerId,
       vehicleId: vehicleId ?? this.vehicleId,
       kmReading: kmReading ?? this.kmReading,
@@ -139,10 +143,11 @@ class Invoice {
       taxPercent: taxPercent ?? this.taxPercent,
       payments: payments ?? this.payments,
       invoiceDate: invoiceDate ?? this.invoiceDate,
-      dueDate: dueDate ?? this.dueDate,
+      dueDate: clearDueDate ? null : (dueDate ?? this.dueDate),
       cancelledAt: cancelledAt ?? this.cancelledAt,
-      notes: notes ?? this.notes,
-      termsAndConditions: termsAndConditions ?? this.termsAndConditions,
+      notes: clearNotes ? null : (notes ?? this.notes),
+      termsAndConditions:
+          clearTerms ? null : (termsAndConditions ?? this.termsAndConditions),
     );
   }
 }

@@ -928,14 +928,14 @@ class MockDataService {
   }
 
   static GarageProfile getGarageProfile() => const GarageProfile(
-    name: 'Nexory Garage & Body Shop',
+    name: 'NT Garage & Body Shop',
     tagline: 'Multi-Brand Auto Care',
     addressLine: 'Shop 14, Andheri Industrial Estate',
     city: 'Mumbai, MH',
     phone: '+91 98200 12345',
-    email: 'service@nexorygarage.in',
+    email: 'service@ntgarage.in',
     gstin: '27AAAAA0000A1Z5',
-    upiId: 'nexorygarage@upi',
+    upiId: 'ntgarage@upi',
   );
 
   static AppConfig getAppConfig() => const AppConfig();

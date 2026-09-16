@@ -4,14 +4,14 @@ import 'package:garage_manager/data/api/model_json.dart';
 const settingsWire = {
   'garage_id': 'g-1',
   'profile': {
-    'name': 'Nexory Garage & Body Shop',
+    'name': 'NT Garage & Body Shop',
     'tagline': 'Body repair done right',
     'address_line': '12 MG Road',
     'city': 'Pune',
     'phone': '020-1234',
-    'email': 'hello@nexory.in',
+    'email': 'hello@ntgarage.in',
     'gstin': '27AAAAA0000A1Z5',
-    'upi_id': 'nexory@upi',
+    'upi_id': 'ntgarage@upi',
   },
   'default_tax_percent': 18,
   'tax_percent_options': [0, 12, 18, 28],
@@ -27,9 +27,9 @@ const settingsWire = {
 void main() {
   test('profile parses snake_case keys', () {
     final p = profileFromJson(settingsWire['profile'] as Map<String, dynamic>);
-    expect(p.name, 'Nexory Garage & Body Shop');
+    expect(p.name, 'NT Garage & Body Shop');
     expect(p.addressLine, '12 MG Road');
-    expect(p.upiId, 'nexory@upi');
+    expect(p.upiId, 'ntgarage@upi');
     expect(p.gstin, '27AAAAA0000A1Z5');
   });
 
