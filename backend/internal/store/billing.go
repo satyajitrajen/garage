@@ -174,3 +174,13 @@ func (s *Store) SubscriptionStatusChangedAt(ctx context.Context, garageID string
 		`SELECT updated_at FROM subscriptions WHERE garage_id = $1`, garageID).Scan(&at)
 	return at, mapPGError(err)
 }
+
+// SetProviderSubscription records the Razorpay subscription created at
+// checkout so later payment.* webhooks can resolve the garage. Status is
+// left alone: activation only ever arrives via a signed webhook.
+func (s *Store) SetProviderSubscription(ctx context.Context, garageID, providerSubID, planCode string) error {
+	_, err := s.Pool.Exec(ctx,
+		`UPDATE subscriptions SET provider_subscription_id=$2, plan_code=$3 WHERE garage_id=$1`,
+		garageID, providerSubID, planCode)
+	return mapPGError(err)
+}

@@ -92,9 +92,16 @@ func TestSettingsPermissionGate(t *testing.T) {
 	var login authResponse
 	mustUnmarshal(t, data, &login)
 
+	// Any member reads settings (invoice header + defaults)...
 	status, data = doJSON(t, "GET", settingsURL(garageID), login.AccessToken, garageID, nil)
-	if status != 403 {
+	if status != 200 {
 		t.Fatalf("staff get settings: status %d body %s", status, data)
+	}
+	// ...but only settings.manage may change them.
+	status, data = doJSON(t, "PATCH", settingsURL(garageID), login.AccessToken, garageID,
+		map[string]any{"invoice_due_days": 3})
+	if status != 403 {
+		t.Fatalf("staff patch settings: status %d body %s", status, data)
 	}
 	if _, message := decodeError(t, data); message != "missing permission: settings.manage" {
 		t.Fatalf("message = %s", message)

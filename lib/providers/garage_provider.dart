@@ -14,6 +14,25 @@ import '../models/payment.dart';
 import '../models/expense.dart';
 import '../models/staff.dart';
 
+/// Thrown by [GarageProvider.quickServiceCheckout] when the job card was
+/// created but billing it failed. Callers retry with [jobCard] so the retry
+/// bills the same walk-in instead of opening a second job card.
+class QuickServiceBillingException implements Exception {
+  QuickServiceBillingException(this.jobCard, this.cause);
+
+  final JobCard jobCard;
+  final Object cause;
+
+  @override
+  String toString() {
+    final reason = cause is ApiException
+        ? (cause as ApiException).userMessage
+        : cause.toString().replaceFirst('Exception: ', '');
+    return 'Job card ${jobCard.jobCardNumber} saved, but billing failed: '
+        '$reason. Tap Generate Bill to retry.';
+  }
+}
+
 /// Single source of app state. All data is fetched from a [GarageRepository]
 /// and mirrored in memory for synchronous reads by the UI; every mutation is
 /// delegated to the repository first, then applied to the cache.
@@ -76,15 +95,15 @@ class GarageProvider extends ChangeNotifier {
       final results = await Future.wait([
         _repo.fetchProfile(),
         _repo.fetchConfig(),
-        _repo.fetchCustomers(),
-        _repo.fetchVehicles(),
-        _repo.fetchStaff(),
-        _repo.fetchJobCards(),
-        _repo.fetchQuotations(),
-        _repo.fetchInvoices(),
-        _repo.fetchExpenses(),
-        _repo.fetchAttendance(),
-        _repo.fetchSalaryAdvances(),
+        _unlessForbidden(_repo.fetchCustomers()),
+        _unlessForbidden(_repo.fetchVehicles()),
+        _unlessForbidden(_repo.fetchStaff()),
+        _unlessForbidden(_repo.fetchJobCards()),
+        _unlessForbidden(_repo.fetchQuotations()),
+        _unlessForbidden(_repo.fetchInvoices()),
+        _unlessForbidden(_repo.fetchExpenses()),
+        _unlessForbidden(_repo.fetchAttendance()),
+        _unlessForbidden(_repo.fetchSalaryAdvances()),
         _repo.fetchCatalog(),
       ]);
       _profile = results[0] as GarageProfile;
@@ -109,6 +128,42 @@ class GarageProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Persists the invoice-header profile and business config.
+  Future<void> updateSettings(GarageProfile profile, AppConfig config) async {
+    final (savedProfile, savedConfig) =
+        await _repo.updateSettings(profile, config);
+    _profile = savedProfile;
+    _config = normalizeConfig(savedConfig);
+    notifyListeners();
+  }
+
+  /// Saves a reusable part/labour line to the garage's price list.
+  Future<MaintenanceItem> addCatalogItem(MaintenanceItem item) async {
+    final saved = await _repo.createCatalogItem(item);
+    _catalog = [..._catalog, saved];
+    notifyListeners();
+    return saved;
+  }
+
+  Future<void> deleteCatalogItem(String itemId) async {
+    await _repo.deleteCatalogItem(itemId);
+    _catalog = _catalog.where((c) => c.id != itemId).toList();
+    notifyListeners();
+  }
+
+  /// Each collection is gated by its own permission server-side, and staff
+  /// logins lack some by default (expenses, staff, advances). A 403 means
+  /// "not yours to see", so it loads as empty instead of failing the whole
+  /// app load; any other error still propagates.
+  static Future<List<T>> _unlessForbidden<T>(Future<List<T>> fetch) async {
+    try {
+      return await fetch;
+    } on ApiException catch (e) {
+      if (e.isForbidden) return <T>[];
+      rethrow;
     }
   }
 
@@ -537,9 +592,12 @@ class GarageProvider extends ChangeNotifier {
     double? taxPercent,
     double paymentAmount = 0,
     PaymentMode paymentMode = PaymentMode.cash,
+    JobCard? existingJobCard,
   }) async {
     if (items.isEmpty) throw Exception('Add at least one service item');
-    final jobCard = await addJobCard(JobCard(
+    // A retry after a failed bill passes back the job card the first attempt
+    // already created, so the walk-in is never opened twice.
+    final jobCard = existingJobCard ?? await addJobCard(JobCard(
       id: _uuid.v4(),
       jobCardNumber: generateJobCardNumber(),
       customerId: customerId,
@@ -554,12 +612,17 @@ class GarageProvider extends ChangeNotifier {
     ));
     // addInvoice marks the job delivered as a side effect (invoice is tied
     // to the job card), so the counter sale is closed out in one pass.
-    final invoice = await createInvoiceFromJobCard(
-      jobCard,
-      discount: discount,
-      taxPercent: taxPercent,
-      notes: 'Quick Service counter bill',
-    );
+    final Invoice invoice;
+    try {
+      invoice = await createInvoiceFromJobCard(
+        jobCard,
+        discount: discount,
+        taxPercent: taxPercent,
+        notes: 'Quick Service counter bill',
+      );
+    } catch (e) {
+      throw QuickServiceBillingException(jobCard, e);
+    }
     if (paymentAmount > 0) {
       await recordPayment(
         invoiceId: invoice.id,
@@ -583,8 +646,7 @@ class GarageProvider extends ChangeNotifier {
     if (invoice.totalPaidAmount > 0) {
       throw Exception('Cannot cancel an invoice with recorded payments');
     }
-    final cancelled = invoice.copyWith(cancelledAt: DateTime.now());
-    _invoices[i] = await _repo.updateInvoice(cancelled);
+    _invoices[i] = await _repo.cancelInvoice(invoiceId);
     notifyListeners();
   }
 

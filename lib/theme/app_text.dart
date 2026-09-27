@@ -1,5 +1,5 @@
 /// Named type scale for the whole app. Every `fontSize:` in lib/ must use one
-/// of these tokens; values are tuned for Inter with a raised 10px floor so
+/// of these tokens; values are tuned for Poppins with a raised 10px floor so
 /// nothing renders smaller than before.
 class AppText {
   AppText._();

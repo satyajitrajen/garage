@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/permission_gate.dart';
+import '../../utils/permissions.dart';
 import '../../models/quotation.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_dimens.dart';
-import '../../theme/app_palette.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
 import '../../widgets/search_bar_widget.dart';
+import '../../widgets/list_row.dart';
 import '../../widgets/status_badge.dart';
 import '../customers/customers_list_screen.dart';
 import '../vehicles/vehicle_selection_screen.dart';
@@ -65,23 +66,18 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final palette = context.palette;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Quotations & Estimates', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.note_add_rounded),
-            tooltip: 'New Estimate',
-            onPressed: _createNewQuotation,
-          ),
-        ],
+        title: Text('Quotations & Estimates', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
-      floatingActionButton: GradientFloatingActionButton(
+      floatingActionButton: PermissionGate(
+        permission: Permissions.quotationsManage,
+        child: GradientFloatingActionButton(
         onPressed: _createNewQuotation,
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Estimate'),
+      ),
       ),
       body: Column(
         children: [
@@ -96,11 +92,8 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            labelColor: palette.primary,
-            unselectedLabelColor: palette.textMuted,
-            indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.body),
+            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
             tabs: const [
               Tab(text: 'All Estimates'),
               Tab(text: 'Sent'),
@@ -123,7 +116,6 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
   }
 
   Widget _buildQuotationsList(GarageProvider provider, QuotationStatus? filter) {
-    final palette = context.palette;
     final filtered = provider.quotations.where((q) {
       if (filter != null && q.status != filter) return false;
 
@@ -154,105 +146,23 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 84),
+      padding: const EdgeInsets.only(top: 8, bottom: 120),
       itemCount: filtered.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const RowDivider(),
       itemBuilder: (context, index) {
         final quote = filtered[index];
         final customer = provider.getCustomerById(quote.customerId);
         final vehicle = provider.getVehicleById(quote.vehicleId);
-
-        return Card(
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => QuotationDetailScreen(quotationId: quote.id)),
-              );
-            },
-            borderRadius: BorderRadius.circular(AppDimens.radiusTile),
-            child: Padding(
-              padding: const EdgeInsets.all(AppDimens.paddingCard),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        quote.quotationNumber,
-                        style: GoogleFonts.inter(
-                          fontSize: AppText.body,
-                          fontWeight: FontWeight.w700,
-                          color: palette.accent,
-                        ),
-                      ),
-                      StatusBadge.fromQuotationStatus(quote.status),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            customer?.name ?? '',
-                            style: GoogleFonts.inter(
-                              fontSize: AppText.subtitle,
-                              fontWeight: FontWeight.w700,
-                              color: palette.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${vehicle?.registrationNumber ?? ""} • ${vehicle?.displayName ?? ""}',
-                            style: GoogleFonts.inter(
-                              fontSize: AppText.label,
-                              color: palette.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            CurrencyFormatter.format(quote.grandTotal),
-                            style: GoogleFonts.inter(
-                              fontSize: AppText.subtitle,
-                              fontWeight: FontWeight.w800,
-                              color: palette.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            '${quote.items.length} items',
-                            style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Divider(),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Created: ${AppDateFormatter.formatDate(quote.createdAt)}',
-                        style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
-                      ),
-                      Text(
-                        'Valid: ${quote.validityDays} Days',
-                        style: GoogleFonts.inter(fontSize: AppText.label, color: palette.accent, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+        return ListRow(
+          overline: '${quote.quotationNumber} · ${AppDateFormatter.formatDate(quote.createdAt)}',
+          title: customer?.name ?? 'Customer',
+          subtitle: [vehicle?.registrationNumber, vehicle?.displayName].whereType<String>().join(' · '),
+          detail: 'Valid ${quote.validityDays} days',
+          trailingTop: RowAmount(CurrencyFormatter.format(quote.grandTotal)),
+          trailingBottom: StatusBadge.fromQuotationStatus(quote.status),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => QuotationDetailScreen(quotationId: quote.id)),
           ),
         );
       },

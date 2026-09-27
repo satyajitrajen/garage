@@ -14,7 +14,6 @@ import '../../utils/date_formatter.dart';
 import '../../widgets/status_badge.dart';
 import 'add_customer_screen.dart';
 import '../vehicles/add_vehicle_dialog.dart';
-import '../vehicles/vehicle_selection_screen.dart';
 import '../job_cards/job_card_detail_screen.dart';
 import '../job_cards/create_job_card_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
@@ -174,11 +173,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(customer.name, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        title: const Text('Customer'),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit Customer',
+            tooltip: 'Edit customer',
             onPressed: () {
               Navigator.push(
                 context,
@@ -188,25 +187,17 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
               );
             },
           ),
-          IconButton(
-            icon: Icon(Icons.delete_outline_rounded, color: palette.pending),
-            tooltip: 'Delete Customer',
-            onPressed: () => _confirmDeleteCustomer(context, provider, customer),
-          ),
-          IconButton(
-            icon: const Icon(Icons.directions_car_filled_rounded),
-            tooltip: 'New Service for Vehicle',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => VehicleSelectionScreen(
-                    customer: customer,
-                    targetAction: VehicleTargetAction.createJobCard,
-                  ),
-                ),
-              );
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            onSelected: (v) {
+              if (v == 'delete') _confirmDeleteCustomer(context, provider, customer);
             },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'delete',
+                child: Text('Delete customer', style: TextStyle(color: palette.absent)),
+              ),
+            ],
           ),
         ],
       ),
@@ -219,79 +210,47 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  customer.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: AppText.headline,
+                    fontWeight: FontWeight.w600,
+                    color: palette.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  [customer.phone, if (customer.email != null) customer.email!].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary),
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: palette.primary.withValues(alpha: 0.15),
-                      child: Text(
-                        customer.name.substring(0, 1).toUpperCase(),
-                        style: GoogleFonts.inter(
-                          fontSize: AppText.display,
-                          fontWeight: FontWeight.w700,
-                          color: palette.primary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            customer.name,
-                            style: GoogleFonts.inter(
-                              fontSize: AppText.headline,
-                              fontWeight: FontWeight.w700,
-                              color: palette.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            customer.phone,
-                            style: GoogleFonts.inter(
-                              fontSize: AppText.body,
-                              color: palette.textSecondary,
-                            ),
-                          ),
-                          if (customer.email != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              customer.email!,
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.caption,
-                                color: palette.textMuted,
-                              ),
-                            ),
-                          ],
-                        ],
+                      child: OutlinedButton.icon(
+                        onPressed: () => ContactActions.call(context, customer.phone),
+                        icon: const Icon(Icons.phone_outlined, size: 18),
+                        label: const Text('Call'),
                       ),
                     ),
-                    // Quick Action Buttons (Call / WhatsApp)
-                    Row(
-                      children: [
-                        IconButton.filledTonal(
-                          onPressed: () =>
-                              ContactActions.call(context, customer.phone),
-                          icon: Icon(Icons.phone_rounded, color: palette.accent, size: 20),
-                          tooltip: 'Call Customer',
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton.filledTonal(
-                          onPressed: () {
-                            ContactActions.whatsapp(
-                              context,
-                              customer.effectiveWhatsApp,
-                              message: ContactActions.greeting(
-                                customerName: customer.name,
-                                garageName: provider.profile.name,
-                              ),
-                            );
-                          },
-                          icon: Icon(Icons.chat_bubble_rounded, color: palette.paid, size: 20),
-                          tooltip: 'WhatsApp Message',
-                        ),
-                      ],
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          ContactActions.whatsapp(
+                            context,
+                            customer.effectiveWhatsApp,
+                            message: ContactActions.greeting(
+                              customerName: customer.name,
+                              garageName: provider.profile.name,
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.chat_outlined, size: 18),
+                        label: const Text('WhatsApp'),
+                      ),
                     ),
                   ],
                 ),
@@ -304,7 +263,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                       Expanded(
                         child: Text(
                           customer.address!,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.poppins(
                             fontSize: AppText.caption,
                             color: palette.textSecondary,
                           ),
@@ -323,7 +282,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                     ),
                     child: Text(
                       'GSTIN: ${customer.gstin!.trim()}',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         fontSize: AppText.label,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,
@@ -342,7 +301,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                       Expanded(
                         child: Text(
                           customer.notes!.trim(),
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.poppins(
                             fontSize: AppText.caption,
                             fontStyle: FontStyle.italic,
                             color: palette.textSecondary,
@@ -371,8 +330,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                             Icon(Icons.warning_amber_rounded, color: palette.pending, size: 20),
                             const SizedBox(width: 8),
                             Text(
-                              'Outstanding Balance Dues:',
-                              style: GoogleFonts.inter(
+                              'Balance due',
+                              style: GoogleFonts.poppins(
                                 fontSize: AppText.body,
                                 fontWeight: FontWeight.w600,
                                 color: palette.pending,
@@ -382,9 +341,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                         ),
                         Text(
                           CurrencyFormatter.format(outstandingDues),
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.poppins(
                             fontSize: AppText.title,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             color: palette.pending,
                           ),
                         ),
@@ -399,10 +358,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
           // Tabs for Vehicles, Job Cards, and Invoices
           TabBar(
             controller: _tabController,
-            labelColor: palette.primary,
-            unselectedLabelColor: palette.textMuted,
-            indicatorColor: palette.primary,
-            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.body),
+            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
             tabs: [
               Tab(text: 'Vehicles (${vehicles.length})'),
               Tab(text: 'Job Cards (${customerJobCards.length})'),
@@ -442,9 +398,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Registered Fleet',
-              style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
+            Expanded(
+              child: Text(
+                'Vehicles',
+                style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+              ),
             ),
             ElevatedButton.icon(
               onPressed: _addVehicle,
@@ -470,9 +428,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                     children: [
                       Text(
                         v.registrationNumber,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: AppText.title,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -484,7 +442,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                         ),
                         child: Text(
                           v.fuelType.displayName,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.poppins(
                             fontSize: AppText.label,
                             fontWeight: FontWeight.w600,
                             color: palette.primary,
@@ -496,61 +454,57 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                   const SizedBox(height: 6),
                   Text(
                     v.displayName,
-                    style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       Text(
-                        '${v.currentKm} KM',
-                        style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textSecondary),
+                        '${v.currentKm} km',
+                        style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary),
                       ),
                       if (v.year != null) ...[
                         const SizedBox(width: 12),
                         Text(
-                          '${v.year} Model',
-                          style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textSecondary),
+                          '${v.year} model',
+                          style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary),
                         ),
                       ],
                     ],
                   ),
                   const SizedBox(height: 12),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined, size: 18),
-                            tooltip: 'Edit Vehicle',
-                            onPressed: () => _editVehicle(v),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.delete_outline_rounded, size: 18, color: palette.pending),
-                            tooltip: 'Delete Vehicle',
-                            onPressed: () => _confirmDeleteVehicle(context, provider, v),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CreateJobCardScreen(
+                                  customer: customer,
+                                  vehicle: v,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.add_rounded, size: 18),
+                          label: const Text('New job card'),
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        tooltip: 'Vehicle options',
+                        onSelected: (choice) {
+                          if (choice == 'edit') _editVehicle(v);
+                          if (choice == 'delete') _confirmDeleteVehicle(context, provider, v);
+                        },
+                        itemBuilder: (_) => [
+                          const PopupMenuItem(value: 'edit', child: Text('Edit vehicle')),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Delete vehicle', style: TextStyle(color: palette.absent)),
                           ),
                         ],
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => CreateJobCardScreen(
-                                customer: customer,
-                                vehicle: v,
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.build_circle_outlined, size: 16),
-                        label: const Text('Start Service'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: palette.primary,
-                          foregroundColor: palette.onPrimary,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        ),
                       ),
                     ],
                   ),
@@ -567,7 +521,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
     final palette = context.palette;
     if (jobCards.isEmpty) {
       return Center(
-        child: Text('No job cards recorded yet', style: GoogleFonts.inter(color: palette.textMuted)),
+        child: Text('No job cards recorded yet', style: GoogleFonts.poppins(color: palette.textMuted)),
       );
     }
     return ListView.builder(
@@ -586,11 +540,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             },
             title: Text(
               jc.jobCardNumber,
-              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
             ),
             subtitle: Text(
               AppDateFormatter.formatDate(jc.createdAt),
-              style: GoogleFonts.inter(fontSize: AppText.caption),
+              style: GoogleFonts.poppins(fontSize: AppText.caption),
             ),
             trailing: StatusBadge.fromJobStatus(jc.status),
           ),
@@ -603,7 +557,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
     final palette = context.palette;
     if (invoices.isEmpty) {
       return Center(
-        child: Text('No invoices recorded yet', style: GoogleFonts.inter(color: palette.textMuted)),
+        child: Text('No invoices recorded yet', style: GoogleFonts.poppins(color: palette.textMuted)),
       );
     }
     return ListView.builder(
@@ -622,11 +576,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             },
             title: Text(
               inv.invoiceNumber,
-              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
             ),
             subtitle: Text(
               '${CurrencyFormatter.format(inv.grandTotal)} • ${AppDateFormatter.formatDate(inv.invoiceDate)}',
-              style: GoogleFonts.inter(fontSize: AppText.caption),
+              style: GoogleFonts.poppins(fontSize: AppText.caption),
             ),
             // Same small overdue chip as the invoices list, so a bill past
             // its due date is flagged wherever the invoice appears.
@@ -642,7 +596,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                     ),
                     child: Text(
                       'Overdue',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         fontSize: AppText.micro,
                         fontWeight: FontWeight.w700,
                         color: palette.onPrimary,

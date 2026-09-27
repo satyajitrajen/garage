@@ -64,12 +64,24 @@ class MockGarageRepository implements GarageRepository {
 
   // Profile & config
 
-  @override
-  Future<GarageProfile> fetchProfile() async =>
-      MockDataService.getGarageProfile();
+  GarageProfile? _profile;
+  AppConfig? _config;
 
   @override
-  Future<AppConfig> fetchConfig() async => MockDataService.getAppConfig();
+  Future<GarageProfile> fetchProfile() async =>
+      _profile ?? MockDataService.getGarageProfile();
+
+  @override
+  Future<AppConfig> fetchConfig() async =>
+      _config ?? MockDataService.getAppConfig();
+
+  @override
+  Future<(GarageProfile, AppConfig)> updateSettings(
+      GarageProfile profile, AppConfig config) async {
+    _profile = profile;
+    _config = config;
+    return (profile, config);
+  }
 
   // Customers
 
@@ -271,6 +283,17 @@ class MockGarageRepository implements GarageRepository {
     return payment;
   }
 
+  @override
+  Future<Invoice> cancelInvoice(String invoiceId) async {
+    final i = _invoices.indexWhere((inv) => inv.id == invoiceId);
+    if (i == -1) throw Exception('Invoice not found');
+    final invoice = _invoices[i];
+    if (invoice.totalPaidAmount > 0) {
+      throw Exception('Cannot cancel an invoice with recorded payments');
+    }
+    return _invoices[i] = invoice.copyWith(cancelledAt: DateTime.now());
+  }
+
   // Expenses
 
   @override
@@ -359,4 +382,15 @@ class MockGarageRepository implements GarageRepository {
 
   @override
   Future<List<MaintenanceItem>> fetchCatalog() async => List.of(_catalog);
+
+  @override
+  Future<MaintenanceItem> createCatalogItem(MaintenanceItem item) async {
+    _catalog.add(item);
+    return item;
+  }
+
+  @override
+  Future<void> deleteCatalogItem(String itemId) async {
+    _catalog.removeWhere((c) => c.id == itemId);
+  }
 }

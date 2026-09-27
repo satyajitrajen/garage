@@ -13,19 +13,22 @@ type Config struct {
 	JWTSecret      string
 	AllowedOrigins []string
 
-	AppBaseURL          string
-	TrialDays           int
-	SuperadminEmails    []string
-	SMTPHost            string
-	SMTPPort            int
-	SMTPUser            string
-	SMTPPass            string
-	SMTPFrom            string
-	RazorpayKeyID       string
-	RazorpayKeySecret   string
+	AppBaseURL            string
+	TrialDays             int
+	SuperadminEmails      []string
+	SMTPHost              string
+	SMTPPort              int
+	SMTPUser              string
+	SMTPPass              string
+	SMTPFrom              string
+	RazorpayKeyID         string
+	RazorpayKeySecret     string
 	RazorpayWebhookSecret string
-	RazorpayPlanMonthly string
-	RazorpayPlanYearly  string
+	RazorpayPlanMonthly   string
+	RazorpayPlanYearly    string
+	// RazorpayAPIBase defaults to https://api.razorpay.com; tests point it at
+	// a fake server.
+	RazorpayAPIBase string
 }
 
 func Load() (Config, error) {
@@ -48,6 +51,7 @@ func Load() (Config, error) {
 		RazorpayWebhookSecret: os.Getenv("RAZORPAY_WEBHOOK_SECRET"),
 		RazorpayPlanMonthly:   os.Getenv("RAZORPAY_PLAN_MONTHLY"),
 		RazorpayPlanYearly:    os.Getenv("RAZORPAY_PLAN_YEARLY"),
+		RazorpayAPIBase:       getenv("RAZORPAY_API_BASE", "https://api.razorpay.com"),
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("DATABASE_URL is required")

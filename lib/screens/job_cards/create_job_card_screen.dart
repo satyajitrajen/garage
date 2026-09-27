@@ -236,19 +236,19 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
 
         Navigator.pop(context);
       } else {
-        await provider.addJobCard(jobCard);
+        final created = await provider.addJobCard(jobCard);
         if (!mounted) return;
 
         showAppSnackBar(
           context,
-          'Job Card ${jobCard.jobCardNumber} created successfully!',
+          'Job Card ${created.jobCardNumber} created successfully!',
           type: SnackBarType.success,
         );
 
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => JobCardDetailScreen(jobCardId: jobCard.id),
+            builder: (_) => JobCardDetailScreen(jobCardId: created.id),
           ),
         );
       }
@@ -279,7 +279,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Job Card' : 'New Job Card',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
@@ -313,16 +313,16 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                         children: [
                           Text(
                             vehicle?.registrationNumber ?? 'Vehicle',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.poppins(
                               fontSize: AppText.title,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               letterSpacing: 0.5,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${vehicle?.displayName ?? '—'} • ${customer?.name ?? '—'}',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.poppins(
                               fontSize: AppText.body,
                               color: palette.textSecondary,
                             ),
@@ -331,7 +331,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                             const SizedBox(height: 2),
                             Text(
                               '${widget.existing!.jobCardNumber} • customer & vehicle locked',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 color: palette.textMuted,
                               ),
@@ -363,6 +363,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _fuelLevel,
                       decoration: InputDecoration(
                         labelText: 'Fuel Gauge',
@@ -387,6 +388,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _assignedStaffId,
                       decoration: InputDecoration(
                         labelText: 'Assign Mechanic',
@@ -397,7 +399,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                           .where((s) => s.isActive)
                           .map((s) => DropdownMenuItem(
                                 value: s.id,
-                                child: Text('${s.name} (${s.role.displayName})'),
+                                child: Text('${s.name} (${s.role.displayName})', maxLines: 1, overflow: TextOverflow.ellipsis),
                               ))
                           .toList(),
                       onChanged: (val) => setState(() => _assignedStaffId = val),
@@ -421,30 +423,28 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.access_time_rounded, color: palette.primary, size: 20),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Promised Delivery Time',
-                                style: GoogleFonts.inter(
-                                  fontSize: AppText.label,
-                                  color: palette.textMuted,
-                                ),
+                      Icon(Icons.access_time_rounded, color: palette.primary, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Promised Delivery Time',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.label,
+                                color: palette.textMuted,
                               ),
-                              Text(
-                                AppDateFormatter.formatDateTime(_promisedDate),
-                                style: GoogleFonts.inter(
-                                  fontSize: AppText.subtitle,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            ),
+                            Text(
+                              AppDateFormatter.formatDateTime(_promisedDate),
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.subtitle,
+                                fontWeight: FontWeight.w600,
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                       Icon(Icons.edit_calendar_rounded, size: 18, color: palette.primary),
                     ],
@@ -456,7 +456,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               // Customer Complaints / Demands
               Text(
                 'Customer Complaints & Voice',
-                style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               Row(
@@ -498,7 +498,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                         Expanded(
                           child: Text(
                             entry.value,
-                            style: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w500),
+                            style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w500),
                           ),
                         ),
                         GestureDetector(
@@ -515,7 +515,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               // Inspection Checklist
               Text(
                 'Inspection & Vehicle Health Checklist',
-                style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               Container(
@@ -530,7 +530,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     final checked = _inspectionChecklist[key] ?? true;
                     return CheckboxListTile(
                       value: checked,
-                      title: Text(key, style: GoogleFonts.inter(fontSize: AppText.body)),
+                      title: Text(key, style: GoogleFonts.poppins(fontSize: AppText.body)),
                       activeColor: palette.paid,
                       dense: true,
                       contentPadding: EdgeInsets.zero,
@@ -549,9 +549,11 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Work Items & Parts (${_selectedItems.length})',
-                    style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                  Expanded(
+                    child: Text(
+                      'Work Items & Parts (${_selectedItems.length})',
+                      style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                    ),
                   ),
                   // A billed job locks its items; the disabled button carries
                   // the same explanatory tooltip as the detail screen.
@@ -574,11 +576,11 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     margin: const EdgeInsets.only(bottom: 6),
                     child: ListTile(
                       dense: true,
-                      title: Text(item.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                      title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                       subtitle: Text('${item.quantity} x ${CurrencyFormatter.format(item.unitPrice)}'),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: palette.primary),
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary),
                       ),
                     ),
                   );

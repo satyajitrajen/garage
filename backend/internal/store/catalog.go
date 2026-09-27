@@ -32,3 +32,28 @@ func (s *Store) ListCatalogItems(ctx context.Context, garageID string) ([]models
 	}
 	return items, rows.Err()
 }
+
+func (s *Store) CreateCatalogItem(ctx context.Context, garageID string, ci models.CatalogItem) (models.CatalogItem, error) {
+	return scanCatalogItem(s.Pool.QueryRow(ctx,
+		`INSERT INTO catalog_items (garage_id, name, category, unit_price, unit, is_labour, part_number, notes)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING `+catalogColumns,
+		garageID, ci.Name, ci.Category, ci.UnitPrice, ci.Unit, ci.IsLabour, ci.PartNumber, ci.Notes))
+}
+
+func (s *Store) UpdateCatalogItem(ctx context.Context, garageID string, ci models.CatalogItem) (models.CatalogItem, error) {
+	return scanCatalogItem(s.Pool.QueryRow(ctx,
+		`UPDATE catalog_items SET name=$3, category=$4, unit_price=$5, unit=$6, is_labour=$7,
+		 part_number=$8, notes=$9 WHERE id=$1 AND garage_id=$2 RETURNING `+catalogColumns,
+		ci.ID, garageID, ci.Name, ci.Category, ci.UnitPrice, ci.Unit, ci.IsLabour, ci.PartNumber, ci.Notes))
+}
+
+func (s *Store) DeleteCatalogItem(ctx context.Context, garageID, id string) error {
+	tag, err := s.Pool.Exec(ctx, `DELETE FROM catalog_items WHERE id=$1 AND garage_id=$2`, id, garageID)
+	if err != nil {
+		return mapPGError(err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

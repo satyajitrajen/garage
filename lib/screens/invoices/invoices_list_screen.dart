@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/permission_gate.dart';
+import '../../utils/permissions.dart';
 import '../../models/invoice.dart';
-import '../../models/payment.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
 import '../../widgets/search_bar_widget.dart';
+import '../../widgets/list_row.dart';
 import '../../widgets/status_badge.dart';
 import '../customers/customers_list_screen.dart';
 import '../vehicles/vehicle_selection_screen.dart';
-import '../payments/payment_collection_screen.dart';
 import 'invoice_preview_screen.dart';
 import '../../theme/app_text.dart';
 
@@ -77,19 +77,15 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Invoices & Billing', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.note_add_rounded),
-            tooltip: 'New Invoice',
-            onPressed: _createNewInvoice,
-          ),
-        ],
+        title: Text('Invoices & Billing', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
-      floatingActionButton: GradientFloatingActionButton(
+      floatingActionButton: PermissionGate(
+        permission: Permissions.invoicesManage,
+        child: GradientFloatingActionButton(
         onPressed: _createNewInvoice,
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Invoice'),
+      ),
       ),
       body: Column(
         children: [
@@ -101,14 +97,10 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             color: palette.cardAlt,
             child: Row(
               children: [
-                _buildKpiItem('Total Invoiced', CurrencyFormatter.format(totalInvoiced), null),
-                // Vertical hairlines: kept as sized Containers because a
-                // Divider is horizontal and a VerticalDivider stretches to
-                // the full row height (visual change).
-                Container(height: 24, width: 1, color: palette.textMuted),
-                _buildKpiItem('Collected', CurrencyFormatter.format(totalCollected), palette.paid),
-                Container(height: 24, width: 1, color: palette.textMuted),
-                _buildKpiItem('Pending Dues', CurrencyFormatter.format(totalPending), palette.pending),
+                _buildKpiItem('Billed', CurrencyFormatter.format(totalInvoiced), null),
+                _buildKpiItem('Collected', CurrencyFormatter.format(totalCollected), null),
+                _buildKpiItem('Due', CurrencyFormatter.format(totalPending),
+                    totalPending > 0 ? palette.pending : null),
               ],
             ),
           ),
@@ -127,11 +119,8 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            labelColor: palette.primary,
-            unselectedLabelColor: palette.textMuted,
-            indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.body),
+            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
             tabs: const [
               Tab(text: 'All Invoices'),
               Tab(text: 'Paid'),
@@ -162,7 +151,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
               fontSize: AppText.label,
               color: palette.textSecondary,
             ),
@@ -170,9 +159,9 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
           const SizedBox(height: 2),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
               fontSize: AppText.body,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: color ?? palette.textPrimary,
             ),
           ),
@@ -213,187 +202,35 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 84),
+      padding: const EdgeInsets.only(top: 8, bottom: 120),
       itemCount: filtered.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const RowDivider(),
       itemBuilder: (context, index) {
         final inv = filtered[index];
         final customer = provider.getCustomerById(inv.customerId);
         final vehicle = provider.getVehicleById(inv.vehicleId);
+        final open = inv.balanceDue > 0 && inv.status != InvoiceStatus.cancelled;
 
-        return Card(
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoiceId: inv.id)),
-              );
-            },
-            borderRadius: BorderRadius.circular(AppDimens.radiusTile),
-            child: Padding(
-              padding: const EdgeInsets.all(AppDimens.paddingCard),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        inv.invoiceNumber,
-                        style: GoogleFonts.inter(
-                          fontSize: AppText.body,
-                          fontWeight: FontWeight.w700,
-                          color: palette.accent,
-                        ),
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (inv.isOverdue) ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: palette.pending,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                'Overdue',
-                                style: GoogleFonts.inter(
-                                  fontSize: AppText.micro,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                          ],
-                          StatusBadge.fromInvoiceStatus(inv.status),
-                        ],
-                      ),
-                    ],
+        return ListRow(
+          overline: '${inv.invoiceNumber} · ${AppDateFormatter.formatDate(inv.invoiceDate)}',
+          title: customer?.name ?? 'Customer',
+          subtitle: [vehicle?.registrationNumber, vehicle?.displayName].whereType<String>().join(' · '),
+          trailingTop: RowAmount(CurrencyFormatter.format(inv.grandTotal)),
+          trailingBottom: open
+              ? Text(
+                  inv.isOverdue
+                      ? 'Overdue · ${CurrencyFormatter.format(inv.balanceDue)}'
+                      : '${CurrencyFormatter.format(inv.balanceDue)} due',
+                  style: GoogleFonts.poppins(
+                    fontSize: AppText.label,
+                    fontWeight: FontWeight.w500,
+                    color: inv.isOverdue ? palette.absent : palette.pending,
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              customer?.name ?? 'Customer',
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.subtitle,
-                                fontWeight: FontWeight.w700,
-                                color: palette.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${vehicle?.registrationNumber ?? ""} • ${vehicle?.displayName ?? ""}',
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.label,
-                                color: palette.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            CurrencyFormatter.format(inv.grandTotal),
-                            style: GoogleFonts.inter(
-                              fontSize: AppText.subtitle,
-                              fontWeight: FontWeight.w800,
-                              color: palette.textPrimary,
-                            ),
-                          ),
-                          if (inv.balanceDue > 0)
-                            Text(
-                              'Due: ${CurrencyFormatter.format(inv.balanceDue)}',
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.label,
-                                fontWeight: FontWeight.w700,
-                                color: palette.pending,
-                              ),
-                            )
-                          else
-                            Text(
-                              'Paid in Full',
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.label,
-                                fontWeight: FontWeight.w600,
-                                color: palette.paid,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Divider(),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        AppDateFormatter.formatDate(inv.invoiceDate),
-                        style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
-                      ),
-                      if (inv.balanceDue > 0)
-                        InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => PaymentCollectionScreen(invoice: inv),
-                              ),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: palette.paid.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: palette.paid.withValues(alpha: 0.3)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.payment_rounded, size: 13, color: palette.paid),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Collect',
-                                  style: GoogleFonts.inter(
-                                    fontSize: AppText.label,
-                                    fontWeight: FontWeight.w700,
-                                    color: palette.paid,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      else
-                        Row(
-                          children: [
-                            Icon(Icons.check_circle_rounded, size: 13, color: palette.paid),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Paid via ${inv.payments.isEmpty ? '—' : inv.payments.last.mode.shortName}',
-                              style: GoogleFonts.inter(fontSize: AppText.label, color: palette.paid, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+                )
+              : StatusBadge.fromInvoiceStatus(inv.status),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoiceId: inv.id)),
           ),
         );
       },

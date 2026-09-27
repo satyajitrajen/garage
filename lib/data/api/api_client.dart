@@ -36,7 +36,13 @@ class ApiClient {
   /// Return `true` when a retry should be attempted.
   Future<bool> Function()? onUnauthorized;
 
-  bool _refreshInFlight = false;
+  /// The refresh currently in flight. Every request that hits a 401 while it
+  /// runs awaits this same future (however long it takes) instead of starting
+  /// a second refresh with an already-rotated refresh token.
+  Future<bool>? _refreshing;
+
+  Future<bool> _refreshOnce() =>
+      _refreshing ??= onUnauthorized!().whenComplete(() => _refreshing = null);
 
   Map<String, String> _headers({bool withGarage = true}) {
     final h = <String, String>{
@@ -92,38 +98,27 @@ class ApiClient {
     bool withGarage = true,
     bool retryOnAuth = true,
   }) async {
-    http.Response res;
-    try {
-      res = await call(_headers(withGarage: withGarage))
-          .timeout(ApiConfig.timeout);
-    } on TimeoutException {
-      throw const ApiException(0, 'timeout', 'Request timed out.');
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      throw ApiException(0, 'network_error', 'Network error: $e');
-    }
-    if (res.statusCode == 401 && retryOnAuth && onUnauthorized != null) {
-      if (_refreshInFlight) {
-        // Another request is already refreshing; wait briefly then retry once
-        // with whatever token it installed.
-        for (var i = 0; i < 20 && _refreshInFlight; i++) {
-          await Future<void>.delayed(const Duration(milliseconds: 100));
-        }
-        res = await call(_headers(withGarage: withGarage))
-            .timeout(ApiConfig.timeout);
-        if (res.statusCode >= 200 && res.statusCode < 300) return res;
-        _throwEnvelope(res);
-      }
-      _refreshInFlight = true;
+    Future<http.Response> attempt() async {
       try {
-        final ok = await onUnauthorized!();
-        if (ok) {
-          res = await call(_headers(withGarage: withGarage))
-              .timeout(ApiConfig.timeout);
-          if (res.statusCode >= 200 && res.statusCode < 300) return res;
-        }
-      } finally {
-        _refreshInFlight = false;
+        return await call(_headers(withGarage: withGarage))
+            .timeout(ApiConfig.timeout);
+      } on TimeoutException {
+        throw const ApiException(0, 'timeout', 'Request timed out.');
+      } catch (e) {
+        if (e is ApiException) rethrow;
+        throw ApiException(0, 'network_error', 'Network error: $e');
+      }
+    }
+
+    final sentToken = accessToken;
+    var res = await attempt();
+    if (res.statusCode == 401 && retryOnAuth && onUnauthorized != null) {
+      // If another request already rotated the token after this one was
+      // sent, just retry with it; otherwise join (or start) the refresh.
+      final ok = accessToken != sentToken || await _refreshOnce();
+      if (ok) {
+        res = await attempt();
+        if (res.statusCode >= 200 && res.statusCode < 300) return res;
       }
       _throwEnvelope(res);
     }

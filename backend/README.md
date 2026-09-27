@@ -39,7 +39,8 @@ granular permissions, PostgreSQL storage. The Flutter app is its only client.
    | `SUPERADMIN_EMAILS` | Comma-separated owner emails promoted to superadmin on register | `owner@example.com` |
    | `SMTP_HOST/PORT/USER/PASS/FROM` | SMTP for verify/reset/invite mail; unset = log-only (dev) | `smtp.mailgun.org` |
    | `RAZORPAY_KEY_ID/KEY_SECRET/WEBHOOK_SECRET` | Razorpay credentials; unset = manual billing | — |
-   | `RAZORPAY_PLAN_MONTHLY/PLAN_YEARLY` | Razorpay plan ids returned by checkout | `plan_xxx` |
+   | `RAZORPAY_PLAN_MONTHLY/PLAN_YEARLY` | Razorpay plan ids checkout subscribes to | `plan_xxx` |
+   | `RAZORPAY_API_BASE` | Razorpay API origin (default `https://api.razorpay.com`; tests override) | — |
 
    Production: `docker compose up -d` (postgres + server + Caddy TLS, see
    `Caddyfile`). Nightly `pg_dump` recommended; health probes: liveness
@@ -78,7 +79,7 @@ external needed. The first run downloads the Postgres binaries.
 | `GET /api/me` | bearer | current user + memberships |
 | `GET`/`POST /api/garages/{garageId}/members` | bearer + garage + `staff.manage` | list / create staff |
 | `PATCH`/`DELETE /api/garages/{garageId}/members/{userId}` | bearer + garage + `staff.manage` | edit permissions/active flag; password reset and member deletion are owner-only |
-| `GET /api/garages/{garageId}/settings` | bearer + garage + `settings.manage` | lazily creates the defaults row |
+| `GET /api/garages/{garageId}/settings` | bearer + garage (any member) | lazily creates the defaults row; profile name seeded from the garage name |
 | `PATCH /api/garages/{garageId}/settings` | bearer + garage + `settings.manage` | partial merge — see "Garage settings semantics" |
 | `GET`/`POST /api/customers` · `PUT`/`DELETE /api/customers/{customerId}` | bearer + garage + `customers.manage` | newest-first lists; delete blocked by dues or invoice/job-card history |
 | `GET`/`POST /api/vehicles` · `PUT`/`DELETE /api/vehicles/{vehicleId}` | bearer + garage + `vehicles.manage` | delete blocked once documents reference the vehicle |
@@ -94,7 +95,8 @@ external needed. The first run downloads the Postgres binaries.
 | `POST /api/invoices/{invoiceId}/cancel` | bearer + garage + `invoices.manage` | only when unpaid and not already cancelled |
 | `POST /api/invoices/{invoiceId}/payments` | bearer + garage + `payments.record` | append-only; amount in (0, balanceDue + 0.01] |
 | `GET`/`POST /api/expenses` · `PUT`/`DELETE /api/expenses/{expenseId}` | bearer + garage + `expenses.manage` | expenseDate is a `YYYY-MM-DD` string |
-| `GET /api/catalog` | bearer + garage (any member) | read-only; ships empty (CRUD out of scope) |
+| `GET /api/catalog` | bearer + garage (any member) | the garage's saved price list (starts empty) |
+| `POST /api/catalog` · `PUT`/`DELETE /api/catalog/{itemId}` | bearer + garage + `jobcards.manage` | `{name, category, unitPrice, unit?, isLabour?, partNumber?, notes?}`; subscription-gated |
 | `POST /api/auth/verify-request` · `POST /api/auth/verify` | none (rate-limited) | email verification: request (always 200) + confirm `{token}` |
 | `POST /api/auth/forgot` · `POST /api/auth/reset` | none (rate-limited) | password reset: request (always 200) + `{token, password≥8}`; revokes sessions |
 | `POST /api/garages/{garageId}/invites` · `DELETE /api/garages/{garageId}/invites/{inviteId}` | bearer + garage + `staff.manage` | invite by email (7d expiry, mailed link); revoke |
@@ -102,7 +104,7 @@ external needed. The first run downloads the Postgres binaries.
 | `POST /api/invites/{token}/accept` | bearer | join the garage as a member |
 | `GET /api/garages/{garageId}/doc-numbers/next?kind=jobcard\|quotation\|invoice` | bearer + garage | server-allocated number (JC-/EST-/INV-YYYY-); POST with empty number auto-assigns |
 | `GET /api/garages/{garageId}/billing` | bearer + garage | plan, status, trial window, Razorpay key id |
-| `POST /api/garages/{garageId}/billing/checkout` | bearer + garage | `{plan: monthly\|yearly}` → key + plan id (or manual instructions when unconfigured) |
+| `POST /api/garages/{garageId}/billing/checkout` | bearer + garage | `{plan: monthly\|yearly}` → creates a Razorpay subscription (notes.garage_id) and returns `short_url` (hosted payment page) + `subscription_id`; manual instructions when unconfigured |
 | `POST /api/garages/{garageId}/billing/cancel` | bearer + garage, owner-only | mark subscription cancelled |
 | `POST /api/billing/webhooks/razorpay` | HMAC `X-Razorpay-Signature` | idempotent (event id dedupe); activated→active, halted/failed→past_due, cancelled→cancelled |
 | `GET /api/admin/garages` · `POST /api/admin/garages/{id}/suspend\|unsuspend` | superadmin | tenant list (paginated) + suspension (writes → 402, reads stay 200) |
@@ -164,10 +166,13 @@ Every error response is `{"error":{"code":"...","message":"..."}}` with one of:
   `upi_id`); there is no per-field profile merge. The slice fields
   `tax_percent_options` and `quotation_validity_options` are nil-checked:
   omitting keeps the stored list, sending `[]` clears it.
-- **Owner-only by default:** both settings routes require `settings.manage`,
-  which is excluded from the default staff permission set — so in practice
-  only owners (or members explicitly granted `settings.manage`) can read or
-  write settings.
+- **Read by all, write by `settings.manage`:** every member can `GET`
+  settings (the profile is the invoice header and the config drives tax and
+  due-date defaults). `PATCH` requires `settings.manage`, which is excluded
+  from the default staff permission set, so in practice only owners (or
+  members explicitly granted it) can change settings.
+- **Seeded profile name:** the lazily created row takes `profile.name` from
+  the garage name given at registration instead of a generic default.
 - **Range validation:** `default_tax_percent` and each `tax_percent_options`
   entry must be 0–100; each `quotation_validity_options` entry 0–365;
   `invoice_due_days`, `working_days_per_month`, `promised_delivery_hours`

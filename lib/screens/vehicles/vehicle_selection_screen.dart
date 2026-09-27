@@ -107,14 +107,14 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Select Vehicle', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        title: Text('Select Vehicle', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         actions: [
           TextButton.icon(
             onPressed: _openAddVehicleDialog,
             icon: Icon(Icons.add_rounded, color: palette.primary),
             label: Text(
               'Add Vehicle',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                 color: palette.primary,
                 fontWeight: FontWeight.w600,
               ),
@@ -136,7 +136,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                   backgroundColor: palette.primary.withOpacity(0.12),
                   child: Text(
                     widget.customer.name.substring(0, 1).toUpperCase(),
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                       fontSize: AppText.headline,
                       fontWeight: FontWeight.w700,
                       color: palette.primary,
@@ -150,20 +150,22 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                     children: [
                       Text(
                         widget.customer.name,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: AppText.title,
                           fontWeight: FontWeight.w700,
                           color: palette.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        runSpacing: 4,
                         children: [
                           Icon(Icons.phone_rounded, size: 14, color: palette.textMuted),
                           const SizedBox(width: 4),
                           Text(
                             widget.customer.phone,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.poppins(
                               fontSize: AppText.caption,
                               color: palette.textSecondary,
                             ),
@@ -177,7 +179,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                             ),
                             child: Text(
                               '${vehicles.length} Vehicles',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 fontWeight: FontWeight.w600,
                                 color: palette.textPrimary,
@@ -237,7 +239,8 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // License Plate visual box
-                                  Container(
+                                  Flexible(
+                                    child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: palette.background,
@@ -260,17 +263,22 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 6),
-                                        Text(
-                                          vehicle.registrationNumber,
-                                          style: GoogleFonts.inter(
-                                            fontSize: AppText.body,
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: 0.8,
-                                            color: palette.textPrimary,
+                                        Flexible(
+                                          child: Text(
+                                            vehicle.registrationNumber,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: AppText.body,
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 0.8,
+                                              color: palette.textPrimary,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
+                                  ),
                                   ),
                                   const Spacer(),
                                   Container(
@@ -281,7 +289,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                     ),
                                     child: Text(
                                       vehicle.fuelType.displayName,
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.poppins(
                                         fontSize: AppText.label,
                                         fontWeight: FontWeight.w600,
                                         color: palette.primary,
@@ -293,20 +301,22 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                               const SizedBox(height: 12),
                               Text(
                                 vehicle.displayName,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.poppins(
                                   fontSize: AppText.title,
                                   fontWeight: FontWeight.w700,
                                   color: palette.textPrimary,
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              Row(
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                runSpacing: 4,
                                 children: [
                                   Icon(Icons.speed_rounded, size: 15, color: palette.textMuted),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${vehicle.currentKm.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} KM',
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.poppins(
                                       fontSize: AppText.caption,
                                       fontWeight: FontWeight.w500,
                                       color: palette.textSecondary,
@@ -318,7 +328,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                     const SizedBox(width: 4),
                                     Text(
                                       '${vehicle.year} Model',
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.poppins(
                                         fontSize: AppText.caption,
                                         color: palette.textSecondary,
                                       ),
@@ -330,7 +340,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                     const SizedBox(width: 4),
                                     Text(
                                       vehicle.color!,
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.poppins(
                                         fontSize: AppText.caption,
                                         color: palette.textSecondary,
                                       ),
@@ -342,7 +352,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                 const SizedBox(height: 8),
                                 Text(
                                   'Last serviced: ${AppDateFormatter.formatDate(vehicle.lastServiceDate!)} (${serviceHistory.length} total visits)',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.poppins(
                                     fontSize: AppText.label,
                                     color: palette.paid,
                                     fontWeight: FontWeight.w500,
@@ -355,7 +365,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                 children: [
                                   Text(
                                     'Tap to select & continue',
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.poppins(
                                       fontSize: AppText.caption,
                                       fontWeight: FontWeight.w600,
                                       color: palette.primary,

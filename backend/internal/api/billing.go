@@ -1,12 +1,17 @@
 package api
 
 import (
+	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -26,16 +31,17 @@ func (s *Server) getBilling(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, 200, map[string]any{
 		"plan_tier": sub.PlanCode, "status": sub.Status,
 		"trial_ends_at": sub.TrialEndsAt, "current_period_end": sub.CurrentPeriodEnd,
-		"subscription_status": st.SubscriptionStatus,
+		"subscription_status":      st.SubscriptionStatus,
 		"provider_subscription_id": sub.ProviderSubscription,
 		"razorpay_key_id":          s.Config.RazorpayKeyID,
 	})
 }
 
 // POST /api/garages/{garageId}/billing/checkout {plan: monthly|yearly}
-// Returns Razorpay plan id + key so Flutter can open Checkout. The actual
-// subscription object is created client-side via Razorpay; activation arrives
-// via webhook. When Razorpay is unconfigured, returns manual instructions.
+// Creates a Razorpay subscription server-side (tagged with the garage id so
+// webhooks can find it) and returns its hosted payment page (short_url) for
+// the app to open. Activation arrives via webhook. When Razorpay is
+// unconfigured, returns manual instructions.
 func (s *Server) createCheckout(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Plan string `json:"plan"`
@@ -44,21 +50,69 @@ func (s *Server) createCheckout(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, 400, "invalid_request", "plan must be monthly or yearly")
 		return
 	}
-	planID := s.Config.RazorpayPlanMonthly
+	planID, totalCount := s.Config.RazorpayPlanMonthly, 120
 	if req.Plan == "yearly" {
-		planID = s.Config.RazorpayPlanYearly
+		planID, totalCount = s.Config.RazorpayPlanYearly, 10
 	}
-	if s.Config.RazorpayKeyID == "" || planID == "" {
+	if s.Config.RazorpayKeyID == "" || s.Config.RazorpayKeySecret == "" || planID == "" {
 		httputil.JSON(w, 200, map[string]any{
 			"configured": false,
-			"message":    "Razorpay not configured; contact support to activate.",
+			"message":    "Online payment is not configured yet; contact support to activate.",
 		})
+		return
+	}
+	garageID := auth.GarageID(r.Context())
+	sub, err := s.createRazorpaySubscription(r.Context(), planID, totalCount, garageID)
+	if err != nil {
+		slog.Error("razorpay subscription create failed", "garage", garageID, "err", err)
+		httputil.Error(w, 502, "internal", "could not start checkout, please try again")
+		return
+	}
+	if err := s.Store.SetProviderSubscription(r.Context(), garageID, sub.ID, req.Plan); err != nil {
+		httputil.Error(w, 500, "internal", "could not save subscription")
 		return
 	}
 	httputil.JSON(w, 200, map[string]any{
 		"configured": true, "key_id": s.Config.RazorpayKeyID,
 		"plan_id": planID, "plan": req.Plan,
+		"subscription_id": sub.ID, "short_url": sub.ShortURL,
 	})
+}
+
+type razorpaySubscription struct {
+	ID       string `json:"id"`
+	ShortURL string `json:"short_url"`
+}
+
+func (s *Server) createRazorpaySubscription(ctx context.Context, planID string, totalCount int, garageID string) (razorpaySubscription, error) {
+	body, _ := json.Marshal(map[string]any{
+		"plan_id": planID, "total_count": totalCount, "customer_notify": 1,
+		"notes": map[string]string{"garage_id": garageID},
+	})
+	base := s.Config.RazorpayAPIBase
+	if base == "" {
+		base = "https://api.razorpay.com"
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", base+"/v1/subscriptions", bytes.NewReader(body))
+	if err != nil {
+		return razorpaySubscription{}, err
+	}
+	req.SetBasicAuth(s.Config.RazorpayKeyID, s.Config.RazorpayKeySecret)
+	req.Header.Set("Content-Type", "application/json")
+	res, err := (&http.Client{Timeout: 15 * time.Second}).Do(req)
+	if err != nil {
+		return razorpaySubscription{}, err
+	}
+	defer res.Body.Close()
+	raw, _ := io.ReadAll(io.LimitReader(res.Body, 1<<20))
+	if res.StatusCode/100 != 2 {
+		return razorpaySubscription{}, fmt.Errorf("razorpay status %d: %s", res.StatusCode, raw)
+	}
+	var sub razorpaySubscription
+	if err := json.Unmarshal(raw, &sub); err != nil || sub.ID == "" || sub.ShortURL == "" {
+		return razorpaySubscription{}, fmt.Errorf("unexpected razorpay response: %s", raw)
+	}
+	return sub, nil
 }
 
 // POST /api/billing/webhooks/razorpay — public, HMAC-verified, idempotent.
@@ -199,9 +253,9 @@ func (s *Server) adminGarages(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	type g struct {
 		ID, Name, Plan, Status string
-		TrialEndsAt           any
-		SuspendedAt           any
-		CreatedAt             any
+		TrialEndsAt            any
+		SuspendedAt            any
+		CreatedAt              any
 	}
 	var out []g
 	for rows.Next() {

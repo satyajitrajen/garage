@@ -32,6 +32,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
   final _colorController = TextEditingController();
 
   FuelType _fuelType = FuelType.petrol;
+  bool _isSaving = false;
 
   bool get isEditing => widget.vehicleToEdit != null;
 
@@ -64,18 +65,41 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
   }
 
   Future<void> _saveVehicle() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
+    setState(() => _isSaving = true);
 
-    if (isEditing) {
-      // Build explicitly from controllers instead of copyWith: copyWith
-      // treats null as "keep existing", so clearing Variant/Color/Year in
-      // the form would silently keep the old values.
-      final original = widget.vehicleToEdit!;
-      final updated = Vehicle(
-        id: original.id,
-        customerId: original.customerId,
+    try {
+      if (isEditing) {
+        final original = widget.vehicleToEdit!;
+        final updated = Vehicle(
+          id: original.id,
+          customerId: original.customerId,
+          registrationNumber: _regNoController.text.trim().toUpperCase(),
+          make: _makeController.text.trim(),
+          model: _modelController.text.trim(),
+          variant: _variantController.text.trim().isEmpty ? null : _variantController.text.trim(),
+          year: int.tryParse(_yearController.text.trim()),
+          fuelType: _fuelType,
+          currentKm: int.tryParse(_kmController.text.trim()) ?? 0,
+          color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
+          chassisNumber: original.chassisNumber,
+          engineNumber: original.engineNumber,
+          createdAt: original.createdAt,
+          lastServiceDate: original.lastServiceDate,
+        );
+
+        await provider.updateVehicle(updated);
+        if (!mounted) return;
+        Navigator.pop(context, updated);
+        return;
+      }
+
+      final newVehicle = Vehicle(
+        id: const Uuid().v4(),
+        customerId: widget.customerId,
         registrationNumber: _regNoController.text.trim().toUpperCase(),
         make: _makeController.text.trim(),
         model: _modelController.text.trim(),
@@ -84,34 +108,19 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
         fuelType: _fuelType,
         currentKm: int.tryParse(_kmController.text.trim()) ?? 0,
         color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
-        chassisNumber: original.chassisNumber,
-        engineNumber: original.engineNumber,
-        createdAt: original.createdAt,
-        lastServiceDate: original.lastServiceDate,
       );
 
-      await provider.updateVehicle(updated);
+      final created = await provider.addVehicle(newVehicle);
       if (!mounted) return;
-      Navigator.pop(context, updated);
-      return;
+      Navigator.pop(context, created);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
-
-    final newVehicle = Vehicle(
-      id: const Uuid().v4(),
-      customerId: widget.customerId,
-      registrationNumber: _regNoController.text.trim().toUpperCase(),
-      make: _makeController.text.trim(),
-      model: _modelController.text.trim(),
-      variant: _variantController.text.trim().isEmpty ? null : _variantController.text.trim(),
-      year: int.tryParse(_yearController.text.trim()),
-      fuelType: _fuelType,
-      currentKm: int.tryParse(_kmController.text.trim()) ?? 0,
-      color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
-    );
-
-    await provider.addVehicle(newVehicle);
-    if (!mounted) return;
-    Navigator.pop(context, newVehicle);
   }
 
   @override
@@ -133,12 +142,14 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      isEditing ? 'Edit Vehicle' : 'Add New Vehicle',
-                      style: GoogleFonts.inter(
-                        fontSize: AppText.headline,
-                        fontWeight: FontWeight.w700,
-                        color: palette.textPrimary,
+                    Expanded(
+                      child: Text(
+                        isEditing ? 'Edit Vehicle' : 'Add New Vehicle',
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.headline,
+                          fontWeight: FontWeight.w700,
+                          color: palette.textPrimary,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -225,7 +236,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                 // Fuel Type Selector
                 Text(
                   'Fuel Type',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: AppText.caption,
                     fontWeight: FontWeight.w600,
                     color: palette.textSecondary,
@@ -265,7 +276,12 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                           hintText: 'e.g. 35000',
                           prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
                         ),
-                        validator: (val) => val == null || val.trim().isEmpty ? 'KM is required' : null,
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) return 'KM is required';
+                          final km = int.tryParse(val.trim());
+                          if (km == null || km < 0) return 'Enter a valid KM reading';
+                          return null;
+                        },
                       ),
                     ),
                     const SizedBox(width: 12),

@@ -63,13 +63,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text('Forgot your password?',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                             fontSize: AppText.title,
-                            fontWeight: FontWeight.w800)),
+                            fontWeight: FontWeight.w700)),
                     const SizedBox(height: 6),
                     Text(
                       'Enter your account email and we will send a reset link.',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                           fontSize: AppText.body,
                           color: Theme.of(context).hintColor),
                     ),

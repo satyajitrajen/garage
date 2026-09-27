@@ -225,7 +225,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(quote.quotationNumber, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        title: Text(quote.quotationNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
             icon: const Icon(Icons.share_rounded),
@@ -289,9 +289,9 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                               profile.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.poppins(
                                 fontSize: AppText.title,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 color: palette.primary,
                               ),
                             ),
@@ -301,7 +301,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                                 profile.tagline.trim(),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.poppins(
                                   fontSize: AppText.label,
                                   fontWeight: FontWeight.w500,
                                   color: palette.textSecondary,
@@ -311,7 +311,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                             const SizedBox(height: 2),
                             Text(
                               'ESTIMATE / QUOTATION',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.2,
@@ -322,7 +322,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                               'GSTIN: ${profile.gstin}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 color: palette.textMuted,
                               ),
@@ -331,7 +331,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                               '${profile.addressLine}, ${profile.city}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 color: palette.textMuted,
                               ),
@@ -340,7 +340,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                               'Phone: ${profile.phone}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 color: palette.textMuted,
                               ),
@@ -350,7 +350,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                                 'Email: ${profile.email.trim()}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.poppins(
                                   fontSize: AppText.label,
                                   color: palette.textMuted,
                                 ),
@@ -363,11 +363,11 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                         children: [
                           Text(
                             quote.quotationNumber,
-                            style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
                           ),
                           Text(
                             AppDateFormatter.formatDate(quote.createdAt),
-                            style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
+                            style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
                           ),
                         ],
                       ),
@@ -382,23 +382,28 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Column(
+                      Expanded(
+                        child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('ESTIMATE FOR:', style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w600, color: palette.textMuted)),
+                          Text('ESTIMATE FOR:', style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w600, color: palette.textMuted)),
                           const SizedBox(height: 2),
-                          Text(customer?.name ?? '', style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
-                          Text(customer?.phone ?? '', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textSecondary)),
+                          Text(customer?.name ?? '', style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
+                          Text(customer?.phone ?? '', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary)),
                         ],
                       ),
-                      Column(
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('VEHICLE:', style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w600, color: palette.textMuted)),
+                          Text('VEHICLE:', style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w600, color: palette.textMuted)),
                           const SizedBox(height: 2),
-                          Text(vehicle?.registrationNumber ?? '', style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
-                          Text('${vehicle?.displayName ?? ""} • ${quote.kmReading} KM', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textSecondary)),
+                          Text(vehicle?.registrationNumber ?? '', style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
+                          Text('${vehicle?.displayName ?? ""} • ${quote.kmReading} KM', textAlign: TextAlign.end, style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary)),
                         ],
+                      ),
                       ),
                     ],
                   ),
@@ -415,19 +420,19 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                       children: [
                         Expanded(
                           flex: 3,
-                          child: Text('DESCRIPTION', style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('DESCRIPTION', style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 1,
-                          child: Text('QTY', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('QTY', textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('RATE', textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('RATE', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('AMOUNT', textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text('AMOUNT', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                       ],
                     ),
@@ -445,25 +450,25 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(item.name, style: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w600)),
+                                Text(item.name, style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600)),
                                 Text(
                                   item.isLabour ? 'Labour' : 'Part (${item.category.displayName})',
-                                  style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
+                                  style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
                                 ),
                               ],
                             ),
                           ),
                           Expanded(
                             flex: 1,
-                            child: Text(formatQuantity(item.quantity), textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: AppText.caption)),
+                            child: Text(formatQuantity(item.quantity), textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: AppText.caption)),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(CurrencyFormatter.format(item.unitPrice), textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: AppText.caption)),
+                            child: Text(CurrencyFormatter.format(item.unitPrice), textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.caption)),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(CurrencyFormatter.format(item.taxableAmount), textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w700)),
+                            child: Text(CurrencyFormatter.format(item.taxableAmount), textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w700)),
                           ),
                         ],
                       ),
@@ -481,10 +486,16 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Net Estimated Total:', style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w800)),
-                      Text(
-                        CurrencyFormatter.format(quote.grandTotal),
-                        style: GoogleFonts.inter(fontSize: AppText.headline, fontWeight: FontWeight.w900, color: palette.primary),
+                      Expanded(
+                        child: Text('Net Estimated Total:', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                      ),
+                      const SizedBox(width: 8),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          CurrencyFormatter.format(quote.grandTotal),
+                          style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.primary),
+                        ),
                       ),
                     ],
                   ),
@@ -501,9 +512,11 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                       children: [
                         Icon(Icons.info_outline_rounded, size: 16, color: palette.accent),
                         const SizedBox(width: 8),
-                        Text(
-                          'Valid until ${AppDateFormatter.formatDate(quote.validUntil)} (${quote.validityDays} days)',
-                          style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w500, color: palette.accent),
+                        Expanded(
+                          child: Text(
+                            'Valid until ${AppDateFormatter.formatDate(quote.validUntil)} (${quote.validityDays} days)',
+                            style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w500, color: palette.accent),
+                          ),
                         ),
                       ],
                     ),
@@ -604,7 +617,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                     const SizedBox(width: 8),
                     Text(
                       'This estimate is ${quote.status.displayName.toLowerCase()} — no further actions',
-                      style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w600, color: palette.textMuted),
+                      style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600, color: palette.textMuted),
                     ),
                   ],
                 ),
@@ -625,11 +638,11 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textSecondary),
+              style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary),
             ),
           ),
           const SizedBox(width: 8),
-          Text(val, style: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
+          Text(val, style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
         ],
       ),
     );

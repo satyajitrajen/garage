@@ -106,17 +106,22 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       invoiceNumber: provider.generateInvoiceNumber(),
       customerId: widget.customer.id,
       vehicleId: widget.vehicle.id,
-      kmReading: int.tryParse(_kmController.text.trim()) ?? widget.vehicle.currentKm,
+      kmReading:
+          int.tryParse(_kmController.text.trim()) ?? widget.vehicle.currentKm,
       items: _items,
       discountAmount: discount,
       taxPercent: _taxPercent,
       invoiceDate: DateTime.now(),
-      dueDate: DateTime.now().add(Duration(days: provider.config.invoiceDueDays)),
-      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      dueDate: DateTime.now().add(
+        Duration(days: provider.config.invoiceDueDays),
+      ),
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
     );
 
     try {
-      await provider.addInvoice(invoice);
+      final created = await provider.addInvoice(invoice);
       if (!mounted) return;
 
       // The invoice itself is committed; addInvoice downgrades a failed
@@ -124,7 +129,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       // replaced by the success message.
       showAppSnackBar(
         context,
-        'Invoice #${invoice.invoiceNumber} created successfully!',
+        'Invoice #${created.invoiceNumber} created successfully!',
         type: SnackBarType.success,
       );
       if (provider.sideEffectWarning != null) {
@@ -138,7 +143,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => InvoicePreviewScreen(invoiceId: invoice.id),
+          builder: (_) => InvoicePreviewScreen(invoiceId: created.id),
         ),
       );
     } catch (e) {
@@ -158,17 +163,27 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     final palette = context.palette;
     final config = context.read<GarageProvider>().config;
 
-    final partsSubtotal = _items.where((i) => !i.isLabour).fold(0.0, (sum, i) => sum + i.taxableAmount);
-    final labourSubtotal = _items.where((i) => i.isLabour).fold(0.0, (sum, i) => sum + i.taxableAmount);
+    final partsSubtotal = _items
+        .where((i) => !i.isLabour)
+        .fold(0.0, (sum, i) => sum + i.taxableAmount);
+    final labourSubtotal = _items
+        .where((i) => i.isLabour)
+        .fold(0.0, (sum, i) => sum + i.taxableAmount);
     final grossSubtotal = partsSubtotal + labourSubtotal;
     final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
-    final taxableSubtotal = (grossSubtotal - discount).clamp(0.0, double.infinity);
+    final taxableSubtotal = (grossSubtotal - discount).clamp(
+      0.0,
+      double.infinity,
+    );
     final taxAmount = taxableSubtotal * (_taxPercent / 100);
     final grandTotal = taxableSubtotal + taxAmount;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Direct Tax Invoice', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        title: Text(
+          'Create Direct Tax Invoice',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -191,9 +206,15 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: palette.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
+                        borderRadius: BorderRadius.circular(
+                          AppDimens.radiusBadge,
+                        ),
                       ),
-                      child: Icon(Icons.receipt_long_rounded, color: palette.primary, size: 26),
+                      child: Icon(
+                        Icons.receipt_long_rounded,
+                        color: palette.primary,
+                        size: 26,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -202,12 +223,15 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                         children: [
                           Text(
                             widget.customer.name,
-                            style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.title,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${widget.vehicle.displayName} (${widget.vehicle.registrationNumber})',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.poppins(
                               fontSize: AppText.body,
                               color: palette.textSecondary,
                             ),
@@ -224,10 +248,16 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Bill Line Items (${_items.length})',
-                    style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                  Expanded(
+                    child: Text(
+                      'Bill Line Items (${_items.length})',
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.title,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: _openAddItems,
                     icon: const Icon(Icons.add_rounded, size: 18),
@@ -241,18 +271,27 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 const EmptyStateWidget(
                   icon: Icons.shopping_bag_outlined,
                   title: 'No items in bill yet',
-                  description: 'Add services, spare parts or oils to create bill',
+                  description:
+                      'Add services, spare parts or oils to create bill',
                 )
               else
                 ..._items.map((item) {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
-                      title: Text(item.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                      subtitle: Text('${item.quantity} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}'),
+                      title: Text(
+                        item.name,
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        '${item.quantity} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}',
+                      ),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: palette.primary),
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          color: palette.primary,
+                        ),
                       ),
                     ),
                   );
@@ -264,18 +303,26 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<double>(
+                      isExpanded: true,
                       initialValue: _taxPercent,
-                      decoration: const InputDecoration(labelText: 'GST Tax Rate'),
+                      decoration: const InputDecoration(
+                        labelText: 'GST Tax Rate',
+                      ),
                       items: config.taxPercentOptions.map((rate) {
                         return DropdownMenuItem(
                           value: rate,
-                          child: Text(rate > 0
-                              ? '${rate.toStringAsFixed(0)}% (CGST ${(rate / 2).toStringAsFixed(1)}% + SGST ${(rate / 2).toStringAsFixed(1)}%)'
-                              : '${rate.toStringAsFixed(0)}%'),
+                          child: Text(
+                            rate > 0
+                                ? '${rate.toStringAsFixed(0)}% (CGST ${(rate / 2).toStringAsFixed(1)}% + SGST ${(rate / 2).toStringAsFixed(1)}%)'
+                                : '${rate.toStringAsFixed(0)}%',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         );
                       }).toList(),
-                      onChanged: (val) =>
-                          setState(() => _taxPercent = val ?? config.defaultTaxPercent),
+                      onChanged: (val) => setState(
+                        () => _taxPercent = val ?? config.defaultTaxPercent,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -326,26 +373,55 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 ),
                 child: Column(
                   children: [
-                    _buildRow('Parts Total:', CurrencyFormatter.format(partsSubtotal), palette),
+                    _buildRow(
+                      'Parts',
+                      CurrencyFormatter.format(partsSubtotal),
+                      palette,
+                    ),
                     const SizedBox(height: 4),
-                    _buildRow('Labour Total:', CurrencyFormatter.format(labourSubtotal), palette),
+                    _buildRow(
+                      'Labour',
+                      CurrencyFormatter.format(labourSubtotal),
+                      palette,
+                    ),
                     const SizedBox(height: 4),
                     if (discount > 0) ...[
-                      _buildRow('Discount:', '- ${CurrencyFormatter.format(discount)}', palette, color: palette.paid),
+                      _buildRow(
+                        'Discount:',
+                        '- ${CurrencyFormatter.format(discount)}',
+                        palette,
+                        color: palette.paid,
+                      ),
                       const SizedBox(height: 4),
                     ],
-                    _buildRow('GST Taxes (${_taxPercent.toInt()}%):', CurrencyFormatter.format(taxAmount), palette),
+                    _buildRow(
+                      'GST Taxes (${_taxPercent.toInt()}%):',
+                      CurrencyFormatter.format(taxAmount),
+                      palette,
+                    ),
                     const Divider(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Net Payable Total:', style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700)),
-                        Text(
-                          CurrencyFormatter.format(grandTotal),
-                          style: GoogleFonts.inter(
-                            fontSize: AppText.headline,
-                            fontWeight: FontWeight.w900,
-                            color: palette.primary,
+                        Expanded(
+                          child: Text(
+                            'Net Payable Total:',
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.title,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            CurrencyFormatter.format(grandTotal),
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.headline,
+                              fontWeight: FontWeight.w700,
+                              color: palette.primary,
+                            ),
                           ),
                         ),
                       ],
@@ -375,18 +451,33 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     );
   }
 
-  Widget _buildRow(String label, String value, AppPalette palette, {Color? color}) {
+  Widget _buildRow(
+    String label,
+    String value,
+    AppPalette palette, {
+    Color? color,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textSecondary),
+            style: GoogleFonts.poppins(
+              fontSize: AppText.caption,
+              color: palette.textSecondary,
+            ),
           ),
         ),
         const SizedBox(width: 8),
-        Text(value, style: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: AppText.body,
+            fontWeight: FontWeight.w600,
+            color: color ?? palette.textPrimary,
+          ),
+        ),
       ],
     );
   }

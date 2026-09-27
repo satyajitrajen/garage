@@ -81,7 +81,7 @@ class _SubscriptionBannerState extends State<SubscriptionBanner> {
                 Expanded(
                   child: Text(
                     text,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontSize: AppText.label,
                       fontWeight: FontWeight.w600,

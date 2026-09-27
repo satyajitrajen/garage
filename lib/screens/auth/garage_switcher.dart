@@ -32,12 +32,12 @@ class GarageSwitcherSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Switch garage',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                     fontSize: AppText.title, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             Text(
               'Signed in as ${auth.user?.name ?? ''} (${auth.user?.email ?? ''})',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                   fontSize: AppText.caption, color: Theme.of(context).hintColor),
             ),
             const SizedBox(height: 12),
@@ -55,7 +55,7 @@ class GarageSwitcherSheet extends StatelessWidget {
                           : m.garageName[0].toUpperCase()),
                     ),
                     title: Text(m.garageName,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600)),
                     subtitle: Text(
                         '${m.role}${m.isActive ? '' : ' • deactivated'}'),

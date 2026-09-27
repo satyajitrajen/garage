@@ -17,6 +17,10 @@ abstract class GarageRepository {
   Future<GarageProfile> fetchProfile();
   Future<AppConfig> fetchConfig();
 
+  /// Saves the garage profile (invoice header) and business config together.
+  Future<(GarageProfile, AppConfig)> updateSettings(
+      GarageProfile profile, AppConfig config);
+
   Future<List<Customer>> fetchCustomers();
   Future<Customer> createCustomer(Customer customer);
   Future<Customer> updateCustomer(Customer customer);
@@ -51,6 +55,9 @@ abstract class GarageRepository {
   Future<Invoice> updateInvoice(Invoice invoice);
   Future<Payment> createPayment(Payment payment);
 
+  /// Cancels an unpaid invoice (the server re-checks there are no payments).
+  Future<Invoice> cancelInvoice(String invoiceId);
+
   Future<List<GarageExpense>> fetchExpenses();
   Future<GarageExpense> createExpense(GarageExpense expense);
   Future<GarageExpense> updateExpense(GarageExpense expense);
@@ -71,4 +78,6 @@ abstract class GarageRepository {
   );
 
   Future<List<MaintenanceItem>> fetchCatalog();
+  Future<MaintenanceItem> createCatalogItem(MaintenanceItem item);
+  Future<void> deleteCatalogItem(String itemId);
 }

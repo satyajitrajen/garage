@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart';
+
+import '../../models/customer.dart';
 import '../../models/invoice.dart';
+import '../../models/job_card.dart';
+import '../../models/vehicle.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
@@ -10,711 +13,452 @@ import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
-import '../../widgets/book_service_card.dart';
-import '../../widgets/section_header.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/subscription_banner.dart';
+import '../customers/customer_detail_screen.dart';
 import '../customers/customers_list_screen.dart';
-import '../job_cards/job_cards_list_screen.dart';
-import '../job_cards/job_card_detail_screen.dart';
-import '../quotations/quotations_list_screen.dart';
-import '../invoices/invoices_list_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
-import '../expenses/expenses_list_screen.dart';
-import '../staff/staff_list_screen.dart';
+import '../invoices/invoices_list_screen.dart';
+import '../job_cards/job_card_detail_screen.dart';
+import '../job_cards/job_cards_list_screen.dart';
 import '../workflow/quick_service_wizard.dart';
 
-class DashboardScreen extends StatelessWidget {
+/// Home: find a car, start work, see what's on the floor and what's owed.
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final provider = Provider.of<GarageProvider>(context);
-    final palette = context.palette;
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
 
-    final today = DateTime.now();
-    final activeJobs = provider.activeJobCards;
-    final recentInvoices = provider.recentInvoices;
+class _DashboardScreenState extends State<DashboardScreen> {
+  final _search = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _push(Widget screen) =>
+      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+
+  Future<void> _refresh() async {
+    try {
+      await context.read<GarageProvider>().refresh();
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, e.toString().replaceFirst('Exception: ', ''),
+          type: SnackBarType.error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<GarageProvider>();
+    final palette = context.palette;
 
     return Scaffold(
       backgroundColor: palette.background,
       appBar: AppBar(
-        title: Row(
+        centerTitle: false,
+        titleSpacing: 16,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: palette.primary,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.car_repair_rounded, color: Colors.white, size: 18),
-            ),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    provider.profile.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                      fontSize: AppText.title,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                      color: palette.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    AppDateFormatter.formatDayDate(today),
-                    style: GoogleFonts.inter(
-                      fontSize: AppText.label,
-                      fontWeight: FontWeight.w500,
-                      color: palette.textMuted,
-                    ),
-                  ),
-                ],
-              ),
+            Text(provider.profile.name,
+                maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(
+              AppDateFormatter.formatDayDate(DateTime.now()),
+              style: GoogleFonts.poppins(
+                  fontSize: AppText.label, color: palette.textMuted),
             ),
           ],
         ),
-        centerTitle: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.flash_on_rounded, color: palette.primary, size: 22),
-            tooltip: 'Quick Service Wizard',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const QuickServiceWizard()),
-              );
-            },
-          ),
-          const SizedBox(width: 6),
-        ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          try {
-            await context.read<GarageProvider>().refresh();
-          } catch (e) {
-            if (!context.mounted) return;
-            showAppSnackBar(
-              context,
-              e.toString().replaceFirst('Exception: ', ''),
-              type: SnackBarType.error,
-            );
-          }
-        },
-        child: SingleChildScrollView(
-          // Always scrollable so pull-to-refresh works even when the content
-          // fits the viewport.
+        onRefresh: _refresh,
+        child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-
-              // SaaS subscription status (hidden when active / mock mode).
-              const SubscriptionBanner(),
-
-              // -------------------------------------------------------------
-              // 1. BOOK A SERVICE (HERO)
-              // -------------------------------------------------------------
-              const BookServiceCard(),
-              const SizedBox(height: 16),
-
-              // -------------------------------------------------------------
-              // 2. TODAY CARD (COLLECTION / EXPENSES / SPARKLINE / DUES)
-              // -------------------------------------------------------------
-              _buildTodayCard(context, provider, palette),
-              const SizedBox(height: 24),
-
-              // -------------------------------------------------------------
-              // 3. LIVE FLOOR (ACTIVE VEHICLES)
-              // -------------------------------------------------------------
-              SectionHeader(
-                title: 'Live Floor',
-                actionText: 'View All (${activeJobs.length})',
-                onActionTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const JobCardsListScreen()),
-                  );
-                },
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          children: [
+            const SubscriptionBanner(),
+            TextField(
+              controller: _search,
+              onChanged: (v) => setState(() => _query = v.trim()),
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: 'Search plate, phone or name',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear',
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => setState(() {
+                          _search.clear();
+                          _query = '';
+                        }),
+                      ),
               ),
-              const SizedBox(height: 8),
-              _buildLiveFloorStrip(context, provider, palette),
-              const SizedBox(height: 24),
-
-              // -------------------------------------------------------------
-              // 4. WORKSHOP MODULES SHORTCUTS (6 TILES)
-              // -------------------------------------------------------------
-              Text(
-                'Workshop Modules',
-                style: GoogleFonts.inter(
-                  fontSize: AppText.body,
-                  fontWeight: FontWeight.w600,
-                  color: palette.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              GridView.count(
-                crossAxisCount: 3,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 1.05,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+            ),
+            const SizedBox(height: 12),
+            if (_query.isNotEmpty)
+              ..._searchResults(provider, palette)
+            else ...[
+              Row(
                 children: [
-                  _buildModuleTile(
-                    context,
-                    title: 'Customers',
-                    icon: Icons.people_alt_rounded,
-                    count: '${provider.customers.length}',
-                    color: palette.accent,
-                    badgeBg: palette.badgeBlueBg,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersListScreen())),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _push(
+                          const CustomersListScreen(isSelectionMode: true)),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('New job card'),
+                    ),
                   ),
-                  _buildModuleTile(
-                    context,
-                    title: 'Job Cards',
-                    icon: Icons.assignment_rounded,
-                    count: '${provider.activeVehiclesUnderMaintenanceCount}',
-                    color: palette.badgePurpleIcon,
-                    badgeBg: palette.badgePurpleBg,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobCardsListScreen())),
-                  ),
-                  _buildModuleTile(
-                    context,
-                    title: 'Quotations',
-                    icon: Icons.request_quote_rounded,
-                    count: '${provider.quotations.length}',
-                    color: palette.badgeOrangeIcon,
-                    badgeBg: palette.badgeOrangeBg,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QuotationsListScreen())),
-                  ),
-                  _buildModuleTile(
-                    context,
-                    title: 'Invoices',
-                    icon: Icons.receipt_long_rounded,
-                    count: '${provider.invoices.length}',
-                    color: palette.paid,
-                    badgeBg: palette.badgeGreenBg,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InvoicesListScreen())),
-                  ),
-                  _buildModuleTile(
-                    context,
-                    title: 'Expenses',
-                    icon: Icons.account_balance_wallet_rounded,
-                    count: '${provider.expenses.length}',
-                    color: palette.pending,
-                    badgeBg: palette.badgeRedBg,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpensesListScreen())),
-                  ),
-                  _buildModuleTile(
-                    context,
-                    title: 'Staff Team',
-                    icon: Icons.badge_rounded,
-                    count: '${provider.staff.length}',
-                    color: palette.primary,
-                    badgeBg: palette.badgeBlueBg,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StaffListScreen())),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _push(const QuickServiceWizard()),
+                      icon: const Icon(Icons.receipt_long_outlined, size: 18),
+                      label: const Text('Quick bill'),
+                    ),
                   ),
                 ],
               ),
+              const SizedBox(height: 20),
+              _MoneyToday(provider: provider),
               const SizedBox(height: 24),
-
-              // -------------------------------------------------------------
-              // 5. RECENT COLLECTIONS & BILLS
-              // -------------------------------------------------------------
-              SectionHeader(
-                title: 'Recent Collections & Bills',
-                actionText: 'All Invoices',
-                onActionTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const InvoicesListScreen()),
-                  );
-                },
+              _SectionTitle(
+                'In the workshop',
+                count: provider.activeJobCards.length,
+                action: 'All jobs',
+                onAction: () => _push(const JobCardsListScreen()),
               ),
-              const SizedBox(height: 8),
-
-              ...recentInvoices.take(3).map((inv) {
-                final customer = provider.getCustomerById(inv.customerId);
-                final vehicle = provider.getVehicleById(inv.vehicleId);
-                // A cancelled invoice zeroes out its balance, so the paid/settled
-                // branch below must never claim it — check cancellation first.
-                final isCancelled = inv.status == InvoiceStatus.cancelled;
-                final hasDue = !isCancelled && inv.balanceDue > 0;
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: palette.surface,
-                    borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                    border: Border.all(
-                      color: palette.border,
-                      width: 1,
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoiceId: inv.id)),
-                      );
-                    },
-                    leading: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: isCancelled
-                            ? palette.badgeRedBg
-                            : hasDue
-                                ? palette.badgeOrangeBg
-                                : palette.badgeGreenBg,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        isCancelled
-                            ? Icons.cancel_outlined
-                            : hasDue
-                                ? Icons.timelapse_rounded
-                                : Icons.check_circle_rounded,
-                        color: isCancelled
-                            ? palette.cancelled
-                            : hasDue
-                                ? palette.badgeOrangeIcon
-                                : palette.badgeGreenIcon,
-                        size: 18,
-                      ),
-                    ),
-                    title: Text(
-                      inv.invoiceNumber,
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.body),
-                    ),
-                    subtitle: Text(
-                      '${customer?.name ?? ""} • ${vehicle?.registrationNumber ?? ""}',
-                      style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              CurrencyFormatter.format(inv.grandTotal),
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: AppText.body),
-                            ),
-                            Text(
-                              isCancelled ? 'Cancelled' : hasDue ? 'Due' : 'Paid',
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.label,
-                                fontWeight: FontWeight.w600,
-                                color: isCancelled
-                                    ? palette.cancelled
-                                    : hasDue
-                                        ? palette.pending
-                                        : palette.paid,
-                              ),
-                            ),
-                            if (inv.isOverdue) ...[
-                              const SizedBox(height: 2),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: palette.pending,
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                child: Text(
-                                  'Overdue',
-                                  style: GoogleFonts.inter(
-                                    fontSize: AppText.micro,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          color: palette.textMuted,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(height: 84),
+              _workshopList(provider, palette),
+              const SizedBox(height: 24),
+              _SectionTitle(
+                'Recent bills',
+                action: 'All bills',
+                onAction: () => _push(const InvoicesListScreen()),
+              ),
+              _billsList(provider, palette),
             ],
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildTodayCard(BuildContext context, GarageProvider provider, AppPalette palette) {
-    final pendingCount = provider.invoices
-        .where((inv) => inv.status != InvoiceStatus.cancelled && inv.balanceDue > 0)
-        .length;
-    final pendingTotal = provider.totalPendingPayments;
-
-    // Mon–Sun totals of payments received this week, drawn as a sparkline.
-    final now = DateTime.now();
-    final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
-    final weeklyCollections = List<double>.filled(7, 0);
-    for (final p in provider.payments) {
-      final dayDiff = DateTime(p.paymentDate.year, p.paymentDate.month, p.paymentDate.day)
-          .difference(DateTime(monday.year, monday.month, monday.day))
-          .inDays;
-      if (dayDiff >= 0 && dayDiff < 7) weeklyCollections[dayDiff] += p.amount;
+  List<Widget> _searchResults(GarageProvider provider, AppPalette palette) {
+    final q = _query.toLowerCase();
+    final plateQ = q.replaceAll(' ', '');
+    final vehicles = provider.vehicles
+        .where((v) =>
+            v.registrationNumber.toLowerCase().replaceAll(' ', '').contains(plateQ))
+        .take(8)
+        .toList();
+    final customers = provider.customers
+        .where((c) =>
+            c.name.toLowerCase().contains(q) ||
+            c.phone.replaceAll(' ', '').contains(plateQ))
+        .take(8)
+        .toList();
+    if (vehicles.isEmpty && customers.isEmpty) {
+      return [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Column(
+            children: [
+              Text('No match for "$_query"',
+                  style: GoogleFonts.poppins(color: palette.textSecondary)),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => _push(const CustomersListScreen()),
+                child: const Text('Add a customer'),
+              ),
+            ],
+          ),
+        ),
+      ];
     }
-    final hasWeeklyData = weeklyCollections.any((v) => v > 0);
+    return [
+      _Group(children: [
+        for (final v in vehicles)
+          _vehicleRow(v, provider.getCustomerById(v.customerId), palette),
+        for (final c in customers)
+          _Row(
+            title: c.name,
+            subtitle: c.phone,
+            onTap: () => _push(CustomerDetailScreen(customer: c)),
+          ),
+      ]),
+    ];
+  }
 
+  Widget _vehicleRow(Vehicle v, Customer? owner, AppPalette palette) => _Row(
+        title: v.registrationNumber,
+        subtitle: [v.displayName, if (owner != null) owner.name].join(' · '),
+        onTap: owner == null
+            ? null
+            : () => _push(CustomerDetailScreen(customer: owner)),
+      );
+
+  Widget _workshopList(GarageProvider provider, AppPalette palette) {
+    final jobs = provider.activeJobCards
+      ..sort((a, b) => a.promisedDeliveryDate.compareTo(b.promisedDeliveryDate));
+    if (jobs.isEmpty) {
+      return const _Empty('No vehicles in the workshop.');
+    }
+    return _Group(children: [
+      for (final jc in jobs.take(5)) _jobRow(jc, provider, palette),
+    ]);
+  }
+
+  Widget _jobRow(JobCard jc, GarageProvider provider, AppPalette palette) {
+    final v = provider.getVehicleById(jc.vehicleId);
+    final c = provider.getCustomerById(jc.customerId);
+    final late = jc.promisedDeliveryDate.isBefore(DateTime.now());
+    return _Row(
+      title: v?.registrationNumber ?? jc.jobCardNumber,
+      subtitle: [v?.displayName, c?.name].whereType<String>().join(' · '),
+      trailing: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          StatusBadge.fromJobStatus(jc.status),
+          const SizedBox(height: 4),
+          Text(
+            late
+                ? 'Late · ${AppDateFormatter.formatTime(jc.promisedDeliveryDate)}'
+                : 'Due ${AppDateFormatter.formatRelative(jc.promisedDeliveryDate)}',
+            style: GoogleFonts.poppins(
+              fontSize: AppText.label,
+              color: late ? palette.absent : palette.textMuted,
+              fontWeight: late ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+      onTap: () => _push(JobCardDetailScreen(jobCardId: jc.id)),
+    );
+  }
+
+  Widget _billsList(GarageProvider provider, AppPalette palette) {
+    final bills = provider.recentInvoices.take(4).toList();
+    if (bills.isEmpty) return const _Empty('No bills yet.');
+    return _Group(children: [
+      for (final inv in bills)
+        _Row(
+          title: provider.getCustomerById(inv.customerId)?.name ??
+              inv.invoiceNumber,
+          subtitle:
+              '${inv.invoiceNumber} · ${AppDateFormatter.formatShortDate(inv.invoiceDate)}',
+          trailing: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(CurrencyFormatter.format(inv.grandTotal),
+                  style: GoogleFonts.poppins(
+                      fontSize: AppText.body, fontWeight: FontWeight.w600)),
+              Text(
+                switch (inv.status) {
+                  InvoiceStatus.paid => 'Paid',
+                  InvoiceStatus.cancelled => 'Cancelled',
+                  _ => '${CurrencyFormatter.format(inv.balanceDue)} due',
+                },
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.label,
+                  color: switch (inv.status) {
+                    InvoiceStatus.paid => palette.paid,
+                    InvoiceStatus.cancelled => palette.textMuted,
+                    _ => palette.pending,
+                  },
+                ),
+              ),
+            ],
+          ),
+          onTap: () => _push(InvoicePreviewScreen(invoiceId: inv.id)),
+        ),
+    ]);
+  }
+}
+
+/// Today's money in three plain figures. Tapping "Due" opens the bills list.
+class _MoneyToday extends StatelessWidget {
+  const _MoneyToday({required this.provider});
+  final GarageProvider provider;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    Widget figure(String label, double value, Color color, {VoidCallback? onTap}) =>
+        Expanded(
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: GoogleFonts.poppins(
+                          fontSize: AppText.label, color: palette.textMuted)),
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(CurrencyFormatter.format(value),
+                        style: GoogleFonts.poppins(
+                            fontSize: AppText.title,
+                            fontWeight: FontWeight.w600,
+                            color: color)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppDimens.paddingCard),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: palette.surface,
         borderRadius: BorderRadius.circular(AppDimens.radiusCard),
         border: Border.all(color: palette.border),
-        boxShadow: AppDimens.cardShadow(palette.textPrimary),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            'Today',
-            style: GoogleFonts.inter(
-              fontSize: AppText.subtitle,
-              fontWeight: FontWeight.w700,
-              color: palette.textPrimary,
-              letterSpacing: -0.2,
+          figure('Collected today', provider.todayCollection, palette.textPrimary),
+          figure('Spent today', provider.todayExpenses, palette.textPrimary),
+          figure(
+            'Due from customers',
+            provider.totalPendingPayments,
+            provider.totalPendingPayments > 0 ? palette.pending : palette.textPrimary,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const InvoicesListScreen())),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.title, {this.count, this.action, this.onAction});
+  final String title;
+  final int? count;
+  final String? action;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              count == null ? title : '$title ($count)',
+              style: GoogleFonts.poppins(
+                  fontSize: AppText.body, fontWeight: FontWeight.w600),
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Collection',
-                      style: GoogleFonts.inter(
-                        fontSize: AppText.label,
-                        fontWeight: FontWeight.w600,
-                        color: palette.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      CurrencyFormatter.format(provider.todayCollection),
-                      style: GoogleFonts.inter(
-                        fontSize: AppText.title,
-                        fontWeight: FontWeight.w800,
-                        color: palette.paid,
-                      ),
-                    ),
-                  ],
-                ),
+          if (action != null)
+            TextButton(
+              onPressed: onAction,
+              style: TextButton.styleFrom(
+                foregroundColor: palette.textSecondary,
+                visualDensity: VisualDensity.compact,
               ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Expenses',
-                      style: GoogleFonts.inter(
-                        fontSize: AppText.label,
-                        fontWeight: FontWeight.w600,
-                        color: palette.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      CurrencyFormatter.format(provider.todayExpenses),
-                      style: GoogleFonts.inter(
-                        fontSize: AppText.title,
-                        fontWeight: FontWeight.w800,
-                        color: palette.pending,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (hasWeeklyData) ...[
-            const SizedBox(height: 14),
-            SizedBox(
-              height: 48,
-              child: LineChart(
-                LineChartData(
-                  minY: 0,
-                  lineTouchData: const LineTouchData(enabled: false),
-                  gridData: const FlGridData(show: false),
-                  titlesData: const FlTitlesData(show: false),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: [
-                        for (var i = 0; i < 7; i++) FlSpot(i.toDouble(), weeklyCollections[i]),
-                      ],
-                      isCurved: true,
-                      barWidth: 2.5,
-                      color: palette.primary,
-                      dotData: const FlDotData(show: false),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        gradient: LinearGradient(
-                          colors: [
-                            palette.primary.withValues(alpha: 0.22),
-                            palette.primary.withValues(alpha: 0),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          if (pendingCount > 0)
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const InvoicesListScreen()),
-                  );
-                },
-                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                  child: Row(
-                    children: [
-                      Icon(Icons.account_balance_wallet_rounded, size: 16, color: palette.pending),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '${CurrencyFormatter.format(pendingTotal)} due across $pendingCount bills',
-                          style: GoogleFonts.inter(
-                            fontSize: AppText.caption,
-                            fontWeight: FontWeight.w700,
-                            color: palette.pending,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Icon(Icons.chevron_right_rounded, size: 18, color: palette.pending),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-              child: Text(
-                'No pending dues',
-                style: GoogleFonts.inter(
-                  fontSize: AppText.caption,
-                  fontWeight: FontWeight.w600,
-                  color: palette.textMuted,
-                ),
-              ),
+              child: Text(action!),
             ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildLiveFloorStrip(BuildContext context, GarageProvider provider, AppPalette palette) {
-    final activeJobs = provider.activeJobCards;
+/// A bordered group of divided rows: dense, scannable, one surface.
+class _Group extends StatelessWidget {
+  const _Group({required this.children});
+  final List<Widget> children;
 
-    if (activeJobs.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-        decoration: BoxDecoration(
-          color: palette.surface,
-          borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-          border: Border.all(color: palette.border),
-        ),
-        child: Center(
-          child: Text(
-            'All clear — no vehicles in workshop',
-            style: GoogleFonts.inter(
-              fontSize: AppText.caption,
-              fontWeight: FontWeight.w500,
-              color: palette.textMuted,
-            ),
-          ),
-        ),
-      );
-    }
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusCard),
+        border: Border.all(color: palette.border),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) Divider(height: 1, indent: 14, color: palette.divider),
+            children[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
 
-    return SizedBox(
-      height: 92,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: activeJobs.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final jc = activeJobs[index];
-          final vehicle = provider.getVehicleById(jc.vehicleId);
-          return Container(
-            // 210 so the widest status badge (WAITING PARTS) fits beside the
-            // registration number on one line instead of overflowing.
-            width: 210,
-            decoration: BoxDecoration(
-              color: palette.surface,
-              borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-              border: Border.all(color: palette.border),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => JobCardDetailScreen(jobCardId: jc.id)),
-                  );
-                },
-                borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              vehicle?.registrationNumber ?? 'Vehicle',
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.body,
-                                fontWeight: FontWeight.w800,
-                                color: palette.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          StatusBadge.fromJobStatus(jc.status),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        vehicle?.displayName ?? '',
-                        style: GoogleFonts.inter(
-                          fontSize: AppText.label,
-                          fontWeight: FontWeight.w500,
-                          color: palette.textMuted,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
+class _Row extends StatelessWidget {
+  const _Row({required this.title, required this.subtitle, this.trailing, this.onTap});
+  final String title;
+  final String subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                          fontSize: AppText.body, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                          fontSize: AppText.label, color: palette.textSecondary)),
+                ],
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildModuleTile(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required String count,
-    required Color color,
-    required Color badgeBg,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: context.palette.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: context.palette.border,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: badgeBg,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(icon, color: color, size: 17),
-                    ),
-                    Text(
-                      count,
-                      style: GoogleFonts.inter(
-                        fontSize: AppText.body,
-                        fontWeight: FontWeight.w800,
-                        color: context.palette.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: AppText.caption,
-                    fontWeight: FontWeight.w600,
-                    color: context.palette.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
+            if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+          ],
         ),
       ),
     );
   }
+}
 
+class _Empty extends StatelessWidget {
+  const _Empty(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Text(text,
+            style: GoogleFonts.poppins(color: context.palette.textMuted)),
+      );
 }

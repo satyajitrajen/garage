@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/permission_gate.dart';
+import '../../utils/permissions.dart';
 import '../../models/expense.dart';
 import '../../models/payment.dart';
 import '../../providers/garage_provider.dart';
@@ -12,7 +14,7 @@ import '../../utils/date_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
 import '../../widgets/search_bar_widget.dart';
-import '../../widgets/status_badge.dart';
+import '../../widgets/list_row.dart';
 import 'add_expense_screen.dart';
 import '../../theme/app_text.dart';
 
@@ -54,8 +56,8 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
       builder: (ctx) {
         final palette = ctx.palette;
         return AlertDialog(
-          title: const Text('Delete Expense?'),
-          content: Text('Are you sure you want to delete "${exp.title}" (${CurrencyFormatter.format(exp.amount)})?'),
+          title: const Text('Delete this expense?'),
+          content: Text('"${exp.title}" (${CurrencyFormatter.format(exp.amount)}) will be removed.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -63,7 +65,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: palette.pending,
+                backgroundColor: palette.absent,
                 foregroundColor: palette.onPrimary,
               ),
               onPressed: () async {
@@ -107,24 +109,20 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
       appBar: AppBar(
         title: Text(
           'Garage Expenses',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: AppText.title,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add_circle_outline_rounded, color: palette.accent, size: 22),
-            tooltip: 'Add Expense',
-            onPressed: _openAddExpense,
-          ),
-        ],
       ),
-      floatingActionButton: GradientFloatingActionButton(
+      floatingActionButton: PermissionGate(
+        permission: Permissions.expensesManage,
+        child: GradientFloatingActionButton(
         onPressed: _openAddExpense,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Expense'),
+      ),
       ),
       body: Column(
         children: [
@@ -146,7 +144,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                     children: [
                       Text(
                         'This Month Expenses',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           color: palette.textSecondary,
                           fontSize: AppText.label,
                           fontWeight: FontWeight.w500,
@@ -155,9 +153,9 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                       const SizedBox(height: 4),
                       Text(
                         CurrencyFormatter.format(provider.thisMonthExpenses),
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: AppText.headline,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: palette.textPrimary,
                         ),
                       ),
@@ -180,7 +178,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                       children: [
                         Text(
                           'Today\'s Expenses',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.poppins(
                             color: palette.textSecondary,
                             fontSize: AppText.label,
                             fontWeight: FontWeight.w500,
@@ -189,9 +187,9 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                         const SizedBox(height: 4),
                         Text(
                           CurrencyFormatter.format(provider.todayExpenses),
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.poppins(
                             fontSize: AppText.headline,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             color: palette.textPrimary,
                           ),
                         ),
@@ -267,126 +265,26 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                     onButtonPressed: _openAddExpense,
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 84),
+                    padding: const EdgeInsets.only(top: 8, bottom: 120),
                     itemCount: expenses.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) => const RowDivider(),
                     itemBuilder: (context, index) {
                       final exp = expenses[index];
-                      // Per-category accent from the palette map (same source
-                      // as StatusBadge.forExpenseCategory) — replaces the old
-                      // all-orange badge mapping.
-                      final categoryColor = palette.categoryColors[exp.category];
-
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: categoryColor?.withValues(alpha: 0.12) ?? palette.badgeOrangeBg,
-                                  borderRadius: BorderRadius.circular(11),
-                                ),
-                                child: Icon(
-                                  exp.category.icon,
-                                  color: categoryColor ?? palette.badgeOrangeIcon,
-                                  size: 18,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      exp.title,
-                                      style: GoogleFonts.inter(
-                                        fontSize: AppText.subtitle,
-                                        fontWeight: FontWeight.w700,
-                                        color: palette.textPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Row(
-                                      children: [
-                                        StatusBadge.forExpenseCategory(exp.category, palette: palette),
-                                        if (exp.vendorName != null) ...[
-                                          const SizedBox(width: 6),
-                                          Text(exp.vendorName!, style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted)),
-                                        ],
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          AppDateFormatter.formatDate(exp.expenseDate),
-                                          style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            // Neutral chip on a white card: cardAlt is
-                                            // exactly the old light value (0xFFF1F5F9).
-                                            color: palette.cardAlt,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            exp.paymentMode.shortName,
-                                            style: GoogleFonts.inter(fontSize: AppText.micro, fontWeight: FontWeight.w600),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    CurrencyFormatter.format(exp.amount),
-                                    style: GoogleFonts.inter(
-                                      fontSize: AppText.title,
-                                      fontWeight: FontWeight.w800,
-                                      color: palette.pending,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // padding 12 + default 48dp constraints keep
-                                      // the icon visual at 18 while the tap target
-                                      // stays >= 44px.
-                                      IconButton(
-                                        padding: const EdgeInsets.all(12),
-                                        icon: Icon(Icons.edit_outlined, size: 18, color: palette.textMuted),
-                                        tooltip: 'Edit Expense',
-                                        onPressed: () => _openEditExpense(exp),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      IconButton(
-                                        padding: const EdgeInsets.all(12),
-                                        icon: Icon(Icons.delete_outline_rounded, size: 18, color: palette.textMuted),
-                                        tooltip: 'Delete Expense',
-                                        onPressed: () => _confirmDeleteExpense(exp),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                      return ListRow(
+                        title: exp.title,
+                        subtitle: [exp.category.displayName, exp.vendorName]
+                            .whereType<String>()
+                            .join(' · '),
+                        detail:
+                            '${AppDateFormatter.formatDate(exp.expenseDate)} · ${exp.paymentMode.shortName}',
+                        trailingTop: RowAmount(CurrencyFormatter.format(exp.amount)),
+                        // Tap edits; delete lives behind a long press with a
+                        // confirmation so it is never one stray tap away.
+                        onTap: () => _openEditExpense(exp),
+                        onLongPress: () => _confirmDeleteExpense(exp),
                       );
                     },
-                  ),
+                  )
           ),
         ],
       ),

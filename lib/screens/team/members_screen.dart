@@ -146,7 +146,7 @@ class _MembersScreenState extends State<MembersScreen> {
                                 ),
                                 title: Text(
                                     (m['name'] as String?) ?? 'Member',
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.poppins(
                                         fontWeight: FontWeight.w600,
                                         fontSize: AppText.body)),
                                 subtitle: Text(

@@ -77,7 +77,9 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       // the dates are degenerate, fall back to the stored day-count. Either
       // way the value is unioned into the dropdown options in build() so a
       // non-listed count still displays — and is saved back — unchanged.
-      final derivedDays = existing.validUntil.difference(existing.createdAt).inDays;
+      final derivedDays = existing.validUntil
+          .difference(existing.createdAt)
+          .inDays;
       _validityDays = derivedDays > 0 ? derivedDays : existing.validityDays;
       _taxPercent = existing.taxPercent;
     }
@@ -137,8 +139,11 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
     setState(() => _isSaving = true);
 
-    final notes = _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
-    final km = int.tryParse(_kmController.text.trim()) ?? widget.vehicle.currentKm;
+    final notes = _notesController.text.trim().isEmpty
+        ? null
+        : _notesController.text.trim();
+    final km =
+        int.tryParse(_kmController.text.trim()) ?? widget.vehicle.currentKm;
 
     try {
       if (_isEditing) {
@@ -153,7 +158,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           quotationNumber: existing.quotationNumber,
           customerId: existing.customerId,
           vehicleId: existing.vehicleId,
-          kmReading: int.tryParse(_kmController.text.trim()) ?? existing.kmReading,
+          kmReading:
+              int.tryParse(_kmController.text.trim()) ?? existing.kmReading,
           items: _items,
           overallDiscount: discount,
           taxPercent: _taxPercent,
@@ -195,19 +201,19 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           notes: notes,
         );
 
-        await provider.addQuotation(quote);
+        final created = await provider.addQuotation(quote);
         if (!mounted) return;
 
         showAppSnackBar(
           context,
-          'Estimate #${quote.quotationNumber} saved successfully!',
+          'Estimate #${created.quotationNumber} saved successfully!',
           type: SnackBarType.success,
         );
 
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => QuotationDetailScreen(quotationId: quote.id),
+            builder: (_) => QuotationDetailScreen(quotationId: created.id),
           ),
         );
       }
@@ -232,24 +238,35 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     // configured option lists (edit mode). Prepend it so the dropdown value
     // is always among the items (Formfield assert) and an untouched edit
     // saves exactly what it prefilled.
-    final validityOptions = config.quotationValidityOptions.contains(_validityDays)
+    final validityOptions =
+        config.quotationValidityOptions.contains(_validityDays)
         ? config.quotationValidityOptions
         : [_validityDays, ...config.quotationValidityOptions];
     final taxOptions = config.taxPercentOptions.contains(_taxPercent)
         ? config.taxPercentOptions
         : [_taxPercent, ...config.taxPercentOptions];
 
-    final partsSubtotal = _items.where((i) => !i.isLabour).fold(0.0, (sum, i) => sum + i.taxableAmount);
-    final labourSubtotal = _items.where((i) => i.isLabour).fold(0.0, (sum, i) => sum + i.taxableAmount);
+    final partsSubtotal = _items
+        .where((i) => !i.isLabour)
+        .fold(0.0, (sum, i) => sum + i.taxableAmount);
+    final labourSubtotal = _items
+        .where((i) => i.isLabour)
+        .fold(0.0, (sum, i) => sum + i.taxableAmount);
     final grossSubtotal = partsSubtotal + labourSubtotal;
     final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
-    final discountedSubtotal = (grossSubtotal - discount).clamp(0.0, double.infinity);
+    final discountedSubtotal = (grossSubtotal - discount).clamp(
+      0.0,
+      double.infinity,
+    );
     final taxAmount = discountedSubtotal * (_taxPercent / 100);
     final grandTotal = discountedSubtotal + taxAmount;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Estimate' : 'Create Quotation / Estimate', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        title: Text(
+          _isEditing ? 'Edit Estimate' : 'Create Quotation / Estimate',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -272,9 +289,15 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: palette.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
+                        borderRadius: BorderRadius.circular(
+                          AppDimens.radiusBadge,
+                        ),
                       ),
-                      child: Icon(Icons.request_quote_rounded, color: palette.primary, size: 26),
+                      child: Icon(
+                        Icons.request_quote_rounded,
+                        color: palette.primary,
+                        size: 26,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -283,12 +306,15 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                         children: [
                           Text(
                             widget.customer.name,
-                            style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.title,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${widget.vehicle.displayName} (${widget.vehicle.registrationNumber})',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.poppins(
                               fontSize: AppText.body,
                               color: palette.textSecondary,
                             ),
@@ -305,10 +331,16 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Estimate Line Items (${_items.length})',
-                    style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                  Expanded(
+                    child: Text(
+                      'Estimate Line Items (${_items.length})',
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.title,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: _openAddItems,
                     icon: const Icon(Icons.add_rounded, size: 18),
@@ -322,18 +354,27 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 const EmptyStateWidget(
                   icon: Icons.add_shopping_cart_rounded,
                   title: 'No services or parts added yet',
-                  description: 'Tap "+ Add Items" to pick from catalogue or add custom items',
+                  description:
+                      'Tap "+ Add Items" to pick from catalogue or add custom items',
                 )
               else
                 ..._items.map((item) {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
-                      title: Text(item.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                      subtitle: Text('${item.quantity} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}'),
+                      title: Text(
+                        item.name,
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        '${item.quantity} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}',
+                      ),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: palette.primary),
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          color: palette.primary,
+                        ),
                       ),
                     ),
                   );
@@ -345,13 +386,18 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<int>(
+                      isExpanded: true,
                       initialValue: _validityDays,
-                      decoration: const InputDecoration(labelText: 'Quote Validity'),
+                      decoration: const InputDecoration(
+                        labelText: 'Quote Validity',
+                      ),
                       items: validityOptions
-                          .map((days) => DropdownMenuItem(
-                                value: days,
-                                child: Text('$days Days'),
-                              ))
+                          .map(
+                            (days) => DropdownMenuItem(
+                              value: days,
+                              child: Text('$days Days'),
+                            ),
+                          )
                           .toList(),
                       onChanged: (val) => setState(() {
                         // Only a real change marks the estimate edited —
@@ -367,18 +413,24 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<double>(
+                      isExpanded: true,
                       initialValue: _taxPercent,
                       decoration: const InputDecoration(labelText: 'Tax Rate'),
                       items: taxOptions.map((rate) {
                         return DropdownMenuItem(
                           value: rate,
-                          child: Text(rate > 0
-                              ? '${rate.toStringAsFixed(0)}% (CGST ${(rate / 2).toStringAsFixed(1)}% + SGST ${(rate / 2).toStringAsFixed(1)}%)'
-                              : '${rate.toStringAsFixed(0)}%'),
+                          child: Text(
+                            rate > 0
+                                ? '${rate.toStringAsFixed(0)}% (CGST ${(rate / 2).toStringAsFixed(1)}% + SGST ${(rate / 2).toStringAsFixed(1)}%)'
+                                : '${rate.toStringAsFixed(0)}%',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         );
                       }).toList(),
-                      onChanged: (val) =>
-                          setState(() => _taxPercent = val ?? config.defaultTaxPercent),
+                      onChanged: (val) => setState(
+                        () => _taxPercent = val ?? config.defaultTaxPercent,
+                      ),
                     ),
                   ),
                 ],
@@ -420,7 +472,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 maxLines: 2,
                 decoration: const InputDecoration(
                   labelText: 'Quotation Notes / Terms',
-                  hintText: 'e.g. Price valid for genuine OEM parts. Labour included.',
+                  hintText:
+                      'e.g. Price valid for genuine OEM parts. Labour included.',
                 ),
               ),
               const SizedBox(height: 24),
@@ -435,26 +488,55 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 ),
                 child: Column(
                   children: [
-                    _buildSummaryRow('Parts Subtotal:', CurrencyFormatter.format(partsSubtotal), palette),
+                    _buildSummaryRow(
+                      'Parts',
+                      CurrencyFormatter.format(partsSubtotal),
+                      palette,
+                    ),
                     const SizedBox(height: 6),
-                    _buildSummaryRow('Labour Subtotal:', CurrencyFormatter.format(labourSubtotal), palette),
+                    _buildSummaryRow(
+                      'Labour',
+                      CurrencyFormatter.format(labourSubtotal),
+                      palette,
+                    ),
                     const SizedBox(height: 6),
                     if (discount > 0) ...[
-                      _buildSummaryRow('Discount:', '- ${CurrencyFormatter.format(discount)}', palette, color: palette.paid),
+                      _buildSummaryRow(
+                        'Discount:',
+                        '- ${CurrencyFormatter.format(discount)}',
+                        palette,
+                        color: palette.paid,
+                      ),
                       const SizedBox(height: 6),
                     ],
-                    _buildSummaryRow('Taxes (${_taxPercent.toInt()}%):', CurrencyFormatter.format(taxAmount), palette),
+                    _buildSummaryRow(
+                      'Taxes (${_taxPercent.toInt()}%):',
+                      CurrencyFormatter.format(taxAmount),
+                      palette,
+                    ),
                     const Divider(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Estimated Total:', style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700)),
-                        Text(
-                          CurrencyFormatter.format(grandTotal),
-                          style: GoogleFonts.inter(
-                            fontSize: AppText.headline,
-                            fontWeight: FontWeight.w800,
-                            color: palette.primary,
+                        Expanded(
+                          child: Text(
+                            'Estimated Total:',
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.title,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            CurrencyFormatter.format(grandTotal),
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.headline,
+                              fontWeight: FontWeight.w700,
+                              color: palette.primary,
+                            ),
                           ),
                         ),
                       ],
@@ -470,7 +552,9 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _saveQuotation,
                   icon: const Icon(Icons.check_circle_outline_rounded),
-                  label: Text(_isEditing ? 'Save Changes' : 'Save & Send Estimate'),
+                  label: Text(
+                    _isEditing ? 'Save Changes' : 'Save & Send Estimate',
+                  ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -484,14 +568,19 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, AppPalette palette, {Color? color}) {
+  Widget _buildSummaryRow(
+    String label,
+    String value,
+    AppPalette palette, {
+    Color? color,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
               fontSize: AppText.caption,
               color: palette.textSecondary,
             ),
@@ -500,7 +589,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         const SizedBox(width: 8),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: AppText.body,
             fontWeight: FontWeight.w600,
             color: color ?? palette.textPrimary,

@@ -68,16 +68,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'NT Garage',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         fontSize: AppText.display,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Sign in to your workshop',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         fontSize: AppText.body,
                         color: Theme.of(context).hintColor,
                       ),

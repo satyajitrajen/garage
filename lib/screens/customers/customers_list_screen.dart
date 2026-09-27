@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/list_row.dart';
+import '../../widgets/permission_gate.dart';
+import '../../utils/permissions.dart';
 import '../../models/customer.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
-import '../../utils/contact_actions.dart';
 import '../../utils/currency_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
@@ -71,26 +72,16 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
       appBar: AppBar(
         title: Text(
           widget.isSelectionMode ? 'Select Customer' : 'Customers',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: AppText.title,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.person_add_rounded, color: palette.accent, size: 22),
-            tooltip: 'Add Customer',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
-              );
-            },
-          ),
-        ],
       ),
-      floatingActionButton: GradientFloatingActionButton(
+      floatingActionButton: PermissionGate(
+        permission: Permissions.customersManage,
+        child: GradientFloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
@@ -99,6 +90,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
         },
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Customer'),
+      ),
       ),
       body: Column(
         children: [
@@ -115,26 +107,17 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
           // Count bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${customers.length} Customers Found',
-                  style: GoogleFonts.inter(
-                    fontSize: AppText.caption,
-                    fontWeight: FontWeight.w600,
-                    color: palette.textSecondary,
-                  ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                widget.isSelectionMode
+                    ? 'Choose the customer for this job'
+                    : '${customers.length} customers',
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.caption,
+                  color: palette.textSecondary,
                 ),
-                Text(
-                  'Tap to select / view',
-                  style: GoogleFonts.inter(
-                    fontSize: AppText.label,
-                    color: palette.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -157,165 +140,24 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                     },
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 84),
+                    padding: const EdgeInsets.only(top: 8, bottom: 120),
                     itemCount: customers.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) => const RowDivider(),
                     itemBuilder: (context, index) {
                       final customer = customers[index];
                       final vehicles = provider.getVehiclesForCustomer(customer.id);
-                      final outstandingBalance = provider.getCustomerOutstandingBalance(customer.id);
-
-                      return Card(
-                        child: InkWell(
-                          onTap: () => _onCustomerSelected(customer),
-                          borderRadius: BorderRadius.circular(AppDimens.radiusTile),
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                CircleAvatar(
-                                  radius: 24,
-                                  backgroundColor: palette.primary.withOpacity(0.12),
-                                  child: Text(
-                                    customer.name.substring(0, 1).toUpperCase(),
-                                    style: GoogleFonts.inter(
-                                      fontSize: AppText.title,
-                                      fontWeight: FontWeight.w700,
-                                      color: palette.primary,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        customer.name,
-                                        style: GoogleFonts.inter(
-                                          fontSize: AppText.subtitle,
-                                          fontWeight: FontWeight.w700,
-                                          color: palette.textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.phone_rounded,
-                                            size: 13,
-                                            color: palette.textMuted,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            customer.phone,
-                                            style: GoogleFonts.inter(
-                                              fontSize: AppText.label,
-                                              color: palette.textSecondary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 6),
-                                      // Vehicles preview pills
-                                      Wrap(
-                                        spacing: 6,
-                                        runSpacing: 4,
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                                            decoration: BoxDecoration(
-                                              // Neutral chip on a white card: cardAlt is exactly
-                                              // the old light value (0xFFF1F5F9) with a matching
-                                              // dark-mode alt surface.
-                                              color: palette.cardAlt,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.directions_car_rounded, size: 12, color: palette.accent),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  '${vehicles.length} ${vehicles.length == 1 ? "Vehicle" : "Vehicles"}',
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: AppText.micro,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: palette.textSecondary,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                           if (vehicles.isNotEmpty)
-                                             Container(
-                                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                                               decoration: BoxDecoration(
-                                                 color: palette.accent.withValues(alpha: 0.10),
-                                                 borderRadius: BorderRadius.circular(8),
-                                               ),
-                                               child: Text(
-                                                 vehicles.first.registrationNumber,
-                                                 style: GoogleFonts.inter(
-                                                   fontSize: AppText.micro,
-                                                   fontWeight: FontWeight.w700,
-                                                   color: palette.accent,
-                                                 ),
-                                               ),
-                                             ),
-                                         ],
-                                       ),
-                                     ],
-                                   ),
-                                 ),
-                                 const SizedBox(width: 8),
-                                 Column(
-                                   crossAxisAlignment: CrossAxisAlignment.end,
-                                   children: [
-                                     if (outstandingBalance > 0)
-                                       Container(
-                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                         decoration: BoxDecoration(
-                                           color: palette.pending.withValues(alpha: 0.12),
-                                           borderRadius: BorderRadius.circular(6),
-                                         ),
-                                         child: Text(
-                                           'Due: ${CurrencyFormatter.format(outstandingBalance)}',
-                                           style: GoogleFonts.inter(
-                                             fontSize: AppText.label,
-                                             fontWeight: FontWeight.w700,
-                                             color: palette.pending,
-                                           ),
-                                         ),
-                                       ),
-                                     const SizedBox(height: 8),
-                                     Row(
-                                       mainAxisSize: MainAxisSize.min,
-                                       children: [
-                                         IconButton(
-                                           icon: Icon(Icons.chat_bubble_outline_rounded, color: palette.paid, size: 20),
-                                           tooltip: 'WhatsApp',
-                                           onPressed: () {
-                                             ContactActions.whatsapp(
-                                               context,
-                                               customer.effectiveWhatsApp,
-                                               message: ContactActions.greeting(
-                                                 customerName: customer.name,
-                                                 garageName: provider.profile.name,
-                                               ),
-                                             );
-                                           },
-                                         ),
-                                         Icon(Icons.chevron_right_rounded, size: 22, color: palette.textMuted),
-                                       ],
-                                     ),
-                                   ],
-                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      final due = provider.getCustomerOutstandingBalance(customer.id);
+                      return ListRow(
+                        title: customer.name,
+                        subtitle: customer.phone,
+                        detail: vehicles.isEmpty
+                            ? 'No vehicle'
+                            : vehicles.map((v) => v.registrationNumber).join(', '),
+                        trailingTop: due > 0
+                            ? RowAmount('${CurrencyFormatter.format(due)} due',
+                                color: palette.pending)
+                            : null,
+                        onTap: () => _onCustomerSelected(customer),
                       );
                     },
                   ),

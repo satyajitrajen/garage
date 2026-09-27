@@ -32,7 +32,7 @@ class GradientButton extends StatelessWidget {
     final isEnabled = onPressed != null;
     final contentColor = textColor ?? palette.onPrimary;
 
-    final effectiveTextStyle = GoogleFonts.inter(
+    final effectiveTextStyle = GoogleFonts.poppins(
       fontSize: AppText.body,
       fontWeight: FontWeight.w600,
       color: isEnabled ? contentColor : contentColor.withValues(alpha: 0.5),
@@ -119,7 +119,7 @@ class GradientFloatingActionButton extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 DefaultTextStyle(
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: AppText.body,
                     fontWeight: FontWeight.w600,
                     color: palette.onPrimary,

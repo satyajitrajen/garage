@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/permission_gate.dart';
+import '../../utils/permissions.dart';
 import '../../models/customer.dart';
 import '../../models/vehicle.dart';
 import '../../models/maintenance_item.dart';
 import '../../models/invoice.dart';
+import '../../models/job_card.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
@@ -41,6 +44,27 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
   String _searchQuery = '';
   Invoice? _generatedInvoice;
   bool _isGeneratingBill = false;
+
+  /// Job card created by a bill attempt that then failed; reused on retry so
+  /// the walk-in is not opened twice.
+  JobCard? _pendingJobCard;
+
+  /// Keeps the odometer/discount fields (and their focus) alive when the
+  /// items step switches to its scrolling layout as the keyboard opens.
+  final _itemsFieldsKey = GlobalKey();
+
+  /// Only reuse the pending job card while the bill still matches it.
+  JobCard? get _reusableJobCard {
+    final jc = _pendingJobCard;
+    if (jc == null ||
+        jc.customerId != _selectedCustomer?.id ||
+        jc.vehicleId != _selectedVehicle?.id ||
+        jc.items.map((i) => i.id).join(',') !=
+            _selectedItems.map((i) => i.id).join(',')) {
+      return null;
+    }
+    return jc;
+  }
 
   @override
   void initState() {
@@ -147,7 +171,9 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
         kmReading: int.tryParse(_kmController.text.trim()) ?? _selectedVehicle!.currentKm,
         items: List.of(_selectedItems),
         discount: discount,
+        existingJobCard: _reusableJobCard,
       );
+      _pendingJobCard = null;
       if (!mounted) return;
 
       setState(() {
@@ -155,6 +181,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
         _currentStep = 3;
       });
     } catch (e) {
+      if (e is QuickServiceBillingException) _pendingJobCard = e.jobCard;
       if (!mounted) return;
       showAppSnackBar(
         context,
@@ -189,7 +216,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               }
             },
           ),
-          title: Text('Quick Service Flow', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+          title: Text('Quick Service Flow', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         ),
         body: Column(
           children: [
@@ -242,7 +269,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
         const SizedBox(height: 4),
         Text(
           title,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: AppText.label,
             fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
             color: isActive ? palette.primary : palette.textSecondary,
@@ -296,11 +323,13 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Step 1: Choose Customer',
-                style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
+              Expanded(
+                child: Text(
+                  'Choose customer',
+                  style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                ),
               ),
-              ElevatedButton.icon(
+              OutlinedButton.icon(
                 onPressed: () async {
                   final newCust = await Navigator.push<Customer>(
                     context,
@@ -310,7 +339,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                   if (newCust != null) _onCustomerSelected(newCust);
                 },
                 icon: const Icon(Icons.person_add_rounded, size: 16),
-                label: const Text('Add New'),
+                label: const Text('New'),
               ),
             ],
           ),
@@ -358,8 +387,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                           backgroundColor: palette.primary.withValues(alpha: 0.12),
                           child: Text(c.name.substring(0, 1).toUpperCase(), style: TextStyle(fontWeight: FontWeight.bold, color: palette.primary)),
                         ),
-                        title: Text(c.name, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-                        subtitle: Text('${c.phone} • ${vehicles.length} Vehicles'),
+                        title: Text(c.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+                        subtitle: Text('${c.phone} · ${vehicles.length} ${vehicles.length == 1 ? 'vehicle' : 'vehicles'}'),
                         trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: palette.textMuted),
                       ),
                     );
@@ -382,14 +411,17 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Step 2: Choose Vehicle', style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700)),
-                  Text('For ${_selectedCustomer!.name}', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.primary, fontWeight: FontWeight.w600)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Choose vehicle', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                    Text('For ${_selectedCustomer!.name}', maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.primary, fontWeight: FontWeight.w600)),
+                  ],
+                ),
               ),
-              ElevatedButton.icon(
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
                 onPressed: () async {
                   final newV = await showDialog<Vehicle>(
                     context: context,
@@ -399,7 +431,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                   if (newV != null) _onVehicleSelected(newV);
                 },
                 icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('Add Vehicle'),
+                label: const Text('New'),
               ),
             ],
           ),
@@ -419,7 +451,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                     decoration: BoxDecoration(color: palette.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                     child: Icon(Icons.directions_car_rounded, color: palette.primary),
                   ),
-                  title: Text(v.registrationNumber, style: GoogleFonts.inter(fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                  title: Text(v.registrationNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, letterSpacing: 0.5)),
                   subtitle: Text('${v.displayName} • ${v.currentKm} KM • ${v.fuelType.displayName}'),
                   trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: palette.textMuted),
                 ),
@@ -440,26 +472,38 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     final taxRate = provider.config.defaultTaxPercent / 100;
     final tax = taxable * taxRate;
     final netGrandTotal = taxable + tax;
+    // Short viewport (keyboard up on a small phone): Scaffold strips the inset
+    // from the body's MediaQuery, so decide from the space actually given.
+    return LayoutBuilder(builder: (context, constraints) {
+    final keyboardOpen = constraints.maxHeight < 380;
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
+    // With the keyboard up the step has ~250px on a small phone: scroll the
+    // whole step (list shrink-wrapped) instead of pinning an Expanded list.
+    final content = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Step 3: Work Items', style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700)),
-                  Text('${_selectedVehicle!.registrationNumber} (${_selectedVehicle!.displayName})', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.primary)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Work & parts', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                    Text(
+                      '${_selectedVehicle!.registrationNumber} (${_selectedVehicle!.displayName})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.primary),
+                    ),
+                  ],
+                ),
               ),
-              ElevatedButton.icon(
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
                 onPressed: _openAddItems,
                 icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('Add Items'),
+                label: const Text('Add'),
               ),
             ],
           ),
@@ -467,6 +511,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
 
           // KM and Discount fields
           Container(
+            key: _itemsFieldsKey,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: palette.card,
@@ -504,26 +549,35 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           ),
           const SizedBox(height: 12),
 
-          Expanded(
-            child: _selectedItems.isEmpty
-                ? const EmptyStateWidget(
-                    icon: Icons.build_circle_outlined,
-                    title: 'No items added yet',
-                    description: 'Tap "Add Items" to choose oil, filters, labour, etc.',
-                  )
+          _expandUnlessScrolling(
+            keyboardOpen,
+            _selectedItems.isEmpty
+                ? (keyboardOpen
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text('No items added yet',
+                            style: GoogleFonts.poppins(color: palette.textMuted)),
+                      )
+                    : const EmptyStateWidget(
+                        icon: Icons.build_circle_outlined,
+                        title: 'No items added yet',
+                        description: 'Tap "Add Items" to choose oil, filters, labour, etc.',
+                      ))
                 : ListView.separated(
+                    shrinkWrap: keyboardOpen,
+                    physics: keyboardOpen ? const NeverScrollableScrollPhysics() : null,
                     itemCount: _selectedItems.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final item = _selectedItems[index];
                       return Card(
                         child: ListTile(
-                          title: Text(item.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                          title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                           subtitle: Text('${item.quantity} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(CurrencyFormatter.format(item.totalAmount), style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: palette.primary)),
+                              Text(CurrencyFormatter.format(item.totalAmount), style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary)),
                               const SizedBox(width: 8),
                               IconButton(
                                 icon: Icon(Icons.delete_outline_rounded, size: 18, color: palette.pending),
@@ -536,6 +590,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                     },
                   ),
           ),
+          if (!keyboardOpen) ...[
           const SizedBox(height: 12),
           SafeArea(
             top: false,
@@ -549,26 +604,34 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    spacing: 12,
                     children: [
-                      Text('Subtotal: ${CurrencyFormatter.format(subtotal)}', style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted)),
+                      Text('Subtotal: ${CurrencyFormatter.format(subtotal)}', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
                       if (discount > 0)
-                        Text('Discount: -${CurrencyFormatter.format(discount)}', style: GoogleFonts.inter(fontSize: AppText.label, color: palette.paid, fontWeight: FontWeight.w600)),
-                      Text('Tax (${provider.config.defaultTaxPercent.toStringAsFixed(0)}%): ${CurrencyFormatter.format(tax)}', style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted)),
+                        Text('Discount: -${CurrencyFormatter.format(discount)}', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.paid, fontWeight: FontWeight.w600)),
+                      Text('Tax (${provider.config.defaultTaxPercent.toStringAsFixed(0)}%): ${CurrencyFormatter.format(tax)}', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Net Bill Total:', style: GoogleFonts.inter(fontSize: AppText.caption, color: palette.textMuted)),
-                          Text(CurrencyFormatter.format(netGrandTotal), style: GoogleFonts.inter(fontSize: AppText.headline, fontWeight: FontWeight.w900, color: palette.primary)),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Net Bill Total:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(CurrencyFormatter.format(netGrandTotal), style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.primary)),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       GradientButton(
                         onPressed: _generateFinalBill,
                         icon: const Icon(Icons.receipt_long_rounded),
@@ -581,10 +644,18 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               ),
             ),
           ),
+          ],
         ],
-      ),
+      );
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: keyboardOpen ? SingleChildScrollView(child: content) : content,
     );
+    });
   }
+
+  Widget _expandUnlessScrolling(bool scrolling, Widget child) =>
+      scrolling ? child : Expanded(child: child);
 
   // STEP 4: BILL PREVIEW & PAYMENT TRIGGER
   Widget _buildBillAndPayStep(GarageProvider provider) {
@@ -610,24 +681,24 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           const SizedBox(height: 16),
           Text(
             'Job Card & Bill Generated!',
-            style: GoogleFonts.inter(fontSize: AppText.headline, fontWeight: FontWeight.w800),
+            style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
             'Invoice #${inv.invoiceNumber}',
-            style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.primary),
+            style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.primary),
           ),
           if (job != null) ...[
             const SizedBox(height: 6),
             Text(
               'Job Card #${job.jobCardNumber} • Marked Delivered',
-              style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w600, color: palette.paid),
+              style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600, color: palette.paid),
             ),
           ],
           const SizedBox(height: 6),
           Text(
             'Total Amount: ${CurrencyFormatter.format(inv.grandTotal)} • Pending Due: ${CurrencyFormatter.format(inv.balanceDue)}',
-            style: GoogleFonts.inter(fontSize: AppText.body, color: palette.textSecondary),
+            style: GoogleFonts.poppins(fontSize: AppText.body, color: palette.textSecondary),
           ),
           const SizedBox(height: 28),
 
@@ -635,6 +706,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
             GradientButton(
               width: double.infinity,
               onPressed: () {
+                if (!ensurePermission(context, Permissions.paymentsRecord)) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(

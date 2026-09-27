@@ -82,11 +82,11 @@ func (s *Store) ConsumePasswordReset(ctx context.Context, tokenHash, newHash str
 }
 
 type Invite struct {
-	ID          string   `json:"id"`
-	GarageID    string   `json:"garage_id"`
-	Email       string   `json:"email"`
-	Role        string   `json:"role"`
-	Permissions []string `json:"permissions"`
+	ID          string    `json:"id"`
+	GarageID    string    `json:"garage_id"`
+	Email       string    `json:"email"`
+	Role        string    `json:"role"`
+	Permissions []string  `json:"permissions"`
 	ExpiresAt   time.Time `json:"expires_at"`
 }
 

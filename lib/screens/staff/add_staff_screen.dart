@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import '../../data/api/api_exception.dart';
 import '../../models/staff.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_palette.dart';
@@ -26,6 +27,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
   final _addressController = TextEditingController();
 
   StaffRole _selectedRole = StaffRole.seniorTechnician;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -35,7 +37,9 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
       _nameController.text = s.name;
       _phoneController.text = s.phone;
       _emailController.text = s.email ?? '';
-      _salaryController.text = s.monthlySalary.toStringAsFixed(0);
+      _salaryController.text = s.monthlySalary == s.monthlySalary.roundToDouble()
+          ? s.monthlySalary.toStringAsFixed(0)
+          : s.monthlySalary.toStringAsFixed(2);
       _addressController.text = s.address ?? '';
       _selectedRole = s.role;
     }
@@ -52,47 +56,68 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
   }
 
   Future<void> _saveStaff() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
     final salary = double.tryParse(_salaryController.text.trim()) ?? 0.0;
+    setState(() => _isSaving = true);
 
-    if (widget.staffToEdit != null) {
-      final updated = widget.staffToEdit!.copyWith(
-        name: _nameController.text.trim(),
-        phone: _phoneController.text.trim(),
-        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-        monthlySalary: salary,
-        role: _selectedRole,
-        address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-      );
-      await provider.updateStaff(updated);
+    try {
+      if (widget.staffToEdit != null) {
+        final original = widget.staffToEdit!;
+        final updated = Staff(
+          id: original.id,
+          name: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+          monthlySalary: salary,
+          role: _selectedRole,
+          address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
+          isActive: original.isActive,
+          joiningDate: original.joiningDate,
+          emergencyContact: original.emergencyContact,
+        );
+        final saved = await provider.updateStaff(updated);
+        if (!mounted) return;
+        showAppSnackBar(
+          context,
+          'Staff ${saved.name} updated!',
+          type: SnackBarType.success,
+        );
+      } else {
+        final newStaff = Staff(
+          id: const Uuid().v4(),
+          name: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+          monthlySalary: salary,
+          role: _selectedRole,
+          address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
+        );
+        final saved = await provider.addStaff(newStaff);
+        if (!mounted) return;
+        showAppSnackBar(
+          context,
+          'Employee ${saved.name} added to team!',
+          type: SnackBarType.success,
+        );
+      }
+
+      Navigator.pop(context);
+    } catch (e) {
       if (!mounted) return;
+      final message = e is ApiException
+          ? e.userMessage
+          : 'Failed to save staff. Please try again.';
       showAppSnackBar(
         context,
-        'Staff ${updated.name} updated!',
-        type: SnackBarType.success,
+        message,
+        type: SnackBarType.error,
       );
-    } else {
-      final newStaff = Staff(
-        id: const Uuid().v4(),
-        name: _nameController.text.trim(),
-        phone: _phoneController.text.trim(),
-        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-        monthlySalary: salary,
-        role: _selectedRole,
-        address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-      );
-      await provider.addStaff(newStaff);
-      if (!mounted) return;
-      showAppSnackBar(
-        context,
-        'Employee ${newStaff.name} added to team!',
-        type: SnackBarType.success,
-      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
-
-    Navigator.pop(context);
   }
 
   @override
@@ -103,7 +128,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
       appBar: AppBar(
         title: Text(
           widget.staffToEdit != null ? 'Edit Employee' : 'Add Garage Staff',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
       ),
       body: Form(
@@ -139,6 +164,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
 
               // Role Dropdown
               DropdownButtonFormField<StaffRole>(
+                isExpanded: true,
                 initialValue: _selectedRole,
                 decoration: InputDecoration(
                   labelText: 'Staff Role / Skill *',
@@ -158,7 +184,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               TextFormField(
                 controller: _salaryController,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
                   labelText: 'Monthly Base Salary (₹) *',
                   hintText: 'e.g. 24000',
@@ -167,7 +193,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return 'Enter salary';
                   final num = double.tryParse(val.trim());
-                  if (num == null || num <= 0) return 'Invalid salary amount';
+                  if (num == null || num <= 0 || !num.isFinite) return 'Invalid salary amount';
                   return null;
                 },
               ),
@@ -196,7 +222,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _saveStaff,
+                  onPressed: _isSaving ? null : _saveStaff,
                   icon: const Icon(Icons.check_rounded),
                   label: Text(widget.staffToEdit != null ? 'Save Changes' : 'Add Employee'),
                   style: ElevatedButton.styleFrom(

@@ -21,7 +21,9 @@ func TestSettingsGetOrCreateDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get or create: %v", err)
 	}
-	if want := models.DefaultSettings(m.GarageID); !reflect.DeepEqual(gs, want) {
+	want := models.DefaultSettings(m.GarageID)
+	want.Profile.Name = "Garage S" // seeded from the registered garage name
+	if !reflect.DeepEqual(gs, want) {
 		t.Fatalf("defaults must match models.DefaultSettings:\n got %+v\nwant %+v", gs, want)
 	}
 	if gs.GarageID != m.GarageID {

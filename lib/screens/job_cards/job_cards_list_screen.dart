@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/permission_gate.dart';
+import '../../utils/permissions.dart';
 import '../../models/job_card.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_dimens.dart';
-import '../../theme/app_palette.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
 import '../../widgets/search_bar_widget.dart';
+import '../../widgets/list_row.dart';
 import '../../widgets/status_badge.dart';
 import '../customers/customers_list_screen.dart';
 import '../vehicles/vehicle_selection_screen.dart';
@@ -66,23 +67,18 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final palette = context.palette;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Job Cards & Workshop', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_task_rounded),
-            tooltip: 'New Job Card',
-            onPressed: _createNewJobCard,
-          ),
-        ],
+        title: Text('Job Cards & Workshop', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
-      floatingActionButton: GradientFloatingActionButton(
+      floatingActionButton: PermissionGate(
+        permission: Permissions.jobcardsManage,
+        child: GradientFloatingActionButton(
         onPressed: _createNewJobCard,
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Job Card'),
+      ),
       ),
       body: Column(
         children: [
@@ -100,11 +96,8 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            labelColor: palette.primary,
-            unselectedLabelColor: palette.textMuted,
-            indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.body),
+            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
             tabs: const [
               Tab(text: 'All Jobs'),
               Tab(text: 'In Progress'),
@@ -130,7 +123,6 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
   }
 
   Widget _buildJobCardList(GarageProvider provider, JobStatus? filterStatus) {
-    final palette = context.palette;
     final filtered = provider.jobCards.where((jc) {
       if (filterStatus != null && jc.status != filterStatus) return false;
 
@@ -161,129 +153,33 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 84),
+      padding: const EdgeInsets.only(top: 8, bottom: 120),
       itemCount: filtered.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const RowDivider(),
       itemBuilder: (context, index) {
         final jc = filtered[index];
         final customer = provider.getCustomerById(jc.customerId);
         final vehicle = provider.getVehicleById(jc.vehicleId);
         final staff = jc.assignedStaffId != null ? provider.getStaffById(jc.assignedStaffId!) : null;
+        final open = jc.status != JobStatus.delivered && jc.status != JobStatus.cancelled;
+        final late = open && jc.promisedDeliveryDate.isBefore(DateTime.now());
 
-        return Card(
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => JobCardDetailScreen(jobCardId: jc.id)),
-              );
-            },
-            borderRadius: BorderRadius.circular(AppDimens.radiusTile),
-            child: Padding(
-              padding: const EdgeInsets.all(AppDimens.paddingCard),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        jc.jobCardNumber,
-                        style: GoogleFonts.inter(
-                          fontSize: AppText.body,
-                          fontWeight: FontWeight.w700,
-                          color: palette.accent,
-                        ),
-                      ),
-                      StatusBadge.fromJobStatus(jc.status),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              vehicle?.registrationNumber ?? 'Unknown Plate',
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.subtitle,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.2,
-                                color: palette.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${vehicle?.displayName ?? ""} • ${customer?.name ?? ""}',
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.label,
-                                color: palette.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (jc.items.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              CurrencyFormatter.format(jc.grandTotal),
-                              style: GoogleFonts.inter(
-                                fontSize: AppText.subtitle,
-                                fontWeight: FontWeight.w800,
-                                color: palette.textPrimary,
-                              ),
-                            ),
-                            Text(
-                              '${jc.items.length} items',
-                              style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Divider(),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.person_outline_rounded, size: 13, color: palette.textMuted),
-                          const SizedBox(width: 4),
-                          Text(
-                            staff?.name ?? 'Unassigned',
-                            style: GoogleFonts.inter(
-                              fontSize: AppText.label,
-                              color: palette.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.access_time_rounded, size: 13, color: palette.accent),
-                          const SizedBox(width: 4),
-                          Text(
-                            AppDateFormatter.formatRelative(jc.promisedDeliveryDate),
-                            style: GoogleFonts.inter(
-                              fontSize: AppText.label,
-                              fontWeight: FontWeight.w600,
-                              color: palette.accent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+        return ListRow(
+          overline: jc.jobCardNumber,
+          title: vehicle?.registrationNumber ?? 'Unknown vehicle',
+          subtitle: [vehicle?.displayName, customer?.name].whereType<String>().join(' · '),
+          detail: [
+            staff?.name ?? 'Unassigned',
+            if (open)
+              late
+                  ? 'Late, promised ${AppDateFormatter.formatRelative(jc.promisedDeliveryDate)}'
+                  : 'Promised ${AppDateFormatter.formatRelative(jc.promisedDeliveryDate)}',
+          ].join(' · '),
+          trailingTop: jc.items.isEmpty ? null : RowAmount(CurrencyFormatter.format(jc.grandTotal)),
+          trailingBottom: StatusBadge.fromJobStatus(jc.status),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => JobCardDetailScreen(jobCardId: jc.id)),
           ),
         );
       },

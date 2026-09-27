@@ -24,9 +24,10 @@ class EmptyStateWidget extends StatelessWidget {
     final palette = context.palette;
 
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -42,7 +43,7 @@ class EmptyStateWidget extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                 fontSize: AppText.title,
                 fontWeight: FontWeight.w700,
                 color: palette.textPrimary,
@@ -52,7 +53,7 @@ class EmptyStateWidget extends StatelessWidget {
             Text(
               description,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                 fontSize: AppText.body,
                 color: palette.textSecondary,
                 height: 1.4,

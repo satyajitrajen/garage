@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/permission_gate.dart';
+import '../../utils/permissions.dart';
 import '../../models/staff.dart';
 import '../../providers/garage_provider.dart';
-import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
+import '../../widgets/list_row.dart';
 import '../../widgets/status_badge.dart';
 import 'add_staff_screen.dart';
 import 'staff_attendance_screen.dart';
@@ -17,6 +19,52 @@ import '../../theme/app_text.dart';
 
 class StaffListScreen extends StatelessWidget {
   const StaffListScreen({super.key});
+
+  void _showStaffActions(BuildContext context, GarageProvider provider, Staff staff) {
+    void go(Widget screen) {
+      Navigator.pop(context);
+      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(staff.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              subtitle: Text(staff.role.displayName),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.calendar_month_outlined),
+              title: const Text('Attendance'),
+              onTap: () => go(StaffAttendanceScreen(staff: staff)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.receipt_long_outlined),
+              title: const Text('Salary slip'),
+              onTap: () => go(StaffSalaryScreen(staff: staff)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Edit details'),
+              onTap: () => go(AddStaffScreen(staffToEdit: staff)),
+            ),
+            ListTile(
+              leading: Icon(Icons.delete_outline_rounded, color: ctx.palette.absent),
+              title: Text('Remove from staff', style: TextStyle(color: ctx.palette.absent)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmDeleteStaff(context, provider, staff);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _openAddStaff(BuildContext context) {
     Navigator.push(
@@ -76,24 +124,20 @@ class StaffListScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Staff & Technicians',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: AppText.title,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.person_add_rounded, color: palette.accent, size: 22),
-            tooltip: 'Add Staff Member',
-            onPressed: () => _openAddStaff(context),
-          ),
-        ],
       ),
-      floatingActionButton: GradientFloatingActionButton(
+      floatingActionButton: PermissionGate(
+        permission: Permissions.staffManage,
+        child: GradientFloatingActionButton(
         onPressed: () => _openAddStaff(context),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Staff'),
+      ),
       ),
       body: Column(
         children: [
@@ -111,7 +155,7 @@ class StaffListScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Total Team (${staffMembers.length})',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: AppText.label,
                           color: palette.textSecondary,
                         ),
@@ -119,7 +163,7 @@ class StaffListScreen extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         'Payroll: ${CurrencyFormatter.format(totalMonthlyPayroll)}/mo',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: AppText.body,
                           fontWeight: FontWeight.w700,
                         ),
@@ -158,194 +202,26 @@ class StaffListScreen extends StatelessWidget {
                     onButtonPressed: () => _openAddStaff(context),
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 84),
+                    padding: const EdgeInsets.only(top: 8, bottom: 120),
                     itemCount: staffMembers.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    separatorBuilder: (_, _) => const RowDivider(),
                     itemBuilder: (context, index) {
                       final staff = staffMembers[index];
                       final todayAttendance = provider.getAttendanceForStaffOnDate(staff.id, today);
                       final activeJobsCount = provider.getStaffActiveJobCount(staff.id);
-
-                      return Card(
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => StaffAttendanceScreen(staff: staff),
-                              ),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(AppDimens.radiusTile),
-                          child: Padding(
-                            padding: const EdgeInsets.all(AppDimens.paddingCard),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor: palette.primary.withValues(alpha: 0.15),
-                                      child: Text(
-                                        staff.name.substring(0, 1).toUpperCase(),
-                                        style: GoogleFonts.inter(
-                                          fontSize: AppText.title,
-                                          fontWeight: FontWeight.w800,
-                                          color: palette.primary,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            staff.name,
-                                            style: GoogleFonts.inter(
-                                              fontSize: AppText.title,
-                                              fontWeight: FontWeight.w700,
-                                              color: palette.textPrimary,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: palette.accent.withValues(alpha: 0.12),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              staff.role.displayName,
-                                              style: GoogleFonts.inter(
-                                                fontSize: AppText.label,
-                                                fontWeight: FontWeight.w600,
-                                                color: palette.accent,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          CurrencyFormatter.format(staff.monthlySalary),
-                                          style: GoogleFonts.inter(
-                                            fontSize: AppText.subtitle,
-                                            fontWeight: FontWeight.w800,
-                                            color: palette.textPrimary,
-                                          ),
-                                        ),
-                                        Text(
-                                          'per month',
-                                          style: GoogleFonts.inter(fontSize: AppText.micro, color: palette.textMuted),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                const Divider(),
-                                const SizedBox(height: 8),
-
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(Icons.assignment_turned_in_rounded, size: 14, color: palette.inProgress),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '$activeJobsCount Active Jobs',
-                                          style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w500),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Text('Today: ', style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted)),
-                                        if (todayAttendance != null)
-                                          StatusBadge.fromAttendanceStatus(todayAttendance.status)
-                                        else
-                                          Text('Not Marked', style: GoogleFonts.inter(fontSize: AppText.label, color: palette.pending, fontWeight: FontWeight.w600)),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-
-                                // Quick Actions row
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        // padding 12 keeps the default >=48dp tap
-                                        // target explicit; icon visual unchanged.
-                                        IconButton(
-                                          padding: const EdgeInsets.all(12),
-                                          icon: const Icon(Icons.edit_outlined, size: 18),
-                                          tooltip: 'Edit Staff Details',
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => AddStaffScreen(staffToEdit: staff),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                        IconButton(
-                                          padding: const EdgeInsets.all(12),
-                                          icon: Icon(Icons.delete_outline_rounded, size: 18, color: palette.pending),
-                                          tooltip: 'Delete Staff',
-                                          onPressed: () => _confirmDeleteStaff(context, provider, staff),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        OutlinedButton.icon(
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(builder: (_) => StaffSalaryScreen(staff: staff)),
-                                            );
-                                          },
-                                          icon: const Icon(Icons.receipt_long_rounded, size: 15),
-                                          label: const Text('Salary Slip'),
-                                          style: OutlinedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                            textStyle: GoogleFonts.inter(fontSize: AppText.label),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        ElevatedButton.icon(
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(builder: (_) => StaffAttendanceScreen(staff: staff)),
-                                            );
-                                          },
-                                          icon: const Icon(Icons.calendar_month_rounded, size: 15),
-                                          label: const Text('Attendance'),
-                                          style: ElevatedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                            textStyle: GoogleFonts.inter(fontSize: AppText.label),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      return ListRow(
+                        title: staff.name,
+                        subtitle: staff.role.displayName,
+                        detail: [
+                          staff.phone,
+                          if (activeJobsCount > 0)
+                            '$activeJobsCount active ${activeJobsCount == 1 ? 'job' : 'jobs'}',
+                        ].join(' · '),
+                        trailingTop: RowAmount('${CurrencyFormatter.format(staff.monthlySalary)}/mo'),
+                        trailingBottom: todayAttendance == null
+                            ? null
+                            : StatusBadge.fromAttendanceStatus(todayAttendance.status),
+                        onTap: () => _showStaffActions(context, provider, staff),
                       );
                     },
                   ),

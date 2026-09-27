@@ -24,6 +24,13 @@ func scanSettings(row scanner) (models.GarageSettings, error) {
 // returns it. Idempotent.
 func (s *Store) GetOrCreateSettings(ctx context.Context, garageID string) (models.GarageSettings, error) {
 	d := models.DefaultSettings(garageID)
+	// Seed the invoice header with the name given at sign-up instead of the
+	// generic default, so a fresh garage's first bill already carries it.
+	var garageName string
+	if err := s.Pool.QueryRow(ctx, `SELECT name FROM garages WHERE id = $1`, garageID).
+		Scan(&garageName); err == nil && garageName != "" {
+		d.Profile.Name = garageName
+	}
 	_, err := s.Pool.Exec(ctx, `INSERT INTO garage_settings
 		(garage_id, profile_name, tagline, address_line, city, phone, email, gstin, upi_id,
 		 default_tax_percent, tax_percent_options, invoice_due_days, quotation_validity_options,

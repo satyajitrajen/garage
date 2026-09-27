@@ -98,9 +98,10 @@ func NewRouterWithOrigins(s *Server, allowedOrigins []string) http.Handler {
 					r.Delete("/{inviteId}", s.revokeInvite)
 				})
 				r.Route("/settings", func(r chi.Router) {
-					r.Use(auth.RequirePermission("settings.manage"))
+					// Every member reads settings: the profile is the invoice
+					// header and the config drives tax/due-date defaults.
 					r.Get("/", s.getSettings)
-					r.Patch("/", s.patchSettings)
+					r.With(auth.RequirePermission("settings.manage")).Patch("/", s.patchSettings)
 				})
 				r.Route("/billing", func(r chi.Router) {
 					r.Get("/", s.getBilling)
@@ -224,6 +225,14 @@ func NewRouterWithOrigins(s *Server, allowedOrigins []string) http.Handler {
 			r.Route("/catalog", func(r chi.Router) {
 				r.Use(auth.RequireGarage(s.Store))
 				r.Get("/", s.listCatalog)
+				// Writes: anyone who builds job cards maintains the price list.
+				r.Group(func(r chi.Router) {
+					r.Use(auth.RequirePermission("jobcards.manage"))
+					r.Use(auth.SubscriptionGate(s.Store))
+					r.Post("/", s.createCatalogItem)
+					r.Put("/{itemId}", s.updateCatalogItem)
+					r.Delete("/{itemId}", s.deleteCatalogItem)
+				})
 			})
 		})
 	})

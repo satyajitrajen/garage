@@ -89,13 +89,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text('Verify your email',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                             fontSize: AppText.title,
-                            fontWeight: FontWeight.w800)),
+                            fontWeight: FontWeight.w700)),
                     const SizedBox(height: 6),
                     Text(
                       'We sent a link after registration. Paste the token here or resend the email.',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                           fontSize: AppText.body,
                           color: Theme.of(context).hintColor),
                     ),

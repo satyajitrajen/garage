@@ -35,6 +35,32 @@ class ApiGarageRepository implements GarageRepository {
     return id;
   }
 
+  /// Blanks the client's provisional document number so the server allocates
+  /// it from the garage's sequence. Numbers computed from a local cache
+  /// collide when two devices create documents at the same time.
+  Map<String, dynamic> _serverNumbered(Map<String, dynamic> body, String key) =>
+      {...body, key: ''};
+
+  /// Page size for list fetches (the server caps `limit` at 200).
+  static const _pageSize = 200;
+
+  /// Fetches a whole collection through the paged list API. Endpoints that
+  /// don't page ignore the params and answer with the legacy `{items}` shape
+  /// (no `total`), which is the complete list.
+  Future<List<T>> _fetchAll<T>(
+      String path, T Function(Map<String, dynamic>) fromJson) async {
+    final all = <T>[];
+    var offset = 0;
+    while (true) {
+      final json = await _api.get('$path?limit=$_pageSize&offset=$offset');
+      final page = _items(json, fromJson);
+      all.addAll(page);
+      final total = json is Map<String, dynamic> ? json['total'] : null;
+      if (total is! num || page.isEmpty || all.length >= total) return all;
+      offset += page.length;
+    }
+  }
+
   List<T> _items<T>(
       dynamic json, T Function(Map<String, dynamic>) fromJson) {
     if (json is Map<String, dynamic>) {
@@ -50,35 +76,46 @@ class ApiGarageRepository implements GarageRepository {
 
   // ---------- Profile & config (via garage settings) ----------
 
-  @override
-  Future<GarageProfile> fetchProfile() async {
-    final json =
-        await _api.get('/api/garages/$_garageId/settings') as Map<String, dynamic>;
-    return profileFromJson(json['profile'] as Map<String, dynamic>);
+  /// Profile and config come from the same settings document; share one
+  /// in-flight request so a load() hits the endpoint once, not twice.
+  Future<Map<String, dynamic>>? _settingsInFlight;
+
+  Future<Map<String, dynamic>> _settings() {
+    final pending = _settingsInFlight ??= _api
+        .get('/api/garages/$_garageId/settings')
+        .then((json) => json as Map<String, dynamic>);
+    pending.whenComplete(() => _settingsInFlight = null).ignore();
+    return pending;
   }
 
   @override
-  Future<AppConfig> fetchConfig() async {
-    final json =
-        await _api.get('/api/garages/$_garageId/settings') as Map<String, dynamic>;
-    return appConfigFromSettings(json);
-  }
+  Future<GarageProfile> fetchProfile() async =>
+      profileFromJson((await _settings())['profile'] as Map<String, dynamic>);
 
-  /// Partial settings PATCH. `profile` replaces the whole profile object —
-  /// callers must send all 8 profile fields.
-  Future<AppConfig> updateConfig(AppConfig config, GarageProfile profile) async {
+  @override
+  Future<AppConfig> fetchConfig() async =>
+      appConfigFromSettings(await _settings());
+
+  /// Partial settings PATCH. `profile` replaces the whole profile object, so
+  /// all 8 profile fields are always sent.
+  @override
+  Future<(GarageProfile, AppConfig)> updateSettings(
+      GarageProfile profile, AppConfig config) async {
     final json = await _api.patch('/api/garages/$_garageId/settings', {
       'profile': profileToJson(profile),
       ...configToPatchJson(config),
     }) as Map<String, dynamic>;
-    return appConfigFromSettings(json);
+    return (
+      profileFromJson(json['profile'] as Map<String, dynamic>),
+      appConfigFromSettings(json),
+    );
   }
 
   // ---------- Customers ----------
 
   @override
   Future<List<Customer>> fetchCustomers() async =>
-      _items(await _api.get('/api/customers'), customerFromJson);
+      _fetchAll('/api/customers', customerFromJson);
 
   @override
   Future<Customer> createCustomer(Customer customer) async {
@@ -109,7 +146,7 @@ class ApiGarageRepository implements GarageRepository {
 
   @override
   Future<List<Vehicle>> fetchVehicles() async =>
-      _items(await _api.get('/api/vehicles'), vehicleFromJson);
+      _fetchAll('/api/vehicles', vehicleFromJson);
 
   @override
   Future<Vehicle> createVehicle(Vehicle vehicle) async {
@@ -134,7 +171,7 @@ class ApiGarageRepository implements GarageRepository {
 
   @override
   Future<List<Staff>> fetchStaff() async =>
-      _items(await _api.get('/api/staff'), staffFromJson);
+      _fetchAll('/api/staff', staffFromJson);
 
   @override
   Future<Staff> createStaff(Staff staff) async {
@@ -159,11 +196,12 @@ class ApiGarageRepository implements GarageRepository {
 
   @override
   Future<List<JobCard>> fetchJobCards() async =>
-      _items(await _api.get('/api/jobcards'), jobCardFromJson);
+      _fetchAll('/api/jobcards', jobCardFromJson);
 
   @override
   Future<JobCard> createJobCard(JobCard jobCard) async {
-    final json = await _api.post('/api/jobcards', jobCardToJson(jobCard))
+    final json = await _api.post('/api/jobcards',
+            _serverNumbered(jobCardToJson(jobCard), 'jobCardNumber'))
         as Map<String, dynamic>;
     return jobCardFromJson(json);
   }
@@ -206,12 +244,13 @@ class ApiGarageRepository implements GarageRepository {
 
   @override
   Future<List<Quotation>> fetchQuotations() async =>
-      _items(await _api.get('/api/quotations'), quotationFromJson);
+      _fetchAll('/api/quotations', quotationFromJson);
 
   @override
   Future<Quotation> createQuotation(Quotation quotation) async {
-    final json = await _api.post(
-        '/api/quotations', quotationToJson(quotation)) as Map<String, dynamic>;
+    final json = await _api.post('/api/quotations',
+            _serverNumbered(quotationToJson(quotation), 'quotationNumber'))
+        as Map<String, dynamic>;
     return quotationFromJson(json);
   }
 
@@ -235,11 +274,12 @@ class ApiGarageRepository implements GarageRepository {
 
   @override
   Future<List<Invoice>> fetchInvoices() async =>
-      _items(await _api.get('/api/invoices'), invoiceFromJson);
+      _fetchAll('/api/invoices', invoiceFromJson);
 
   @override
   Future<Invoice> createInvoice(Invoice invoice) async {
-    final json = await _api.post('/api/invoices', invoiceToJson(invoice))
+    final json = await _api.post('/api/invoices',
+            _serverNumbered(invoiceToJson(invoice), 'invoiceNumber'))
         as Map<String, dynamic>;
     return invoiceFromJson(json);
   }
@@ -267,7 +307,7 @@ class ApiGarageRepository implements GarageRepository {
     return paymentFromJson(json);
   }
 
-  /// Cancels via the dedicated endpoint (PUT-with-cancelledAt also works).
+  @override
   Future<Invoice> cancelInvoice(String invoiceId) async {
     final json = await _api.post('/api/invoices/$invoiceId/cancel')
         as Map<String, dynamic>;
@@ -278,7 +318,7 @@ class ApiGarageRepository implements GarageRepository {
 
   @override
   Future<List<GarageExpense>> fetchExpenses() async =>
-      _items(await _api.get('/api/expenses'), expenseFromJson);
+      _fetchAll('/api/expenses', expenseFromJson);
 
   @override
   Future<GarageExpense> createExpense(GarageExpense expense) async {
@@ -311,13 +351,13 @@ class ApiGarageRepository implements GarageRepository {
 
   @override
   Future<List<AttendanceRecord>> fetchAttendance() async =>
-      _items(await _api.get('/api/attendance'), attendanceFromJson);
+      _fetchAll('/api/attendance', attendanceFromJson);
 
   // ---------- Salary advances ----------
 
   @override
   Future<List<SalaryAdvance>> fetchSalaryAdvances() async =>
-      _items(await _api.get('/api/salary-advances'), salaryAdvanceFromJson);
+      _fetchAll('/api/salary-advances', salaryAdvanceFromJson);
 
   @override
   Future<SalaryAdvance> createSalaryAdvance(SalaryAdvance advance) async {
@@ -343,5 +383,24 @@ class ApiGarageRepository implements GarageRepository {
 
   @override
   Future<List<MaintenanceItem>> fetchCatalog() async =>
-      _items(await _api.get('/api/catalog'), catalogItemFromJson);
+      _fetchAll('/api/catalog', catalogItemFromJson);
+
+  @override
+  Future<MaintenanceItem> createCatalogItem(MaintenanceItem item) async {
+    final json = await _api.post('/api/catalog', {
+      'name': item.name,
+      'category': item.category.name,
+      'unitPrice': item.unitPrice,
+      'unit': item.unit,
+      'isLabour': item.isLabour,
+      'partNumber': item.partNumber,
+      'notes': item.notes,
+    }) as Map<String, dynamic>;
+    return catalogItemFromJson(json);
+  }
+
+  @override
+  Future<void> deleteCatalogItem(String itemId) async {
+    await _api.delete('/api/catalog/$itemId');
+  }
 }

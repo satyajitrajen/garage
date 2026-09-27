@@ -52,6 +52,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   FuelType _fuelType = FuelType.petrol;
   bool _sameAsPhone = true;
   bool _hasVehicle = true;
+  Customer? _createdCustomer;
 
   @override
   void initState() {
@@ -126,10 +127,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       return;
     }
 
-    final uuid = const Uuid();
-    final customerId = uuid.v4();
     final newCustomer = Customer(
-      id: customerId,
+      id: const Uuid().v4(),
       name: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
       whatsappNumber: _sameAsPhone
@@ -141,14 +140,16 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 
-    await provider.addCustomer(newCustomer);
+    // Retry after vehicle failure: customer already created, skip creation
+    final createdCustomer = _createdCustomer ?? await provider.addCustomer(newCustomer);
+    _createdCustomer = createdCustomer;
     if (!mounted) return;
 
-    Vehicle? newVehicle;
+    Vehicle? createdVehicle;
     if (_hasVehicle && _regNoController.text.trim().isNotEmpty) {
-      newVehicle = Vehicle(
-        id: uuid.v4(),
-        customerId: customerId,
+      final newVehicle = Vehicle(
+        id: const Uuid().v4(),
+        customerId: createdCustomer.id,
         registrationNumber: _regNoController.text.trim().toUpperCase(),
         make: _makeController.text.trim(),
         model: _modelController.text.trim(),
@@ -158,38 +159,51 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         currentKm: int.tryParse(_kmController.text.trim()) ?? 0,
         color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
       );
-      await provider.addVehicle(newVehicle);
-      if (!mounted) return;
+      try {
+        createdVehicle = await provider.addVehicle(newVehicle);
+        if (!mounted) return;
+        _createdCustomer = null;
+      } catch (e) {
+        if (!mounted) return;
+        showAppSnackBar(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+          type: SnackBarType.error,
+        );
+        return;
+      }
+    } else {
+      _createdCustomer = null;
     }
 
     showAppSnackBar(
       context,
-      'Customer ${newCustomer.name} added successfully!',
+      'Customer ${createdCustomer.name} added successfully!',
       type: SnackBarType.success,
     );
 
-    if (startJob && newVehicle != null) {
+    if (startJob && createdVehicle != null) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => CreateJobCardScreen(
-            customer: newCustomer,
-            vehicle: newVehicle!,
+            customer: createdCustomer,
+            vehicle: createdVehicle!,
           ),
         ),
       );
-    } else if (createQuote && newVehicle != null) {
+    } else if (createQuote && createdVehicle != null) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => CreateQuotationScreen(
-            customer: newCustomer,
-            vehicle: newVehicle!,
+            customer: createdCustomer,
+            vehicle: createdVehicle!,
           ),
         ),
       );
     } else {
-      Navigator.pop(context, newCustomer);
+      Navigator.pop(context, createdCustomer);
     }
   }
 
@@ -201,7 +215,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       appBar: AppBar(
         title: Text(
           isEditing ? 'Edit Customer' : 'Add New Customer',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
       ),
       body: Form(
@@ -257,7 +271,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 activeColor: palette.primary,
                 title: Text(
                   'WhatsApp number is same as Mobile',
-                  style: GoogleFonts.inter(fontSize: AppText.body),
+                  style: GoogleFonts.poppins(fontSize: AppText.body),
                 ),
                 onChanged: (val) => setState(() => _sameAsPhone = val ?? true),
               ),
@@ -328,10 +342,12 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildSectionTitle(
-                      context,
-                      title: 'Vehicle Information',
-                      icon: Icons.directions_car_filled_rounded,
+                    Expanded(
+                      child: _buildSectionTitle(
+                        context,
+                        title: 'Vehicle Information',
+                        icon: Icons.directions_car_filled_rounded,
+                      ),
                     ),
                     Switch.adaptive(
                       value: _hasVehicle,
@@ -430,7 +446,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 // Fuel Type
                 Text(
                   'Fuel Type',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: AppText.caption,
                     fontWeight: FontWeight.w600,
                     color: palette.textSecondary,
@@ -582,12 +598,14 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       children: [
         Icon(icon, color: context.palette.primary, size: 22),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: GoogleFonts.inter(
-            fontSize: AppText.title,
-            fontWeight: FontWeight.w700,
-            color: context.palette.textPrimary,
+        Flexible(
+          child: Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: AppText.title,
+              fontWeight: FontWeight.w700,
+              color: context.palette.textPrimary,
+            ),
           ),
         ),
       ],

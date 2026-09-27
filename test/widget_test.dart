@@ -1,10 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:garage_manager/data/mock/mock_garage_repository.dart';
 import 'package:garage_manager/main.dart';
-import 'package:garage_manager/widgets/book_service_card.dart';
 
 void main() {
-    testWidgets('NT Garage App loads dashboard smoke test', (WidgetTester tester) async {
+  testWidgets('NT Garage App loads the home screen', (WidgetTester tester) async {
     // Repository seam: boot the mock shell directly so the test never touches
     // ApiClient, AuthProvider.init or secure storage (no network).
     await tester.pumpWidget(NTGarageApp(repository: MockGarageRepository()));
@@ -12,21 +12,21 @@ void main() {
 
     expect(find.text('NT Garage & Body Shop'), findsWidgets);
 
-    // New home structure (spec §5): booking-first stack.
-    expect(find.byType(BookServiceCard), findsOneWidget);
-    expect(find.text('Today'), findsOneWidget);
-    expect(find.text('Collection'), findsOneWidget);
-    expect(find.text('Expenses'), findsWidgets); // Today card + module tile
-    expect(find.textContaining('₹'), findsWidgets);
-    expect(find.text('Live Floor'), findsOneWidget);
-    // The mock seed has active job cards, so the strip renders — not the
-    // empty card.
-    expect(find.text('All clear — no vehicles in workshop'), findsNothing);
-    expect(find.text('Workshop Modules'), findsOneWidget);
-    expect(find.text('Recent Collections & Bills'), findsOneWidget);
+    // Home leads with search and the two ways to start work.
+    expect(find.text('Search plate, phone or name'), findsOneWidget);
+    expect(find.text('New job card'), findsOneWidget);
+    expect(find.text('Quick bill'), findsOneWidget);
+    expect(find.text('Collected today'), findsOneWidget);
+    expect(find.textContaining('In the workshop'), findsOneWidget);
 
-    // Deleted sections stay deleted.
-    expect(find.text('Live Bay Activity'), findsNothing);
-    expect(find.text('Weekly Revenue vs Expenses'), findsNothing);
+    // Template sections stay deleted.
+    expect(find.text('Workshop Modules'), findsNothing);
+    expect(find.text('Book a Service'), findsNothing);
+
+    // Searching a plate lists the vehicle.
+    await tester.enterText(find.byType(TextField).first, 'MH 02');
+    await tester.pumpAndSettle();
+    expect(find.text('MH 02 CZ 4421'), findsOneWidget);
+    expect(find.text('New job card'), findsNothing);
   });
 }

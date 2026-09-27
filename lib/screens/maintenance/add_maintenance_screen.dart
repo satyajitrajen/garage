@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import '../../data/api/api_exception.dart';
 import '../../models/maintenance_item.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/permissions.dart';
 import '../../utils/quantity_formatter.dart';
+import '../../widgets/permission_gate.dart';
 import '../../widgets/search_bar_widget.dart';
 import '../../theme/app_text.dart';
 
@@ -41,6 +44,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
   final _customDiscountController = TextEditingController(text: '0');
   ItemCategory _customCategory = ItemCategory.sparePart;
   bool _customIsLabour = false;
+  bool _customSaveToCatalog = false;
 
   @override
   void initState() {
@@ -76,8 +80,8 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
         );
       });
     }
-
-    showAppSnackBar(context, 'Added "${item.name}"', type: SnackBarType.success);
+    // No snackbar: the selected-items header and the Done button count already
+    // confirm the add, and a floating snackbar covered the Done button.
   }
 
   void _addCustomItem() {
@@ -119,6 +123,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
     setState(() {
       _currentItems.add(newItem);
     });
+    if (_customSaveToCatalog) _saveToCatalog(newItem);
 
     _customNameController.clear();
     _customPriceController.clear();
@@ -127,6 +132,61 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
 
     Navigator.pop(context); // Close bottom sheet
     showAppSnackBar(context, 'Custom item added!', type: SnackBarType.success);
+  }
+
+  /// Stores a custom line in the garage price list so it can be picked next
+  /// time. Runs in the background: the bill line is already added.
+  Future<void> _saveToCatalog(MaintenanceItem item) async {
+    final provider = context.read<GarageProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await provider.addCatalogItem(MaintenanceItem(
+        id: const Uuid().v4(),
+        name: item.name,
+        category: item.category,
+        unitPrice: item.unitPrice,
+        unit: item.unit,
+        isLabour: item.isLabour,
+      ));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(e is ApiException
+            ? 'Not saved to price list: ${e.userMessage}'
+            : 'Could not save item to price list'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+
+  Future<void> _confirmDeleteCatalogItem(MaintenanceItem item) async {
+    if (!ensurePermission(context, Permissions.jobcardsManage)) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove from price list?'),
+        content: Text('"${item.name}" will no longer appear in the catalog. '
+            'Existing bills are not affected.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Keep')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Remove')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await context.read<GarageProvider>().deleteCatalogItem(item.id);
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        e is ApiException ? e.userMessage : 'Could not remove item',
+        type: SnackBarType.error,
+      );
+    }
   }
 
   void _showAddCustomItemSheet() {
@@ -160,9 +220,11 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Add Custom Item / Service',
-                          style: GoogleFonts.inter(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                        Expanded(
+                          child: Text(
+                            'Add Custom Item / Service',
+                            style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                          ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.close_rounded),
@@ -232,7 +294,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     const SizedBox(height: 14),
                     Text(
                       'Category',
-                      style: GoogleFonts.inter(fontSize: AppText.caption, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 6),
                     Wrap(
@@ -261,11 +323,27 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       activeColor: palette.primary,
                       title: Text(
                         'Count as Labour / Service Charge',
-                        style: GoogleFonts.inter(fontSize: AppText.body),
+                        style: GoogleFonts.poppins(fontSize: AppText.body),
                       ),
                       onChanged: (val) {
                         setSheetState(() => _customIsLabour = val ?? false);
                       },
+                    ),
+                    PermissionGate(
+                      permission: Permissions.jobcardsManage,
+                      child: CheckboxListTile(
+                        value: _customSaveToCatalog,
+                        contentPadding: EdgeInsets.zero,
+                        activeColor: palette.primary,
+                        title: Text(
+                          'Save to price list for next time',
+                          style: GoogleFonts.poppins(fontSize: AppText.body),
+                        ),
+                        onChanged: (val) {
+                          setSheetState(
+                              () => _customSaveToCatalog = val ?? false);
+                        },
+                      ),
                     ),
                     const SizedBox(height: 20),
                     SizedBox(
@@ -314,14 +392,14 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title, style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        title: Text(widget.title, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         actions: [
           TextButton.icon(
             onPressed: _showAddCustomItemSheet,
             icon: Icon(Icons.add_circle_outline_rounded, color: palette.primary),
             label: Text(
               'Custom Item',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                 color: palette.primary,
                 fontWeight: FontWeight.w600,
               ),
@@ -343,12 +421,14 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Selected Work Items (${_currentItems.length})',
-                      style: GoogleFonts.inter(
-                        fontSize: AppText.subtitle,
-                        fontWeight: FontWeight.w700,
-                        color: palette.textPrimary,
+                    Expanded(
+                      child: Text(
+                        'Selected Work Items (${_currentItems.length})',
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.subtitle,
+                          fontWeight: FontWeight.w700,
+                          color: palette.textPrimary,
+                        ),
                       ),
                     ),
                     if (_currentItems.isNotEmpty)
@@ -361,7 +441,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         ),
                         child: Text(
                           'Clear All',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.poppins(
                             fontSize: AppText.caption,
                             color: palette.pending,
                             fontWeight: FontWeight.w600,
@@ -402,7 +482,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                   Expanded(
                                     child: Text(
                                       item.name,
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.poppins(
                                         fontSize: AppText.caption,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -421,9 +501,9 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                 children: [
                                   Text(
                                     CurrencyFormatter.format(item.totalAmount),
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.poppins(
                                       fontSize: AppText.body,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w700,
                                       color: palette.primary,
                                     ),
                                   ),
@@ -444,7 +524,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                         padding: const EdgeInsets.symmetric(horizontal: 6),
                                         child: Text(
                                           formatQuantity(item.quantity),
-                                          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.caption),
+                                          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: AppText.caption),
                                         ),
                                       ),
                                       GestureDetector(
@@ -488,11 +568,8 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            labelColor: palette.primary,
-            unselectedLabelColor: palette.textMuted,
-            indicatorColor: palette.primary,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: AppText.body),
+            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
             tabs: [
               const Tab(text: 'All Items'),
               Tab(text: ItemCategory.sparePart.displayName),
@@ -533,19 +610,19 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          spacing: 8,
                           children: [
                             Text(
                               'Parts: ${CurrencyFormatter.format(partsSubtotal)}',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 color: palette.textSecondary,
                               ),
                             ),
-                            const SizedBox(width: 8),
                             Text(
                               'Labour: ${CurrencyFormatter.format(labourSubtotal)}',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 color: palette.textSecondary,
                               ),
@@ -555,9 +632,9 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         const SizedBox(height: 2),
                         Text(
                           CurrencyFormatter.format(totalAmount),
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.poppins(
                             fontSize: AppText.headline,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             color: palette.primary,
                           ),
                         ),
@@ -598,9 +675,16 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
 
     if (filtered.isEmpty) {
       return Center(
-        child: Text(
-          'No items found in this category',
-          style: GoogleFonts.inter(color: context.palette.textMuted),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            allCatalog.isEmpty
+                ? 'Your price list is empty.\nAdd a custom item and tick '
+                    '"Save to price list" to reuse it.'
+                : 'No items found in this category',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(color: context.palette.textMuted),
+          ),
         ),
       );
     }
@@ -611,70 +695,79 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final item = filtered[index];
-        final isSelected = _currentItems.any((i) => i.name == item.name);
+        final meta = [
+          item.category.displayName,
+          if (item.partNumber != null) item.partNumber!,
+        ].join(' • ');
 
+        // Custom row instead of ListTile: at narrow widths / large text the
+        // ListTile trailing price block squeezed the title to nothing.
         return Card(
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: CircleAvatar(
-              backgroundColor: item.isLabour
-                  ? palette.inProgress.withOpacity(0.12)
-                  : palette.primary.withOpacity(0.12),
-              child: Icon(
-                item.isLabour ? Icons.build_rounded : Icons.precision_manufacturing_rounded,
-                color: item.isLabour ? palette.inProgress : palette.primary,
-                size: 20,
-              ),
-            ),
-            title: Text(
-              item.name,
-              style: GoogleFonts.inter(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
-            ),
-            subtitle: Row(
-              children: [
-                Text(
-                  item.category.displayName,
-                  style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
-                ),
-                if (item.partNumber != null) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    '• ${item.partNumber}',
-                    style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _addCatalogueItem(item),
+            onLongPress: () => _confirmDeleteCatalogItem(item),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: item.isLabour
+                        ? palette.inProgress.withOpacity(0.12)
+                        : palette.primary.withOpacity(0.12),
+                    child: Icon(
+                      item.isLabour ? Icons.build_rounded : Icons.precision_manufacturing_rounded,
+                      color: item.isLabour ? palette.inProgress : palette.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          meta,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
+                        ),
+                        const SizedBox(height: 4),
+                        Text.rich(
+                          TextSpan(children: [
+                            TextSpan(
+                              text: CurrencyFormatter.format(item.unitPrice),
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.subtitle,
+                                fontWeight: FontWeight.w700,
+                                color: palette.primary,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' / ${item.unit}',
+                              style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
+                            ),
+                          ]),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton.filledTonal(
+                    tooltip: 'Add',
+                    onPressed: () => _addCatalogueItem(item),
+                    icon: const Icon(Icons.add_rounded, size: 20),
                   ),
                 ],
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      CurrencyFormatter.format(item.unitPrice),
-                      style: GoogleFonts.inter(
-                        fontSize: AppText.subtitle,
-                        fontWeight: FontWeight.w700,
-                        color: palette.primary,
-                      ),
-                    ),
-                    Text(
-                      'per ${item.unit}',
-                      style: GoogleFonts.inter(fontSize: AppText.label, color: palette.textMuted),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 10),
-                IconButton.filledTonal(
-                  onPressed: () => _addCatalogueItem(item),
-                  icon: Icon(
-                    isSelected ? Icons.add_rounded : Icons.add_rounded,
-                    size: 20,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );

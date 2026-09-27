@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
@@ -8,8 +9,9 @@ import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 
 /// SaaS subscription screen: trial countdown, plan status, Razorpay checkout
-/// entry, and cancel. The server is the source of truth; the app only opens
-/// checkout with the server-issued key/plan and relies on webhooks.
+/// entry, and cancel. The server creates the Razorpay subscription and hands
+/// back its hosted payment page; the app opens it in the browser and
+/// re-reads status when the user comes back (activation arrives by webhook).
 class BillingScreen extends StatefulWidget {
   const BillingScreen({super.key});
 
@@ -17,15 +19,34 @@ class BillingScreen extends StatefulWidget {
   State<BillingScreen> createState() => _BillingScreenState();
 }
 
-class _BillingScreenState extends State<BillingScreen> {
+class _BillingScreenState extends State<BillingScreen>
+    with WidgetsBindingObserver {
   Map<String, dynamic>? _billing;
   bool _loading = true;
   String? _error;
+  bool _awaitingPayment = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Back from the payment page: the webhook may already have activated
+    // the subscription.
+    if (state == AppLifecycleState.resumed && _awaitingPayment) {
+      _awaitingPayment = false;
+      _load();
+    }
   }
 
   Future<void> _load() async {
@@ -65,10 +86,24 @@ class _BillingScreenState extends State<BillingScreen> {
             context, (res['message'] as String?) ?? 'Payment not configured.');
         return;
       }
-      // Razorpay SDK wiring happens here with res['key_id'] / res['plan_id'].
-      // Until the SDK is added, show the operator what to do next.
-      showAppSnackBar(
-          context, 'Checkout ready (${res['plan']}). Complete payment to activate.');
+      final url = Uri.tryParse((res['short_url'] as String?) ?? '');
+      if (url == null || !url.hasScheme) {
+        showAppSnackBar(context, 'Checkout link missing. Please try again.',
+            type: SnackBarType.error);
+        return;
+      }
+      _awaitingPayment = true;
+      final opened =
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!mounted) return;
+      if (!opened) {
+        _awaitingPayment = false;
+        showAppSnackBar(context, 'Could not open the payment page.',
+            type: SnackBarType.error);
+        return;
+      }
+      showAppSnackBar(context,
+          'Complete payment in the browser. Your plan activates automatically.');
     } on ApiException catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, e.userMessage, type: SnackBarType.error);
@@ -137,7 +172,7 @@ class _BillingScreenState extends State<BillingScreen> {
                       const SizedBox(height: 16),
                       if (isOwner) ...[
                         Text('Plans',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.poppins(
                                 fontSize: AppText.subtitle,
                                 fontWeight: FontWeight.w700)),
                         const SizedBox(height: 8),
@@ -154,7 +189,7 @@ class _BillingScreenState extends State<BillingScreen> {
                       ] else
                         Text(
                           'Only the workshop owner can change the subscription.',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.poppins(
                               color: Theme.of(context).hintColor),
                         ),
                     ],
@@ -188,7 +223,7 @@ class _BillingScreenState extends State<BillingScreen> {
       child: ListTile(
         leading: Icon(Icons.circle, color: dot, size: 14),
         title: Text('Status: $status',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         subtitle: Text(subtitle),
       ),
     );
@@ -199,7 +234,7 @@ class _BillingScreenState extends State<BillingScreen> {
       child: ListTile(
         leading: Icon(icon),
         title: Text(title,
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle),
         trailing: FilledButton(
           onPressed: () => _checkout(plan),

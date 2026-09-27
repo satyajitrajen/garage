@@ -74,9 +74,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text('Choose a new password',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                             fontSize: AppText.title,
-                            fontWeight: FontWeight.w800)),
+                            fontWeight: FontWeight.w700)),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _token,

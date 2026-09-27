@@ -74,7 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     Text(
                       'Your garage, your account',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         fontSize: AppText.title,
                         fontWeight: FontWeight.w700,
                       ),
@@ -82,7 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'You will be the owner with full permissions.',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                           fontSize: AppText.body,
                           color: Theme.of(context).hintColor),
                     ),

@@ -6,10 +6,11 @@ import 'app_text.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
-    final baseTextTheme = GoogleFonts.interTextTheme();
+    final baseTextTheme = GoogleFonts.poppinsTextTheme();
     const palette = AppPalette.light;
     return ThemeData(
       useMaterial3: true,
+      fontFamily: GoogleFonts.poppins().fontFamily,
       extensions: const <ThemeExtension<dynamic>>[AppPalette.light],
       brightness: Brightness.light,
       primaryColor: palette.primary,
@@ -52,7 +53,7 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.poppins(
           fontSize: AppText.title,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.3,
@@ -89,8 +90,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppDimens.radiusInput),
           borderSide: BorderSide(color: palette.absent),
         ),
-        hintStyle: GoogleFonts.inter(color: palette.textMuted, fontSize: AppText.caption),
-        labelStyle: GoogleFonts.inter(
+        hintStyle: GoogleFonts.poppins(color: palette.textMuted, fontSize: AppText.caption),
+        labelStyle: GoogleFonts.poppins(
             color: palette.textSecondary, fontSize: AppText.caption, fontWeight: FontWeight.w500),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -102,7 +103,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimens.radiusButton),
           ),
-          textStyle: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w600, letterSpacing: 0.1),
+          textStyle: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600, letterSpacing: 0.1),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -113,7 +114,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimens.radiusButton),
           ),
-          textStyle: GoogleFonts.inter(fontSize: AppText.body, fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
@@ -132,8 +133,9 @@ class AppTheme {
       ),
       dividerTheme: DividerThemeData(color: palette.divider, thickness: 1, space: 1),
       tabBarTheme: TabBarThemeData(
-        labelColor: palette.primary,
+        labelColor: palette.textPrimary,
         unselectedLabelColor: palette.textMuted,
+        dividerColor: palette.divider,
         indicatorColor: palette.primary,
       ),
       switchTheme: SwitchThemeData(

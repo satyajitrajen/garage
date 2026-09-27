@@ -193,37 +193,36 @@ class StatusBadge extends StatelessWidget {
     );
   }
 
+  /// 'IN PROGRESS' -> 'In progress'. Compact attendance codes stay as-is.
+  static String _sentenceCase(String raw) {
+    if (raw.isEmpty || raw.length <= 2) return raw;
+    final lower = raw.toLowerCase();
+    return lower[0].toUpperCase() + lower.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final resolvedColor = paletteColor?.call(context.palette) ?? color;
-
+    // One quiet style everywhere: tinted fill, coloured text, no icon or
+    // border, sentence case. Status colour carries the meaning on its own.
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 7 : 9,
-        vertical: isCompact ? 3 : 4.5,
+        horizontal: isCompact ? 6 : 8,
+        vertical: isCompact ? 2 : 3,
       ),
       decoration: BoxDecoration(
-        color: resolvedColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: resolvedColor.withValues(alpha: 0.25), width: 0.8),
+        color: resolvedColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(6),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null && !isCompact) ...[
-            Icon(icon, size: 12, color: resolvedColor),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              color: resolvedColor,
-              fontSize: AppText.micro,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.4,
-            ),
-          ),
-        ],
+      child: Text(
+        isCompact ? label : _sentenceCase(label),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.poppins(
+          color: resolvedColor,
+          fontSize: AppText.label,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
