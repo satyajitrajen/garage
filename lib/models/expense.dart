@@ -107,4 +107,16 @@ class GarageExpense {
       receiptPath: receiptPath ?? this.receiptPath,
     );
   }
+
+  /// Copy with no receipt (copyWith can't null a field).
+  GarageExpense clearReceipt() => GarageExpense(
+        id: id,
+        title: title,
+        category: category,
+        amount: amount,
+        expenseDate: expenseDate,
+        paymentMode: paymentMode,
+        vendorName: vendorName,
+        notes: notes,
+      );
 }

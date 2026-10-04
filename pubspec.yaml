@@ -48,6 +48,7 @@ dependencies:
   # SharedPreferences via TokenStore (lib/data/api/token_store.dart); access
   # tokens are short-lived (15 min) and refresh tokens rotate on every use.
   shared_preferences: ^2.5.5
+  image_picker: ^1.2.3
 
 dev_dependencies:
   flutter_test:

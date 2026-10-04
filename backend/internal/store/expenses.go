@@ -37,19 +37,19 @@ func (s *Store) ListExpenses(ctx context.Context, garageID string) ([]models.Exp
 func (s *Store) CreateExpense(ctx context.Context, garageID string, e models.Expense) (models.Expense, error) {
 	return scanExpense(s.Pool.QueryRow(ctx,
 		`INSERT INTO expenses (garage_id, title, category, amount, expense_date, payment_mode,
-		                      vendor_name, notes, receipt_path)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING `+expenseColumns,
+		                      vendor_name, notes)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING `+expenseColumns,
 		garageID, e.Title, e.Category, e.Amount, e.ExpenseDate, e.PaymentMode,
-		e.VendorName, e.Notes, e.ReceiptPath))
+		e.VendorName, e.Notes))
 }
 
 func (s *Store) UpdateExpense(ctx context.Context, garageID string, e models.Expense) (models.Expense, error) {
 	return scanExpense(s.Pool.QueryRow(ctx,
 		`UPDATE expenses SET title=$3, category=$4, amount=$5, expense_date=$6, payment_mode=$7,
-		                        vendor_name=$8, notes=$9, receipt_path=$10
+		                        vendor_name=$8, notes=$9
 		 WHERE garage_id = $1 AND id = $2 RETURNING `+expenseColumns,
 		garageID, e.ID, e.Title, e.Category, e.Amount, e.ExpenseDate, e.PaymentMode,
-		e.VendorName, e.Notes, e.ReceiptPath))
+		e.VendorName, e.Notes))
 }
 
 func (s *Store) DeleteExpense(ctx context.Context, garageID, expenseID string) error {

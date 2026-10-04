@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:async';
 import 'dart:convert';
 
@@ -174,6 +175,22 @@ class ApiClient {
   Future<void> delete(String path) async {
     final res = await _send((h) => _http.delete(_uri(path), headers: h));
     await _handle(res);
+  }
+
+  /// PUTs a raw file body (e.g. a receipt photo); the server sniffs its type.
+  Future<dynamic> putBytes(String path, List<int> bytes) async {
+    final res = await _send((h) => _http.put(_uri(path),
+        headers: {...h, 'Content-Type': 'application/octet-stream'},
+        body: bytes));
+    return _handle(res);
+  }
+
+  /// GETs a raw file body (e.g. a receipt photo).
+  Future<Uint8List> getBytes(String path) async {
+    final res = await _send((h) => _http.get(_uri(path),
+        headers: {...h, 'Accept': '*/*'}));
+    if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
+    _throwEnvelope(res);
   }
 
   /// Raw POST that returns the HTTP status (for endpoints like logout→204).

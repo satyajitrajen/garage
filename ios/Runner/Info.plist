@@ -73,5 +73,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos of expense receipts.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Attach receipt photos to expenses.</string>
 </dict>
 </plist>

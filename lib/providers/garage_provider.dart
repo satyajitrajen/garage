@@ -721,6 +721,23 @@ class GarageProvider extends ChangeNotifier {
     return updated;
   }
 
+  Future<void> uploadExpenseReceipt(String expenseId, Uint8List bytes) async {
+    final path = await _repo.uploadExpenseReceipt(expenseId, bytes);
+    final i = _expenses.indexWhere((e) => e.id == expenseId);
+    if (i != -1) _expenses[i] = _expenses[i].copyWith(receiptPath: path);
+    notifyListeners();
+  }
+
+  Future<Uint8List> fetchExpenseReceipt(String expenseId) =>
+      _repo.fetchExpenseReceipt(expenseId);
+
+  Future<void> deleteExpenseReceipt(String expenseId) async {
+    await _repo.deleteExpenseReceipt(expenseId);
+    final i = _expenses.indexWhere((e) => e.id == expenseId);
+    if (i != -1) _expenses[i] = _expenses[i].clearReceipt();
+    notifyListeners();
+  }
+
   Future<void> deleteExpense(String expenseId) async {
     await _repo.deleteExpense(expenseId);
     _expenses.removeWhere((e) => e.id == expenseId);

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import '../../models/customer.dart';
 import '../../models/expense.dart';
 import '../../models/invoice.dart';
@@ -316,6 +317,32 @@ class MockGarageRepository implements GarageRepository {
   @override
   Future<void> deleteExpense(String expenseId) async {
     _expenses.removeWhere((e) => e.id == expenseId);
+    _receipts.remove(expenseId);
+  }
+
+  final Map<String, Uint8List> _receipts = {};
+
+  @override
+  Future<String> uploadExpenseReceipt(String expenseId, Uint8List bytes) async {
+    _receipts[expenseId] = bytes;
+    final path = '/api/expenses/$expenseId/receipt';
+    final i = _expenses.indexWhere((e) => e.id == expenseId);
+    if (i != -1) _expenses[i] = _expenses[i].copyWith(receiptPath: path);
+    return path;
+  }
+
+  @override
+  Future<Uint8List> fetchExpenseReceipt(String expenseId) async {
+    final bytes = _receipts[expenseId];
+    if (bytes == null) throw StateError('Receipt not found');
+    return bytes;
+  }
+
+  @override
+  Future<void> deleteExpenseReceipt(String expenseId) async {
+    _receipts.remove(expenseId);
+    final i = _expenses.indexWhere((e) => e.id == expenseId);
+    if (i != -1) _expenses[i] = _expenses[i].clearReceipt();
   }
 
   // Attendance

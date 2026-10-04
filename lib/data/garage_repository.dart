@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import '../data/app_config.dart';
 import '../data/garage_profile.dart';
 import '../models/customer.dart';
@@ -62,6 +63,11 @@ abstract class GarageRepository {
   Future<GarageExpense> createExpense(GarageExpense expense);
   Future<GarageExpense> updateExpense(GarageExpense expense);
   Future<void> deleteExpense(String expenseId);
+
+  /// Stores a receipt photo for an expense; returns the new receiptPath.
+  Future<String> uploadExpenseReceipt(String expenseId, Uint8List bytes);
+  Future<Uint8List> fetchExpenseReceipt(String expenseId);
+  Future<void> deleteExpenseReceipt(String expenseId);
 
   /// Upserts by (staffId, calendar day).
   Future<AttendanceRecord> saveAttendance(AttendanceRecord record);

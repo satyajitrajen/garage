@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import '../app_config.dart';
 import '../garage_profile.dart';
 import '../garage_repository.dart';
@@ -339,6 +340,21 @@ class ApiGarageRepository implements GarageRepository {
   Future<void> deleteExpense(String expenseId) async {
     await _api.delete('/api/expenses/$expenseId');
   }
+
+  @override
+  Future<String> uploadExpenseReceipt(String expenseId, Uint8List bytes) async {
+    final json = await _api.putBytes('/api/expenses/$expenseId/receipt', bytes)
+        as Map<String, dynamic>;
+    return json['receiptPath'] as String;
+  }
+
+  @override
+  Future<Uint8List> fetchExpenseReceipt(String expenseId) =>
+      _api.getBytes('/api/expenses/$expenseId/receipt');
+
+  @override
+  Future<void> deleteExpenseReceipt(String expenseId) =>
+      _api.delete('/api/expenses/$expenseId/receipt');
 
   // ---------- Attendance ----------
 

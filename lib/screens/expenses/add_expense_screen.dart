@@ -1,7 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
+import '../../data/api/api_exception.dart';
 import '../../models/expense.dart';
 import '../../models/payment.dart';
 import '../../providers/garage_provider.dart';
@@ -36,6 +40,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   DateTime _expenseDate = DateTime.now();
   bool _isSaving = false;
 
+  // Receipt photo: _receiptBytes is what's shown (new pick or the saved one);
+  // _receiptChanged/_receiptRemoved say what to sync after the expense saves.
+  Uint8List? _receiptBytes;
+  bool _receiptLoading = false;
+  bool _receiptChanged = false;
+  bool _receiptRemoved = false;
+
   bool get _isEditing => widget.existing != null;
 
   @override
@@ -51,7 +62,148 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       _category = existing.category;
       _paymentMode = existing.paymentMode;
       _expenseDate = existing.expenseDate;
+      if (existing.receiptPath != null) _loadReceipt(existing.id);
     }
+  }
+
+  Future<void> _loadReceipt(String expenseId) async {
+    setState(() => _receiptLoading = true);
+    try {
+      final bytes =
+          await context.read<GarageProvider>().fetchExpenseReceipt(expenseId);
+      if (mounted) setState(() => _receiptBytes = bytes);
+    } catch (_) {
+      // Missing/unreadable receipt: the form still works without a preview.
+    } finally {
+      if (mounted) setState(() => _receiptLoading = false);
+    }
+  }
+
+  Future<void> _pickReceipt(ImageSource source) async {
+    try {
+      final file = await ImagePicker().pickImage(
+          source: source, maxWidth: 1600, maxHeight: 1600, imageQuality: 80);
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (bytes.length > 5 * 1024 * 1024) {
+        if (!mounted) return;
+        showAppSnackBar(context, 'Photo is too large (max 5 MB)',
+            type: SnackBarType.error);
+        return;
+      }
+      setState(() {
+        _receiptBytes = bytes;
+        _receiptChanged = true;
+        _receiptRemoved = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, 'Could not open the camera or gallery',
+          type: SnackBarType.error);
+    }
+  }
+
+  void _removeReceipt() => setState(() {
+        _receiptBytes = null;
+        _receiptChanged = false;
+        _receiptRemoved = widget.existing?.receiptPath != null;
+      });
+
+  /// Uploads/removes the receipt once the expense exists. Returns false when
+  /// that failed (the expense itself is already saved).
+  Future<bool> _syncReceipt(GarageProvider provider, String expenseId) async {
+    try {
+      if (_receiptChanged && _receiptBytes != null) {
+        await provider.uploadExpenseReceipt(expenseId, _receiptBytes!);
+      } else if (_receiptRemoved) {
+        await provider.deleteExpenseReceipt(expenseId);
+      }
+      return true;
+    } catch (e) {
+      if (mounted) {
+        showAppSnackBar(
+          context,
+          e is ApiException
+              ? 'Expense saved, but receipt failed: ${e.userMessage}'
+              : 'Expense saved, but the receipt could not be uploaded',
+          type: SnackBarType.error,
+        );
+      }
+      return false;
+    }
+  }
+
+  Widget _buildReceiptSection(BuildContext context) {
+    final palette = context.palette;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Receipt photo',
+            style: GoogleFonts.poppins(
+                fontSize: AppText.body, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        if (_receiptLoading)
+          const SizedBox(
+              height: 120, child: Center(child: CircularProgressIndicator()))
+        else if (_receiptBytes != null)
+          Stack(
+            children: [
+              GestureDetector(
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (_) => Dialog(
+                    child: InteractiveViewer(
+                        child: Image.memory(_receiptBytes!,
+                            errorBuilder: (_, _, _) => const Padding(
+                                padding: EdgeInsets.all(24),
+                                child: Text('Preview not available'))))),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
+                  child: Image.memory(_receiptBytes!,
+                      height: 160,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                          height: 80,
+                          alignment: Alignment.center,
+                          color: palette.cardAlt,
+                          child: const Text('Receipt attached'))),
+                ),
+              ),
+              Positioned(
+                top: 6,
+                right: 6,
+                child: IconButton.filledTonal(
+                  tooltip: 'Remove receipt',
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: _removeReceipt,
+                ),
+              ),
+            ],
+          ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _pickReceipt(ImageSource.camera),
+                icon: const Icon(Icons.photo_camera_outlined),
+                label: Text(_receiptBytes == null ? 'Take photo' : 'Retake'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _pickReceipt(ImageSource.gallery),
+                icon: const Icon(Icons.photo_library_outlined),
+                label: const Text('Gallery'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override
@@ -107,6 +259,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         );
 
         await provider.updateExpense(edited);
+        await _syncReceipt(provider, edited.id);
         if (!mounted) return;
 
         showAppSnackBar(
@@ -128,7 +281,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           notes: notes,
         );
 
-        await provider.addExpense(expense);
+        final created = await provider.addExpense(expense);
+        await _syncReceipt(provider, created.id);
         if (!mounted) return;
 
         showAppSnackBar(
@@ -323,6 +477,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   prefixIcon: Icon(Icons.note_alt_outlined),
                 ),
               ),
+              const SizedBox(height: 20),
+              _buildReceiptSection(context),
               const SizedBox(height: 32),
 
               // Save Button

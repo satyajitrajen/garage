@@ -220,6 +220,9 @@ func NewRouterWithOrigins(s *Server, allowedOrigins []string) http.Handler {
 				r.Post("/", s.createExpense)
 				r.Put("/{expenseId}", s.updateExpense)
 				r.Delete("/{expenseId}", s.deleteExpense)
+				r.Put("/{expenseId}/receipt", s.putExpenseReceipt)
+				r.Get("/{expenseId}/receipt", s.getExpenseReceipt)
+				r.Delete("/{expenseId}/receipt", s.deleteExpenseReceipt)
 			})
 			// Catalog is readable by any member of the garage (spec §5).
 			r.Route("/catalog", func(r chi.Router) {
