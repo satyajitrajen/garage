@@ -12,6 +12,7 @@ import '../../utils/currency_formatter.dart';
 import '../../utils/permissions.dart';
 import '../../utils/quantity_formatter.dart';
 import '../../widgets/permission_gate.dart';
+import '../../widgets/edit_item_dialog.dart';
 import '../../widgets/search_bar_widget.dart';
 import '../../theme/app_text.dart';
 
@@ -365,6 +366,12 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
     );
   }
 
+  Future<void> _editItem(int index) async {
+    final updated = await showEditItemDialog(context, _currentItems[index]);
+    if (updated == null || !mounted) return;
+    setState(() => _currentItems[index] = updated);
+  }
+
   void _updateItemQuantity(int index, double delta) {
     final item = _currentItems[index];
     final newQty = item.quantity + delta;
@@ -460,7 +467,10 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       separatorBuilder: (_, _) => const SizedBox(width: 10),
                       itemBuilder: (context, index) {
                         final item = _currentItems[index];
-                        return Container(
+                        // Tap a selected line to change its price / qty.
+                        return GestureDetector(
+                          onTap: () => _editItem(index),
+                          child: Container(
                           width: 200,
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
@@ -499,6 +509,14 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                  Text(
+                                    '@ ${CurrencyFormatter.format(item.unitPrice)}',
+                                    style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
+                                  ),
                                   Text(
                                     CurrencyFormatter.format(item.totalAmount),
                                     style: GoogleFonts.poppins(
@@ -506,6 +524,8 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                       fontWeight: FontWeight.w700,
                                       color: palette.primary,
                                     ),
+                                  ),
+                                    ],
                                   ),
                                   Row(
                                     children: [
@@ -544,9 +564,15 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                               ),
                             ],
                           ),
+                        ),
                         );
                       },
                     ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tap an item to edit its price',
+                    style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
                   ),
                 ],
               ],

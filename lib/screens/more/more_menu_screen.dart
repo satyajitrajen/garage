@@ -14,6 +14,7 @@ import '../../utils/permissions.dart';
 import '../../widgets/permission_gate.dart';
 import '../auth/garage_switcher.dart';
 import '../billing/billing_screen.dart';
+import '../catalog/price_list_screen.dart';
 import '../expenses/expenses_list_screen.dart';
 import '../quotations/quotations_list_screen.dart';
 import '../settings/garage_settings_screen.dart';
@@ -122,6 +123,15 @@ class MoreMenuScreen extends StatelessWidget {
             ),
           ),
           _Group(title: 'Workshop', children: [
+            PermissionGate(
+              permission: Permissions.jobcardsManage,
+              child: _Item(
+                icon: Icons.inventory_2_outlined,
+                title: 'Spare parts & price list',
+                value: '${provider.catalog.length}',
+                onTap: () => _push(context, const PriceListScreen()),
+              ),
+            ),
             PermissionGate(
               permission: Permissions.quotationsManage,
               child: _Item(

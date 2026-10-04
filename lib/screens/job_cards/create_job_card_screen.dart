@@ -13,6 +13,7 @@ import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
+import '../../widgets/edit_item_dialog.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import 'job_card_detail_screen.dart';
 import '../../theme/app_text.dart';
@@ -144,6 +145,12 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
         _selectedItems.addAll(items);
       });
     }
+  }
+
+  Future<void> _editSelectedItem(int index) async {
+    final updated = await showEditItemDialog(context, _selectedItems[index]);
+    if (updated == null || !mounted) return;
+    setState(() => _selectedItems[index] = updated);
   }
 
   void _pickPromisedDate() async {
@@ -571,13 +578,16 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               ),
               if (_selectedItems.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                ..._selectedItems.map((item) {
+                ..._selectedItems.asMap().entries.map((entry) {
+                  final item = entry.value;
                   return Card(
                     margin: const EdgeInsets.only(bottom: 6),
                     child: ListTile(
                       dense: true,
                       title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                      subtitle: Text('${item.quantity} x ${CurrencyFormatter.format(item.unitPrice)}'),
+                      subtitle: Text('${item.quantity} x ${CurrencyFormatter.format(item.unitPrice)}'
+                          '${_itemsLocked ? '' : '  ·  tap to edit price'}'),
+                      onTap: _itemsLocked ? null : () => _editSelectedItem(entry.key),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary),
