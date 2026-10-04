@@ -79,5 +79,6 @@ abstract class GarageRepository {
 
   Future<List<MaintenanceItem>> fetchCatalog();
   Future<MaintenanceItem> createCatalogItem(MaintenanceItem item);
+  Future<MaintenanceItem> updateCatalogItem(MaintenanceItem item);
   Future<void> deleteCatalogItem(String itemId);
 }

@@ -146,6 +146,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
         name: item.name,
         category: item.category,
         unitPrice: item.unitPrice,
+        taxPercent: item.taxPercent,
         unit: item.unit,
         isLabour: item.isLabour,
       ));

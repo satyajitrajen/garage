@@ -390,6 +390,14 @@ class MockGarageRepository implements GarageRepository {
   }
 
   @override
+  Future<MaintenanceItem> updateCatalogItem(MaintenanceItem item) async {
+    final i = _catalog.indexWhere((c) => c.id == item.id);
+    if (i == -1) throw StateError('Catalog item not found');
+    _catalog[i] = item;
+    return item;
+  }
+
+  @override
   Future<void> deleteCatalogItem(String itemId) async {
     _catalog.removeWhere((c) => c.id == itemId);
   }

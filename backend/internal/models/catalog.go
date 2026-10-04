@@ -7,6 +7,7 @@ type CatalogItem struct {
 	Name       string    `json:"name"`
 	Category   string    `json:"category"`
 	UnitPrice  float64   `json:"unitPrice"`
+	TaxPercent float64   `json:"taxPercent"`
 	Unit       string    `json:"unit"`
 	IsLabour   bool      `json:"isLabour"`
 	PartNumber *string   `json:"partNumber"`

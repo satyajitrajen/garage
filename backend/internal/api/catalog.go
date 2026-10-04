@@ -31,6 +31,9 @@ func validateCatalogItem(ci *models.CatalogItem) string {
 	if ci.UnitPrice < 0 {
 		return "unitPrice cannot be negative"
 	}
+	if ci.TaxPercent < 0 || ci.TaxPercent > 100 {
+		return "taxPercent must be between 0 and 100"
+	}
 	if ci.Unit == "" {
 		ci.Unit = "Pcs"
 	}

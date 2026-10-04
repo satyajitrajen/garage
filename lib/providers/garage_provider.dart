@@ -148,6 +148,13 @@ class GarageProvider extends ChangeNotifier {
     return saved;
   }
 
+  Future<MaintenanceItem> updateCatalogItem(MaintenanceItem item) async {
+    final saved = await _repo.updateCatalogItem(item);
+    _catalog = [for (final c in _catalog) c.id == saved.id ? saved : c];
+    notifyListeners();
+    return saved;
+  }
+
   Future<void> deleteCatalogItem(String itemId) async {
     await _repo.deleteCatalogItem(itemId);
     _catalog = _catalog.where((c) => c.id != itemId).toList();

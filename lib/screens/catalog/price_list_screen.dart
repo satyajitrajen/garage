@@ -43,10 +43,11 @@ class _PriceListScreenState extends State<PriceListScreen> {
     if (result == null || !mounted) return;
     final provider = context.read<GarageProvider>();
     try {
-      // The catalog API has no update: an edit saves the new version first,
-      // then removes the old one, so a failure never loses the item.
-      await provider.addCatalogItem(result);
-      if (existing != null) await provider.deleteCatalogItem(existing.id);
+      if (existing == null) {
+        await provider.addCatalogItem(result);
+      } else {
+        await provider.updateCatalogItem(result);
+      }
       if (!mounted) return;
       showAppSnackBar(context, existing == null ? 'Item added' : 'Item updated',
           type: SnackBarType.success);
@@ -219,6 +220,8 @@ class _ItemFormState extends State<_ItemForm> {
       TextEditingController(text: widget.existing?.partNumber);
   late ItemCategory _category =
       widget.existing?.category ?? ItemCategory.sparePart;
+  late double _tax = widget.existing?.taxPercent ??
+      context.read<GarageProvider>().config.defaultTaxPercent;
 
   static String _fmt(double v) =>
       v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toString();
@@ -238,15 +241,15 @@ class _ItemFormState extends State<_ItemForm> {
     Navigator.pop(
       context,
       MaintenanceItem(
-        id: const Uuid().v4(),
+        id: widget.existing?.id ?? const Uuid().v4(),
         name: _name.text.trim(),
         category: _category,
         unitPrice: double.parse(_price.text.trim()),
         unit: _unit.text.trim().isEmpty ? 'Pcs' : _unit.text.trim(),
         isLabour: _category == ItemCategory.labour,
         partNumber: partNo.isEmpty ? null : partNo,
-        taxPercent: widget.existing?.taxPercent ??
-            context.read<GarageProvider>().config.defaultTaxPercent,
+        taxPercent: _tax,
+        notes: widget.existing?.notes,
       ),
     );
   }
@@ -313,6 +316,19 @@ class _ItemFormState extends State<_ItemForm> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<double>(
+                value: _tax,
+                decoration: const InputDecoration(labelText: 'GST %'),
+                items: [
+                  for (final t in {
+                    ...context.read<GarageProvider>().config.taxPercentOptions,
+                    _tax,
+                  })
+                    DropdownMenuItem(value: t, child: Text('${_fmt(t)}%')),
+                ],
+                onChanged: (t) => setState(() => _tax = t ?? _tax),
               ),
               const SizedBox(height: 12),
               TextFormField(

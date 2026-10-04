@@ -387,17 +387,28 @@ class ApiGarageRepository implements GarageRepository {
 
   @override
   Future<MaintenanceItem> createCatalogItem(MaintenanceItem item) async {
-    final json = await _api.post('/api/catalog', {
-      'name': item.name,
-      'category': item.category.name,
-      'unitPrice': item.unitPrice,
-      'unit': item.unit,
-      'isLabour': item.isLabour,
-      'partNumber': item.partNumber,
-      'notes': item.notes,
-    }) as Map<String, dynamic>;
+    final json = await _api.post('/api/catalog', _catalogBody(item))
+        as Map<String, dynamic>;
     return catalogItemFromJson(json);
   }
+
+  @override
+  Future<MaintenanceItem> updateCatalogItem(MaintenanceItem item) async {
+    final json = await _api.put('/api/catalog/${item.id}', _catalogBody(item))
+        as Map<String, dynamic>;
+    return catalogItemFromJson(json);
+  }
+
+  Map<String, dynamic> _catalogBody(MaintenanceItem item) => {
+        'name': item.name,
+        'category': item.category.name,
+        'unitPrice': item.unitPrice,
+        'taxPercent': item.taxPercent,
+        'unit': item.unit,
+        'isLabour': item.isLabour,
+        'partNumber': item.partNumber,
+        'notes': item.notes,
+      };
 
   @override
   Future<void> deleteCatalogItem(String itemId) async {
