@@ -143,7 +143,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           borderRadius: BorderRadius.circular(20),
           child: SizedBox(
             height: 56,
-            child: Column(
+            // Scale the icon + label down to fit with large system text.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 AnimatedContainer(
@@ -208,6 +212,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
                 ),
               ],
+            ),
             ),
           ),
         ),

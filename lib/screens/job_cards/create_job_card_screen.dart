@@ -532,7 +532,11 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                   borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                   border: Border.all(color: palette.border),
                 ),
-                child: Column(
+                // Own Material so the tiles' ink isn't hidden by the
+                // container's background.
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Column(
                   children: _inspectionChecklist.keys.map((key) {
                     final checked = _inspectionChecklist[key] ?? true;
                     return CheckboxListTile(
@@ -548,6 +552,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                       },
                     );
                   }).toList(),
+                ),
                 ),
               ),
               const SizedBox(height: 24),

@@ -189,7 +189,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _pickReceipt(ImageSource.camera),
                 icon: const Icon(Icons.photo_camera_outlined),
-                label: Text(_receiptBytes == null ? 'Take photo' : 'Retake'),
+                label: Text(_receiptBytes == null ? 'Take photo' : 'Retake',
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ),
             const SizedBox(width: 10),
@@ -197,7 +198,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _pickReceipt(ImageSource.gallery),
                 icon: const Icon(Icons.photo_library_outlined),
-                label: const Text('Gallery'),
+                label: const Text('Gallery',
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ),
           ],
@@ -400,11 +402,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
+                      Expanded(
+                        child: Row(
                         children: [
                           Icon(Icons.calendar_month_rounded, color: palette.primary, size: 20),
                           const SizedBox(width: 10),
-                          Column(
+                          Flexible(
+                            child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
@@ -420,7 +424,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               ),
                             ],
                           ),
+                          ),
                         ],
+                      ),
                       ),
                       Icon(Icons.edit_calendar_rounded, size: 18, color: palette.primary),
                     ],

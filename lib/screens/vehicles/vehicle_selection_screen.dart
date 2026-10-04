@@ -247,7 +247,11 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(color: palette.primary.withOpacity(0.5), width: 1.2),
                                     ),
-                                    child: Row(
+                                    // Plate scales down as a unit on narrow cards.
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         // Indian flag navy band — deliberate theme-invariant literal.
@@ -263,20 +267,18 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 6),
-                                        Flexible(
-                                          child: Text(
-                                            vehicle.registrationNumber,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.poppins(
-                                              fontSize: AppText.body,
-                                              fontWeight: FontWeight.w700,
-                                              letterSpacing: 0.8,
-                                              color: palette.textPrimary,
-                                            ),
+                                        Text(
+                                          vehicle.registrationNumber,
+                                          maxLines: 1,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: AppText.body,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.8,
+                                            color: palette.textPrimary,
                                           ),
                                         ),
                                       ],
+                                    ),
                                     ),
                                   ),
                                   ),
@@ -363,12 +365,16 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Text(
-                                    'Tap to select & continue',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: AppText.caption,
-                                      fontWeight: FontWeight.w600,
-                                      color: palette.primary,
+                                  Flexible(
+                                    child: Text(
+                                      'Tap to select & continue',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: AppText.caption,
+                                        fontWeight: FontWeight.w600,
+                                        color: palette.primary,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 4),

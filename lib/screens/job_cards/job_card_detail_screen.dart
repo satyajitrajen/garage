@@ -276,14 +276,19 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        vehicle?.registrationNumber ?? 'Vehicle',
-                        style: GoogleFonts.poppins(
-                          fontSize: AppText.title,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
+                      Expanded(
+                        child: Text(
+                          vehicle?.registrationNumber ?? 'Vehicle',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.title,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
@@ -429,14 +434,17 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
               const SizedBox(height: 16),
               Container(
                 clipBehavior: Clip.antiAlias,
+                // Background lives on the tile (not the box) so its ink
+                // ripple stays visible.
                 decoration: BoxDecoration(
-                  color: palette.card,
                   borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                   border: Border.all(color: palette.border),
                 ),
                 child: Theme(
                   data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
+                    backgroundColor: palette.card,
+                    collapsedBackgroundColor: palette.card,
                     tilePadding: const EdgeInsets.symmetric(horizontal: 16),
                     childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     title: Text('Inspection',

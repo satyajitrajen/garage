@@ -142,19 +142,25 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             const SizedBox(height: 12),
             Text(
               'Payment Received!',
+              textAlign: TextAlign.center,
               style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: AppText.headline),
             ),
           ],
         ),
-        content: Column(
+        // Scrolls when large text makes the receipt taller than the dialog.
+        content: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              CurrencyFormatter.format(payment.amount),
-              style: GoogleFonts.poppins(
-                fontSize: AppText.display,
-                fontWeight: FontWeight.w700,
-                color: palette.paid,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                CurrencyFormatter.format(payment.amount),
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.display,
+                  fontWeight: FontWeight.w700,
+                  color: palette.paid,
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -179,26 +185,40 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Invoice:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
-                Text(invoiceNumber, style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w700)),
+                Flexible(
+                  child: Text('Invoice:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(invoiceNumber,
+                      textAlign: TextAlign.end,
+                      style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w700)),
+                ),
               ],
             ),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Remaining Due:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
-                Text(
-                  CurrencyFormatter.format(_remainingDueSnapshot),
-                  style: GoogleFonts.poppins(
-                    fontSize: AppText.caption,
-                    fontWeight: FontWeight.w700,
-                    color: _remainingDueSnapshot > 0 ? palette.pending : palette.paid,
+                Flexible(
+                  child: Text('Remaining Due:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    CurrencyFormatter.format(_remainingDueSnapshot),
+                    textAlign: TextAlign.end,
+                    style: GoogleFonts.poppins(
+                      fontSize: AppText.caption,
+                      fontWeight: FontWeight.w700,
+                      color: _remainingDueSnapshot > 0 ? palette.pending : palette.paid,
+                    ),
                   ),
                 ),
               ],
             ),
           ],
+        ),
         ),
         actions: [
           SizedBox(

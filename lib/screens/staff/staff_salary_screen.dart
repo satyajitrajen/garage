@@ -243,14 +243,16 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                         child: Text('Net Salary Payout:', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
                       ),
                       const SizedBox(width: 8),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          CurrencyFormatter.format(netPayable),
-                          style: GoogleFonts.poppins(
-                            fontSize: AppText.display,
-                            fontWeight: FontWeight.w700,
-                            color: palette.paid,
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            CurrencyFormatter.format(netPayable),
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.display,
+                              fontWeight: FontWeight.w700,
+                              color: palette.paid,
+                            ),
                           ),
                         ),
                       ),

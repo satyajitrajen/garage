@@ -151,8 +151,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: const Text(
                           'New workshop? Create an account'),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Wrap(
+                      alignment: WrapAlignment.center,
                       children: [
                         TextButton(
                           onPressed: auth.isBusy

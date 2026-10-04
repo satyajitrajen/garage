@@ -415,7 +415,12 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
           ),
         ],
       ),
-      body: Column(
+      // Header (selected items, search, tabs) scrolls away so the catalog
+      // stays usable with the keyboard up or large text; totals are pinned.
+      body: NestedScrollView(
+        headerSliverBuilder: (context, _) => [
+          SliverToBoxAdapter(
+            child: Column(
         children: [
           // ---------------------------------------------------------
           // SELECTED ITEMS DRAWER / ACCORDION PREVIEW
@@ -461,7 +466,8 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                 if (_currentItems.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   SizedBox(
-                    height: 110,
+                    // Grows with the text scale so the price lines fit.
+                    height: 124 * MediaQuery.textScalerOf(context).scale(1),
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: _currentItems.length,
@@ -510,7 +516,11 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Column(
+                                  Flexible(
+                                    child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -527,6 +537,8 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                     ),
                                   ),
                                     ],
+                                  ),
+                                    ),
                                   ),
                                   Row(
                                     children: [
@@ -606,10 +618,12 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
               Tab(text: ItemCategory.transportMisc.displayName),
             ],
           ),
-
-          // Catalogue List
-          Expanded(
-            child: TabBarView(
+        ],
+            ),
+          ),
+        ],
+        // Catalogue List
+        body: TabBarView(
               controller: _tabController,
               children: [
                 _buildCatalogueList(provider.catalog, null),
@@ -620,10 +634,10 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                 _buildCatalogueList(provider.catalog, ItemCategory.transportMisc),
               ],
             ),
-          ),
+      ),
 
-          // Bottom Totals & Confirmation Bar
-          Container(
+      // Bottom Totals & Confirmation Bar
+      bottomNavigationBar: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             decoration: BoxDecoration(
               color: palette.card,
@@ -668,22 +682,24 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       ],
                     ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context, _currentItems);
-                    },
-                    icon: const Icon(Icons.check_rounded, size: 18),
-                    label: Text('Done (${_currentItems.length} items)'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context, _currentItems);
+                      },
+                      icon: const Icon(Icons.check_rounded, size: 18),
+                      label: Text('Done (${_currentItems.length} items)',
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        ],
-      ),
     );
   }
 

@@ -68,9 +68,16 @@ class GradientButton extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                   ],
-                  DefaultTextStyle(
-                    style: effectiveTextStyle,
-                    child: label,
+                  // Flexible + ellipsis: a long label shrinks instead of
+                  // overflowing in a tight row.
+                  Flexible(
+                    child: DefaultTextStyle(
+                      style: effectiveTextStyle,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      child: label,
+                    ),
                   ),
                 ],
               ),

@@ -421,7 +421,8 @@ MaintenanceItem catalogItemFromJson(Map<String, dynamic> j) => MaintenanceItem(
       category: _enumOr(
           ItemCategory.values, j['category'] as String?, ItemCategory.custom),
       unitPrice: _dbl(j['unitPrice']),
-      taxPercent: _dbl(j['taxPercent']),
+      // Older backends don't send taxPercent for catalog rows.
+      taxPercent: j['taxPercent'] == null ? 0 : _dbl(j['taxPercent']),
       unit: j['unit'] as String,
       isLabour: j['isLabour'] as bool,
       partNumber: _str(j, 'partNumber'),

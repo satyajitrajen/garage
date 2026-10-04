@@ -171,7 +171,9 @@ class StaffListScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                GradientButton(
+                const SizedBox(width: 8),
+                Flexible(
+                  child: GradientButton(
                   onPressed: () async {
                     await provider.markAllPresentToday();
                     if (!context.mounted) return;
@@ -186,6 +188,7 @@ class StaffListScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   height: 38,
                   borderRadius: 14,
+                ),
                 ),
               ],
             ),

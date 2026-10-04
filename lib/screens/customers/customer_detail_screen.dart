@@ -426,14 +426,19 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        v.registrationNumber,
-                        style: GoogleFonts.poppins(
-                          fontSize: AppText.title,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
+                      Expanded(
+                        child: Text(
+                          v.registrationNumber,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.title,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
@@ -457,7 +462,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                     style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
-                  Row(
+                  Wrap(
                     children: [
                       Text(
                         '${v.currentKm} km',

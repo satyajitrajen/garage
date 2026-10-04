@@ -253,7 +253,11 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     final isActive = _currentStep >= stepIndex;
     final isCurrent = _currentStep == stepIndex;
 
-    return Column(
+    // Flexible + one-line label: four steps fit narrow phones and large text.
+    return Flexible(
+      flex: 2,
+      child: Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         CircleAvatar(
           radius: 16,
@@ -269,6 +273,9 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
         const SizedBox(height: 4),
         Text(
           title,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
           style: GoogleFonts.poppins(
             fontSize: AppText.label,
             fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
@@ -276,6 +283,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           ),
         ),
       ],
+      ),
     );
   }
 
@@ -284,7 +292,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     return Expanded(
       child: Container(
         height: 2,
-        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
         color: isActive ? context.palette.primary : context.palette.textMuted,
       ),
     );
@@ -476,6 +484,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     // from the body's MediaQuery, so decide from the space actually given.
     return LayoutBuilder(builder: (context, constraints) {
     final keyboardOpen = constraints.maxHeight < 380;
+    // Also scroll (but keep the totals) when large text leaves too little
+    // room for a pinned list.
+    final scrolling = keyboardOpen ||
+        constraints.maxHeight < 600 * MediaQuery.textScalerOf(context).scale(1);
 
     // With the keyboard up the step has ~250px on a small phone: scroll the
     // whole step (list shrink-wrapped) instead of pinning an Expanded list.
@@ -550,9 +562,9 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           const SizedBox(height: 12),
 
           _expandUnlessScrolling(
-            keyboardOpen,
+            scrolling,
             _selectedItems.isEmpty
-                ? (keyboardOpen
+                ? (scrolling
                     ? Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text('No items added yet',
@@ -564,8 +576,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                         description: 'Tap "Add Items" to choose oil, filters, labour, etc.',
                       ))
                 : ListView.separated(
-                    shrinkWrap: keyboardOpen,
-                    physics: keyboardOpen ? const NeverScrollableScrollPhysics() : null,
+                    shrinkWrap: scrolling,
+                    physics: scrolling ? const NeverScrollableScrollPhysics() : null,
                     itemCount: _selectedItems.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
@@ -632,11 +644,13 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      GradientButton(
-                        onPressed: _generateFinalBill,
-                        icon: const Icon(Icons.receipt_long_rounded),
-                        label: const Text('Generate Bill'),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      Flexible(
+                        child: GradientButton(
+                          onPressed: _generateFinalBill,
+                          icon: const Icon(Icons.receipt_long_rounded),
+                          label: const Text('Generate Bill'),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
                       ),
                     ],
                   ),
@@ -649,7 +663,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       );
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: keyboardOpen ? SingleChildScrollView(child: content) : content,
+      child: scrolling ? SingleChildScrollView(child: content) : content,
     );
     });
   }

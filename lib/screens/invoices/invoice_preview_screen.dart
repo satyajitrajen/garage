@@ -161,7 +161,13 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Column(
+                      // Invoice facts shrink to fit next to a long seller
+                      // block on narrow screens / large text.
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.topRight,
+                          child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text('Tax invoice',
@@ -186,6 +192,8 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                               palette,
                             ),
                         ],
+                      ),
+                        ),
                       ),
                     ],
                   ),
@@ -327,9 +335,15 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Total', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
-                      Text(
-                        CurrencyFormatter.format(invoice.grandTotal),
-                        style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.primary),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            CurrencyFormatter.format(invoice.grandTotal),
+                            style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.primary),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -556,12 +570,15 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   children: [
                     Icon(Icons.check_circle_rounded, color: palette.paid, size: 22),
                     const SizedBox(width: 8),
-                    Text(
-                      'Bill Settled & Paid in Full',
-                      style: GoogleFonts.poppins(
-                        fontSize: AppText.title,
-                        fontWeight: FontWeight.w700,
-                        color: palette.paid,
+                    Flexible(
+                      child: Text(
+                        'Bill Settled & Paid in Full',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.title,
+                          fontWeight: FontWeight.w700,
+                          color: palette.paid,
+                        ),
                       ),
                     ),
                   ],

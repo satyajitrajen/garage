@@ -443,7 +443,18 @@ class _Row extends StatelessWidget {
                 ],
               ),
             ),
-            if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+            // Scale the trailing block down rather than overflow on narrow
+            // screens or with large text.
+            if (trailing != null) ...[
+              const SizedBox(width: 12),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: trailing!,
+                ),
+              ),
+            ],
           ],
         ),
       ),
