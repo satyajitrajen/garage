@@ -362,7 +362,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             tabs: [
               Tab(text: 'Vehicles (${vehicles.length})'),
               Tab(text: 'Job Cards (${customerJobCards.length})'),
-              Tab(text: 'Invoices (${customerInvoices.length})'),
+              Tab(text: 'Bills (${customerInvoices.length})'),
             ],
           ),
 
@@ -562,7 +562,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
     final palette = context.palette;
     if (invoices.isEmpty) {
       return Center(
-        child: Text('No invoices recorded yet', style: GoogleFonts.poppins(color: palette.textMuted)),
+        child: Text('No bills yet', style: GoogleFonts.poppins(color: palette.textMuted)),
       );
     }
     return ListView.builder(

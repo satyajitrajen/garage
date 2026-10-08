@@ -7,6 +7,7 @@ import '../../providers/garage_provider.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
+import '../../utils/grouped_number.dart';
 
 class AddVehicleDialog extends StatefulWidget {
   final String customerId;
@@ -50,7 +51,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
       _modelController.text = v.model;
       _variantController.text = v.variant ?? '';
       _yearController.text = v.year?.toString() ?? '';
-      _kmController.text = v.currentKm.toString();
+      _kmController.text = groupDigits(v.currentKm);
       _colorController.text = v.color ?? '';
       _fuelType = v.fuelType;
     }
@@ -88,7 +89,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
           variant: _variantController.text.trim().isEmpty ? null : _variantController.text.trim(),
           year: int.tryParse(_yearController.text.trim()),
           fuelType: _fuelType,
-          currentKm: int.tryParse(_kmController.text.trim()) ?? 0,
+          currentKm: parseGroupedInt(_kmController.text) ?? 0,
           color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
           chassisNumber: original.chassisNumber,
           engineNumber: original.engineNumber,
@@ -111,7 +112,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
         variant: _variantController.text.trim().isEmpty ? null : _variantController.text.trim(),
         year: int.tryParse(_yearController.text.trim()),
         fuelType: _fuelType,
-        currentKm: int.tryParse(_kmController.text.trim()) ?? 0,
+        currentKm: parseGroupedInt(_kmController.text) ?? 0,
         color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
       );
 
@@ -278,6 +279,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _kmController,
+                        inputFormatters: const [GroupedDigitsInputFormatter()],
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           labelText: 'KM *',
@@ -286,7 +288,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                         ),
                         validator: (val) {
                           if (val == null || val.trim().isEmpty) return 'KM is required';
-                          final km = int.tryParse(val.trim());
+                          final km = parseGroupedInt(val);
                           if (km == null || km < 0) return 'Enter a valid KM reading';
                           return null;
                         },

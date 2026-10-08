@@ -69,9 +69,10 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Quotations & Estimates', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text('Estimates', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
-      floatingActionButton: PermissionGate(
+      // Empty list: its empty state already has the Add button.
+      floatingActionButton: provider.quotations.isEmpty ? null : PermissionGate(
         permission: Permissions.quotationsManage,
         child: GradientFloatingActionButton(
         onPressed: _createNewQuotation,
@@ -138,7 +139,7 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
         icon: Icons.request_quote_outlined,
         title: 'No Estimates Found',
         description: filter != null
-            ? 'No quotations currently with status "${filter.displayName}".'
+            ? 'No estimates with status "${filter.displayName}".'
             : 'No estimates created yet. Create an estimate for your customers.',
         buttonText: 'Create Estimate',
         onButtonPressed: _createNewQuotation,

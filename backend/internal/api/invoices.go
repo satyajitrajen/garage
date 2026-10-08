@@ -114,7 +114,7 @@ func (s *Server) createInvoice(w http.ResponseWriter, r *http.Request) {
 	}
 	created, err := s.Store.CreateInvoice(r.Context(), garageID, inv)
 	if errors.Is(err, store.ErrDuplicate) {
-		httputil.Error(w, 409, "conflict", "invoice number already exists")
+		httputil.Error(w, 409, "conflict", "bill number already exists, please save again")
 		return
 	}
 	if err != nil {

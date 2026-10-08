@@ -11,12 +11,14 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/quantity_formatter.dart';
 import '../../utils/gst_lines.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import 'quotation_detail_screen.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
+import '../../utils/grouped_number.dart';
 
 class CreateQuotationScreen extends StatefulWidget {
   final Customer customer;
@@ -67,12 +69,12 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     final config = context.read<GarageProvider>().config;
     _taxPercent = config.defaultTaxPercent;
     _validityDays = config.quotationValidityOptions.first;
-    _kmController.text = widget.vehicle.currentKm.toString();
+    _kmController.text = groupDigits(widget.vehicle.currentKm);
 
     // Edit mode: prefill everything from the quotation being edited.
     final existing = widget.existing;
     if (existing != null) {
-      _kmController.text = existing.kmReading.toString();
+      _kmController.text = groupDigits(existing.kmReading);
       _discountController.text = existing.overallDiscount == 0
           ? '0'
           : existing.overallDiscount.toStringAsFixed(2);
@@ -107,7 +109,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       MaterialPageRoute(
         builder: (_) => AddMaintenanceScreen(
           initialItems: _items,
-          title: 'Add Estimate Items',
+          title: 'Add items',
         ),
       ),
     );
@@ -151,7 +153,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         ? null
         : _notesController.text.trim();
     final km =
-        int.tryParse(_kmController.text.trim()) ?? widget.vehicle.currentKm;
+        parseGroupedInt(_kmController.text) ?? widget.vehicle.currentKm;
 
     try {
       if (_isEditing) {
@@ -167,7 +169,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           customerId: existing.customerId,
           vehicleId: existing.vehicleId,
           kmReading:
-              int.tryParse(_kmController.text.trim()) ?? existing.kmReading,
+              parseGroupedInt(_kmController.text) ?? existing.kmReading,
           items: _items,
           overallDiscount: discount,
           taxPercent: _taxPercent,
@@ -207,7 +209,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           taxPercent: _taxPercent,
           perItemTax: true,
           validityDays: _validityDays,
-          status: QuotationStatus.sent,
+          status: QuotationStatus.draft,
           notes: notes,
         );
 
@@ -220,11 +222,14 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           type: SnackBarType.success,
         );
 
-        Navigator.pushReplacement(
+        // Drop the customer/vehicle pickers and this form so Back from the
+        // new estimate returns to the main tabs, as after a new bill.
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
             builder: (_) => QuotationDetailScreen(quotationId: created.id),
           ),
+          (route) => route.isFirst,
         );
       }
     } catch (e) {
@@ -276,7 +281,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing ? 'Edit Estimate' : 'Create Quotation / Estimate',
+          _isEditing ? 'Edit Estimate' : 'New Estimate',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
       ),
@@ -379,7 +384,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                       ),
                       subtitle: Text(
-                        '${item.quantity} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}',
+                        '${formatQuantity(item.quantity)} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}',
                       ),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
@@ -469,6 +474,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _kmController,
+                      inputFormatters: const [GroupedDigitsInputFormatter()],
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
                         labelText: 'KM Reading',
@@ -485,7 +491,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 controller: _notesController,
                 maxLines: 2,
                 decoration: const InputDecoration(
-                  labelText: 'Quotation Notes / Terms',
+                  labelText: 'Estimate notes / terms',
                   hintText:
                       'e.g. Price valid for genuine OEM parts. Labour included.',
                 ),
@@ -570,7 +576,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                   onPressed: _saveQuotation,
                   icon: const Icon(Icons.check_circle_outline_rounded),
                   label: Text(
-                    _isEditing ? 'Save Changes' : 'Save & Send Estimate',
+                    _isEditing ? 'Save Changes' : 'Save Estimate',
                   ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),

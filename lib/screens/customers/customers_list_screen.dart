@@ -79,7 +79,8 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
           ),
         ),
       ),
-      floatingActionButton: PermissionGate(
+      // Empty list: its empty state already has the Add button.
+      floatingActionButton: provider.customers.isEmpty ? null : PermissionGate(
         permission: Permissions.customersManage,
         child: GradientFloatingActionButton(
         onPressed: () {

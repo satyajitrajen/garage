@@ -94,7 +94,7 @@ func (s *Server) createQuotation(w http.ResponseWriter, r *http.Request) {
 	}
 	created, err := s.Store.CreateQuotation(r.Context(), garageID, q)
 	if errors.Is(err, store.ErrDuplicate) {
-		httputil.Error(w, 409, "conflict", "quotation number already exists")
+		httputil.Error(w, 409, "conflict", "estimate number already exists, please save again")
 		return
 	}
 	if err != nil {

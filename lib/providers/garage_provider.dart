@@ -544,9 +544,9 @@ class GarageProvider extends ChangeNotifier {
       assignedStaffId: assignedStaffId,
       status: JobStatus.inProgress,
       promisedDeliveryDate:
-          DateTime.now().add(Duration(hours: config.promisedDeliveryHours)),
+          defaultPromisedDelivery(),
       items: itemsWithDocumentDiscount(quote.items, quote.overallDiscount),
-      supervisorNotes: 'Created directly from approved quotation ${quote.quotationNumber}',
+      supervisorNotes: 'Created from approved estimate ${quote.quotationNumber}',
     );
 
     // Store the repository-created job card (the cache already holds it) so
@@ -579,6 +579,26 @@ class GarageProvider extends ChangeNotifier {
   // -------------------------------------------------------------
   // INVOICE METHODS
   // -------------------------------------------------------------
+  /// Default "promised delivery" for a new job: now + the configured hours,
+  /// rounded up to the next whole hour and kept inside workshop hours
+  /// (10:00–19:00). Evening jobs no longer default to 3 AM — they roll to
+  /// 10 AM the next working morning.
+  DateTime defaultPromisedDelivery([DateTime? now]) =>
+      promisedDeliveryFrom(now ?? DateTime.now(), config.promisedDeliveryHours);
+
+  static DateTime promisedDeliveryFrom(DateTime now, int hours) {
+    const open = 10, close = 19;
+    var t = now.add(Duration(hours: hours));
+    if (t.minute != 0 || t.second != 0 || t.millisecond != 0 || t.microsecond != 0) {
+      t = DateTime(t.year, t.month, t.day, t.hour + 1);
+    }
+    if (t.hour < open) return DateTime(t.year, t.month, t.day, open);
+    if (t.hour > close || (t.hour == close && t.minute > 0)) {
+      return DateTime(t.year, t.month, t.day + 1, open);
+    }
+    return t;
+  }
+
   String generateInvoiceNumber() => _nextNumber(
         prefix: 'INV-${DateTime.now().year}',
         existingNumbers: _invoices.map((inv) => inv.invoiceNumber).toList(),
@@ -619,7 +639,7 @@ class GarageProvider extends ChangeNotifier {
       }
     } catch (_) {
       _lastSideEffectWarning =
-          'Invoice saved, but updating the vehicle/job card failed';
+          'Bill saved, but updating the vehicle/job card failed';
     }
     notifyListeners();
     return created;
@@ -636,10 +656,10 @@ class GarageProvider extends ChangeNotifier {
     // the side effects are still running) must fail here instead of billing
     // the job twice.
     if (_invoices.any((inv) => inv.jobCardId == jobCard.id)) {
-      throw Exception('This job card already has an invoice');
+      throw Exception('This job card already has a bill');
     }
     if (jobCard.items.isEmpty) {
-      throw Exception('Cannot invoice a job card with no work items');
+      throw Exception('Cannot bill a job card with no work items');
     }
     final invoice = Invoice(
       id: _uuid.v4(),
@@ -690,7 +710,7 @@ class GarageProvider extends ChangeNotifier {
       kmReading: kmReading,
       status: JobStatus.inProgress,
       promisedDeliveryDate:
-          DateTime.now().add(Duration(hours: config.promisedDeliveryHours)),
+          defaultPromisedDelivery(),
       items: List.of(items),
       supervisorNotes: 'Created via Quick Service wizard',
     ));
@@ -728,7 +748,7 @@ class GarageProvider extends ChangeNotifier {
     if (i == -1) throw Exception('Invoice not found');
     final invoice = _invoices[i];
     if (invoice.totalPaidAmount > 0) {
-      throw Exception('Cannot cancel an invoice with recorded payments');
+      throw Exception('Cannot cancel a bill with recorded payments');
     }
     _invoices[i] = await _repo.cancelInvoice(invoiceId);
     notifyListeners();
@@ -750,7 +770,7 @@ class GarageProvider extends ChangeNotifier {
 
     final invoice = _invoices[i];
     if (invoice.status == InvoiceStatus.cancelled) {
-      throw Exception('Cannot record payment against a cancelled invoice');
+      throw Exception('Cannot record payment against a cancelled bill');
     }
     // Guard against overpayment / invalid amounts so collections analytics
     // cannot be inflated by a bad caller (tiny epsilon for float noise).

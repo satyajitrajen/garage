@@ -77,14 +77,15 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Invoices & Billing', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text('Bills', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
-      floatingActionButton: PermissionGate(
+      // Empty list: its empty state already has the Add button.
+      floatingActionButton: provider.invoices.isEmpty ? null : PermissionGate(
         permission: Permissions.invoicesManage,
         child: GradientFloatingActionButton(
         onPressed: _createNewInvoice,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('New Invoice'),
+        label: const Text('New Bill'),
       ),
       ),
       body: Column(
@@ -110,7 +111,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             padding: const EdgeInsets.all(16),
             child: CustomSearchBar(
               controller: _searchController,
-              hintText: 'Search by invoice #, customer, plate...',
+              hintText: 'Search by bill #, customer, plate...',
               onChanged: (val) => setState(() => _searchQuery = val),
             ),
           ),
@@ -122,7 +123,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             tabAlignment: TabAlignment.start,
             labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
             tabs: const [
-              Tab(text: 'All Invoices'),
+              Tab(text: 'All Bills'),
               Tab(text: 'Paid'),
               Tab(text: 'Partial'),
               Tab(text: 'Pending'),
@@ -192,11 +193,11 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
     if (filtered.isEmpty) {
       return EmptyStateWidget(
         icon: Icons.receipt_long_outlined,
-        title: 'No Invoices Found',
+        title: 'No Bills Found',
         description: filter != null
-            ? 'No invoices currently under status "${filter.displayName}".'
-            : 'No invoices created yet. Create a bill for serviced vehicles.',
-        buttonText: 'Create Invoice',
+            ? 'No bills with status "${filter.displayName}".'
+            : 'No bills yet. Create a bill for serviced vehicles.',
+        buttonText: 'Create Bill',
         onButtonPressed: _createNewInvoice,
       );
     }

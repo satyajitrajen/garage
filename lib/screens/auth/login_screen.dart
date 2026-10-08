@@ -64,7 +64,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(Icons.car_repair_rounded, size: 56),
+                    Image.asset(
+                      'assets/images/logo.png',
+                      height: 96,
+                      semanticLabel: 'NT Garage logo',
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       'NT Garage',

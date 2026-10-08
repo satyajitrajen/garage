@@ -36,6 +36,14 @@ void showAppSnackBar(
         ),
         backgroundColor: background,
         behavior: SnackBarBehavior.floating,
+        // Short-lived so it doesn't sit over a screen's bottom action button
+        // (e.g. "Create Bill"); errors stay longer with a close button.
+        duration: type == SnackBarType.error
+            ? const Duration(seconds: 4)
+            : const Duration(seconds: 2),
+        showCloseIcon: type == SnackBarType.error,
+        closeIconColor: Colors.white,
+        dismissDirection: DismissDirection.horizontal,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );

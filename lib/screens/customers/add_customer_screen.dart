@@ -12,6 +12,7 @@ import '../job_cards/create_job_card_screen.dart';
 import '../quotations/create_quotation_screen.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
+import '../../utils/grouped_number.dart';
 
 class AddCustomerScreen extends StatefulWidget {
   final bool startJobImmediately;
@@ -56,6 +57,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   FuelType _fuelType = FuelType.petrol;
   bool _sameAsPhone = true;
   bool _hasVehicle = true;
+  bool _showMoreCustomer = false;
+  bool _showMoreVehicle = false;
   Customer? _createdCustomer;
 
   @override
@@ -72,6 +75,9 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       _addressController.text = c.address ?? '';
       _notesController.text = c.notes ?? '';
       _hasVehicle = false;
+      // Editing: open the optional section if anything in it is filled in.
+      _showMoreCustomer = [c.email, c.gstin, c.address, c.notes]
+          .any((v) => v != null && v.trim().isNotEmpty);
     }
   }
 
@@ -177,7 +183,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         variant: _variantController.text.trim().isEmpty ? null : _variantController.text.trim(),
         year: int.tryParse(_yearController.text.trim()),
         fuelType: _fuelType,
-        currentKm: int.tryParse(_kmController.text.trim()) ?? 0,
+        currentKm: parseGroupedInt(_kmController.text) ?? 0,
         color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
       );
       try {
@@ -314,6 +320,15 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
               ],
               const SizedBox(height: 14),
 
+              // Optional customer details (email, address, GSTIN, notes) are
+              // folded away so the required fields fit on one screen.
+              _moreToggle(
+                label: 'More customer details (email, address, GSTIN, notes)',
+                expanded: _showMoreCustomer,
+                onTap: () => setState(() => _showMoreCustomer = !_showMoreCustomer),
+              ),
+              if (_showMoreCustomer) ...[
+              const SizedBox(height: 14),
               // Email & Address
               TextFormField(
                 controller: _emailController,
@@ -357,6 +372,17 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                   prefixIcon: Icon(Icons.receipt_long_outlined),
                 ),
               ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _notesController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Customer / Special Preference Notes',
+                  hintText: 'e.g. VIP client, requests synthetic oil always',
+                  prefixIcon: Icon(Icons.note_alt_outlined),
+                ),
+              ),
+              ],
               const SizedBox(height: 28),
 
               // ---------------------------------------------------
@@ -446,34 +472,19 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                // Current KM Reading & Variant
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _kmController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: 'KM Reading *',
-                          hintText: 'e.g. 45000',
-                          prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
-                        ),
-                        validator: (val) => _hasVehicle && (val == null || val.trim().isEmpty)
-                            ? 'KM is required'
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _variantController,
-                        decoration: const InputDecoration(
-                          labelText: 'Variant',
-                          hintText: 'e.g. VXI, SX (O)',
-                        ),
-                      ),
-                    ),
-                  ],
+                // Current KM Reading
+                TextFormField(
+                  controller: _kmController,
+                  inputFormatters: const [GroupedDigitsInputFormatter()],
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'KM Reading *',
+                    hintText: 'e.g. 45000',
+                    prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
+                  ),
+                  validator: (val) => _hasVehicle && (val == null || val.trim().isEmpty)
+                      ? 'KM is required'
+                      : null,
                 ),
                 const SizedBox(height: 14),
 
@@ -508,8 +519,23 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 8),
 
+                _moreToggle(
+                  label: 'More vehicle details (variant, year, colour)',
+                  expanded: _showMoreVehicle,
+                  onTap: () => setState(() => _showMoreVehicle = !_showMoreVehicle),
+                ),
+                if (_showMoreVehicle) ...[
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _variantController,
+                  decoration: const InputDecoration(
+                    labelText: 'Variant',
+                    hintText: 'e.g. VXI, SX (O)',
+                  ),
+                ),
+                const SizedBox(height: 14),
                 // Year & Color
                 Row(
                   children: [
@@ -535,19 +561,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                     ),
                   ],
                 ),
+                ],
               ],
-              const SizedBox(height: 24),
-
-              // Notes
-              TextFormField(
-                controller: _notesController,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Customer / Special Preference Notes',
-                  hintText: 'e.g. VIP client, requests synthetic oil always',
-                  prefixIcon: Icon(Icons.note_alt_outlined),
-                ),
-              ),
               const SizedBox(height: 32),
 
               // ---------------------------------------------------
@@ -623,6 +638,23 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// "More details" disclosure row for optional fields.
+  Widget _moreToggle({
+    required String label,
+    required bool expanded,
+    required VoidCallback onTap,
+  }) {
+    return TextButton.icon(
+      onPressed: onTap,
+      style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
+      icon: Icon(expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded),
+      label: Text(
+        expanded ? 'Hide optional details' : label,
+        textAlign: TextAlign.start,
       ),
     );
   }

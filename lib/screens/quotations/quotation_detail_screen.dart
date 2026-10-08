@@ -221,7 +221,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     if (quote == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Estimate Details')),
-        body: const Center(child: Text('Quotation not found')),
+        body: const Center(child: Text('Estimate not found')),
       );
     }
 
@@ -237,7 +237,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           IconButton(
             icon: const Icon(Icons.share_rounded),
             tooltip: 'Share Estimate',
-            onPressed: () {
+            onPressed: () async {
               final lines = [
                 '${profile.name} — Estimate ${quote.quotationNumber}',
                 'Customer: ${customer?.name ?? '-'}',
@@ -245,11 +245,21 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                 'Estimated Total: ${CurrencyFormatter.format(quote.grandTotal)}',
                 'Valid until ${AppDateFormatter.formatDate(quote.validUntil)} (${quote.validityDays} days)',
               ];
-              ContactActions.shareText(
+              await ContactActions.shareText(
                 context,
                 title: 'Estimate ${quote.quotationNumber}',
                 text: lines.join('\n'),
               );
+              // Sharing is what actually sends the estimate: a draft only
+              // becomes "Sent" here, never just by being saved.
+              if (quote.status == QuotationStatus.draft) {
+                try {
+                  await provider.updateQuotationStatus(
+                      quote.id, QuotationStatus.sent);
+                } catch (_) {
+                  // Status is cosmetic; the share itself already happened.
+                }
+              }
             },
           ),
           Padding(
@@ -317,7 +327,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                             ],
                             const SizedBox(height: 2),
                             Text(
-                              'ESTIMATE / QUOTATION',
+                              'ESTIMATE',
                               style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 fontWeight: FontWeight.w700,
@@ -455,7 +465,10 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                               children: [
                                 Text(item.name, style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600)),
                                 Text(
-                                  item.isLabour ? 'Labour' : 'Part (${item.category.displayName})',
+                                  [
+                                    item.isLabour ? 'Labour' : 'Part (${item.category.displayName})',
+                                    ?item.discountLabel,
+                                  ].join(' • '),
                                   style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
                                 ),
                               ],
@@ -557,7 +570,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                           ? null
                           : () => _convertInvoice(context, quote),
                       icon: const Icon(Icons.receipt_rounded),
-                      label: const Text('Direct Invoice'),
+                      label: const Text('Bill Now'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),

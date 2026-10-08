@@ -27,6 +27,11 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
   late DateTime _selectedMonth;
   bool _isDisbursing = false;
 
+  bool get _isCurrentMonth {
+    final now = DateTime.now();
+    return _selectedMonth.year == now.year && _selectedMonth.month == now.month;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -206,7 +211,34 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('MONTHLY PAYSLIP', style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.primary, letterSpacing: 1)),
-                          Text(AppDateFormatter.formatMonthYear(_selectedMonth), style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                          // ‹ Month › — past payslips can be viewed and paid;
+                          // the arrow stops at the current month.
+                          Row(
+                            children: [
+                              IconButton(
+                                tooltip: 'Previous month',
+                                visualDensity: VisualDensity.compact,
+                                icon: const Icon(Icons.chevron_left_rounded),
+                                onPressed: () => setState(() => _selectedMonth =
+                                    DateTime(_selectedMonth.year, _selectedMonth.month - 1, 1)),
+                              ),
+                              Flexible(
+                                child: Text(
+                                  AppDateFormatter.formatMonthYear(_selectedMonth),
+                                  style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Next month',
+                                visualDensity: VisualDensity.compact,
+                                icon: const Icon(Icons.chevron_right_rounded),
+                                onPressed: _isCurrentMonth
+                                    ? null
+                                    : () => setState(() => _selectedMonth =
+                                        DateTime(_selectedMonth.year, _selectedMonth.month + 1, 1)),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                       ),

@@ -13,6 +13,7 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/quantity_formatter.dart';
 import '../customers/add_customer_screen.dart';
 import '../vehicles/add_vehicle_dialog.dart';
 import '../maintenance/add_maintenance_screen.dart';
@@ -22,6 +23,7 @@ import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
+import '../../utils/grouped_number.dart';
 
 class QuickServiceWizard extends StatefulWidget {
   final Customer? initialCustomer;
@@ -75,7 +77,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     if (customer != null) _selectedCustomer = customer;
     if (vehicle != null) {
       _selectedVehicle = vehicle;
-      _kmController.text = vehicle.currentKm.toString();
+      _kmController.text = groupDigits(vehicle.currentKm);
       _currentStep = 2;
     } else if (customer != null) {
       _currentStep = 1;
@@ -101,7 +103,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
   void _onVehicleSelected(Vehicle vehicle) {
     setState(() {
       _selectedVehicle = vehicle;
-      _kmController.text = vehicle.currentKm.toString();
+      _kmController.text = groupDigits(vehicle.currentKm);
       _currentStep = 2;
     });
   }
@@ -169,7 +171,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       final invoice = await provider.quickServiceCheckout(
         customerId: _selectedCustomer!.id,
         vehicleId: _selectedVehicle!.id,
-        kmReading: int.tryParse(_kmController.text.trim()) ?? _selectedVehicle!.currentKm,
+        kmReading: parseGroupedInt(_kmController.text) ?? _selectedVehicle!.currentKm,
         items: List.of(_selectedItems),
         discount: discount,
         existingJobCard: _reusableJobCard,
@@ -546,6 +548,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                 Expanded(
                   child: TextField(
                     controller: _kmController,
+                    inputFormatters: const [GroupedDigitsInputFormatter()],
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
                       labelText: 'Odometer (KM)',
@@ -596,7 +599,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                       return Card(
                         child: ListTile(
                           title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                          subtitle: Text('${item.quantity} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}'),
+                          subtitle: Text('${formatQuantity(item.quantity)} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -710,7 +713,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Invoice #${inv.invoiceNumber}',
+            'Bill #${inv.invoiceNumber}',
             style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.primary),
           ),
           if (job != null) ...[
@@ -756,7 +759,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                 );
               },
               icon: const Icon(Icons.receipt_rounded),
-              label: const Text('View Tax Invoice Preview'),
+              label: const Text('View Bill'),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
             ),
           ),

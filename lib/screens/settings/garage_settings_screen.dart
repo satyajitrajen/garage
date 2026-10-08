@@ -199,7 +199,7 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            _section('Invoice header'),
+            _section('Bill header'),
             _field('name', 'Garage name *',
                 icon: Icons.store_rounded,
                 caps: TextCapitalization.words,
@@ -253,7 +253,7 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
                       color: context.palette.textMuted)),
             ),
             _section('Defaults'),
-            _field('dueDays', 'Invoice due in (days)',
+            _field('dueDays', 'Bill due in (days)',
                 keyboard: TextInputType.number,
                 validator: (v) => _intInRange(v, 0, 1000)),
             _field('deliveryHours', 'Promised delivery (hours)',
@@ -263,7 +263,7 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
                 keyboard: TextInputType.number,
                 validator: (v) => _intInRange(v, 1, 31)),
             _field('receivedBy', 'Payments received by'),
-            _field('notes', 'Invoice notes', maxLines: 2),
+            _field('notes', 'Bill notes', maxLines: 2),
             _field('terms', 'Terms & conditions', maxLines: 3),
             const SizedBox(height: 12),
             ElevatedButton.icon(

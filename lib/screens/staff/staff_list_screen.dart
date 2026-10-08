@@ -131,7 +131,8 @@ class StaffListScreen extends StatelessWidget {
           ),
         ),
       ),
-      floatingActionButton: PermissionGate(
+      // Empty list: its empty state already has the Add button.
+      floatingActionButton: provider.staff.isEmpty ? null : PermissionGate(
         permission: Permissions.staffManage,
         child: GradientFloatingActionButton(
         onPressed: () => _openAddStaff(context),

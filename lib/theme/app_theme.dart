@@ -37,8 +37,12 @@ class AppTheme {
             fontSize: AppText.caption, fontWeight: FontWeight.w600, color: palette.textPrimary),
         bodyLarge: baseTextTheme.bodyLarge?.copyWith(
             fontSize: AppText.body, fontWeight: FontWeight.w500, color: palette.textPrimary),
+        // bodyMedium is the default style of every Text, so its colour is
+        // what any heading without an explicit colour inherits: it must be
+        // the primary text colour, or bold headings render washed-out grey.
+        // Secondary copy sets palette.textSecondary explicitly.
         bodyMedium: baseTextTheme.bodyMedium?.copyWith(
-            fontSize: AppText.caption, fontWeight: FontWeight.w400, color: palette.textSecondary),
+            fontSize: AppText.caption, fontWeight: FontWeight.w400, color: palette.textPrimary),
         bodySmall: baseTextTheme.bodySmall?.copyWith(
             fontSize: AppText.label, fontWeight: FontWeight.w400, color: palette.textMuted),
         labelLarge: baseTextTheme.labelLarge?.copyWith(

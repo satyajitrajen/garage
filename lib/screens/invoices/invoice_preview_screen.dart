@@ -41,8 +41,8 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
 
     if (invoice == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Tax Invoice')),
-        body: const Center(child: Text('Invoice not found')),
+        appBar: AppBar(title: const Text('Bill')),
+        body: const Center(child: Text('Bill not found')),
       );
     }
 
@@ -73,7 +73,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
             tooltip: 'Share Bill',
             onPressed: _sharing ? null : () async {
               final lines = [
-                '${profile.name} — Tax Invoice ${invoice.invoiceNumber}',
+                '${profile.name} — ${profile.gstin.trim().isEmpty ? 'Bill' : 'Tax Invoice'} ${invoice.invoiceNumber}',
                 'Customer: ${customer?.name ?? '-'}',
                 if (vehicle != null) 'Vehicle: ${vehicle.registrationNumber}',
                 'Grand Total: ${CurrencyFormatter.format(invoice.grandTotal)}',
@@ -85,7 +85,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
               try {
                 await ContactActions.shareText(
                   context,
-                  title: 'Invoice ${invoice.invoiceNumber}',
+                  title: 'Bill ${invoice.invoiceNumber}',
                   text: lines.join('\n'),
                 );
               } finally {
@@ -110,7 +110,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     children: [
                       Icon(Icons.cancel_outlined, size: 18, color: palette.absent),
                       const SizedBox(width: 8),
-                      const Text('Cancel invoice'),
+                      const Text('Cancel bill'),
                     ],
                   ),
                 ),
@@ -187,7 +187,9 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                           child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('Tax invoice',
+                          // Only a GST-registered garage can issue a tax
+                          // invoice; without a GSTIN this is a plain bill.
+                          Text(profile.gstin.trim().isEmpty ? 'Bill' : 'Tax invoice',
                               style: GoogleFonts.poppins(
                                   fontSize: AppText.label, color: palette.textMuted)),
                           Text(invoice.invoiceNumber,
@@ -308,7 +310,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                                   style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600),
                                 ),
                                 Text(
-                                  item.isLabour ? 'Labour Charge' : 'Part • ${item.category.displayName}',
+                                  [
+                                    item.isLabour ? 'Labour Charge' : 'Part • ${item.category.displayName}',
+                                    ?item.discountLabel,
+                                  ].join(' • '),
                                   style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
                                 ),
                               ],
@@ -539,7 +544,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     Icon(Icons.cancel_rounded, color: palette.cancelled, size: 22),
                     const SizedBox(width: 8),
                     Text(
-                      'Invoice Cancelled',
+                      'Bill Cancelled',
                       style: GoogleFonts.poppins(
                         fontSize: AppText.title,
                         fontWeight: FontWeight.w700,
@@ -615,12 +620,12 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
       builder: (ctx) {
         final palette = ctx.palette;
         return AlertDialog(
-          title: const Text('Cancel Invoice?'),
-          content: const Text('Cancel this invoice? This cannot be undone.'),
+          title: const Text('Cancel Bill?'),
+          content: const Text('Cancel this bill? This cannot be undone.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Keep Invoice'),
+              child: const Text('Keep Bill'),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -635,7 +640,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   if (!mounted) return;
                   showAppSnackBar(
                     context,
-                    'Invoice ${invoice.invoiceNumber} cancelled',
+                    'Bill ${invoice.invoiceNumber} cancelled',
                     type: SnackBarType.error,
                   );
                 } catch (e) {
@@ -649,7 +654,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   );
                 }
               },
-              child: const Text('Cancel Invoice'),
+              child: const Text('Cancel Bill'),
             ),
           ],
         );

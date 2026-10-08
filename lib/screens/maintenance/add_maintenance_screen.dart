@@ -508,7 +508,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                   const SizedBox(height: 10),
                   SizedBox(
                     // Grows with the text scale so the price lines fit.
-                    height: 124 * MediaQuery.textScalerOf(context).scale(1),
+                    height: 132 * MediaQuery.textScalerOf(context).scale(1),
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: _currentItems.length,
@@ -548,9 +548,11 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  GestureDetector(
+                                  // 36px touch target around a small glyph.
+                                  _TapTarget(
+                                    tooltip: 'Remove ${item.name}',
                                     onTap: () => setState(() => _currentItems.removeAt(index)),
-                                    child: Icon(Icons.close_rounded, size: 16, color: palette.textMuted),
+                                    child: Icon(Icons.close_rounded, size: 18, color: palette.textMuted),
                                   ),
                                 ],
                               ),
@@ -583,15 +585,16 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                   ),
                                   Row(
                                     children: [
-                                      GestureDetector(
+                                      _TapTarget(
+                                        tooltip: 'Decrease quantity',
                                         onTap: () => _updateItemQuantity(index, -1),
                                         child: Container(
-                                          padding: const EdgeInsets.all(3),
+                                          padding: const EdgeInsets.all(4),
                                           decoration: BoxDecoration(
                                             color: palette.cardAlt,
                                             borderRadius: BorderRadius.circular(6),
                                           ),
-                                          child: const Icon(Icons.remove, size: 12),
+                                          child: const Icon(Icons.remove, size: 16),
                                         ),
                                       ),
                                       Padding(
@@ -601,15 +604,16 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                           style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: AppText.caption),
                                         ),
                                       ),
-                                      GestureDetector(
+                                      _TapTarget(
+                                        tooltip: 'Increase quantity',
                                         onTap: () => _updateItemQuantity(index, 1),
                                         child: Container(
-                                          padding: const EdgeInsets.all(3),
+                                          padding: const EdgeInsets.all(4),
                                           decoration: BoxDecoration(
                                             color: palette.cardAlt,
                                             borderRadius: BorderRadius.circular(6),
                                           ),
-                                          child: const Icon(Icons.add, size: 12),
+                                          child: const Icon(Icons.add, size: 16),
                                         ),
                                       ),
                                     ],
@@ -856,6 +860,27 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
           ),
         );
       },
+    );
+  }
+}
+
+/// A small control with a 36x36 touch area (the visible glyph stays small),
+/// so +/- and remove are easy to hit with a thumb.
+class _TapTarget extends StatelessWidget {
+  const _TapTarget({required this.onTap, required this.child, required this.tooltip});
+  final VoidCallback onTap;
+  final Widget child;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 20,
+        child: SizedBox(width: 36, height: 36, child: Center(child: child)),
+      ),
     );
   }
 }

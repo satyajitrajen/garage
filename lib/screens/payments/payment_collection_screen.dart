@@ -187,7 +187,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Flexible(
-                  child: Text('Invoice:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
+                  child: Text('Bill:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
                 ),
                 const SizedBox(width: 8),
                 Flexible(
@@ -262,10 +262,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  // Brand gradient is the fixed brand anchor: white text sits
-                  // on top, so a themed surface slot would hide it.
-                  gradient: LinearGradient(
-                    colors: palette.brandGradient,
+                  // A fixed dark slate, not the brand red: a big red card read
+                  // as an error. White text sits on top in both themes.
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF22262B), Color(0xFF3B4148)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

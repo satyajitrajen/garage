@@ -116,7 +116,8 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
           ),
         ),
       ),
-      floatingActionButton: PermissionGate(
+      // Empty list: its empty state already has the Add button.
+      floatingActionButton: provider.expenses.isEmpty ? null : PermissionGate(
         permission: Permissions.expensesManage,
         child: GradientFloatingActionButton(
         onPressed: _openAddExpense,

@@ -72,7 +72,8 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
       appBar: AppBar(
         title: Text('Job Cards & Workshop', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
-      floatingActionButton: PermissionGate(
+      // Empty list: its empty state already has the Add button.
+      floatingActionButton: provider.jobCards.isEmpty ? null : PermissionGate(
         permission: Permissions.jobcardsManage,
         child: GradientFloatingActionButton(
         onPressed: _createNewJobCard,

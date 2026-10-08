@@ -427,6 +427,7 @@ class _Row extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
+              flex: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -448,11 +449,18 @@ class _Row extends StatelessWidget {
             // screens or with large text.
             if (trailing != null) ...[
               const SizedBox(width: 12),
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
+              // Tight + right-aligned: a loose Flexible left the unused
+              // half of its slot empty after the amount, so amounts floated
+              // mid-row instead of lining up on the right edge.
+              Expanded(
+                flex: 2,
+                child: Align(
                   alignment: Alignment.centerRight,
-                  child: trailing!,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: trailing!,
+                  ),
                 ),
               ),
             ],

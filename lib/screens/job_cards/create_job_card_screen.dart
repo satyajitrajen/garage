@@ -18,6 +18,7 @@ import '../maintenance/add_maintenance_screen.dart';
 import 'job_card_detail_screen.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
+import '../../utils/grouped_number.dart';
 
 class CreateJobCardScreen extends StatefulWidget {
   /// Customer/vehicle a NEW job card is created for. The screen shows them as
@@ -68,26 +69,25 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
   /// create path has no originals to preserve, so the flag alone is not enough.
   bool get _itemsLocked => _isEditing && widget.itemsLocked;
 
-  // Single source: the model's default inspection checklist (mutable copy so
-  // the form checkboxes can be toggled). Edit mode swaps this for a mutable
-  // copy of the job card's own captured checklist.
-  final Map<String, bool> _inspectionChecklist =
-      Map<String, bool>.from(JobCard.defaultChecklist);
+  // The model's checklist items, all unticked: the mechanic ticks what was
+  // actually checked, so "8 of 8 checked" can't appear without an
+  // inspection. Edit mode swaps this for a mutable copy of the job card's
+  // own captured checklist.
+  final Map<String, bool> _inspectionChecklist = JobCard.uncheckedChecklist;
 
   @override
   void initState() {
     super.initState();
     final provider = context.read<GarageProvider>();
-    _promisedDate = DateTime.now().add(
-      Duration(hours: provider.config.promisedDeliveryHours),
-    );
-    _kmController.text = widget.vehicle?.currentKm.toString() ?? '';
+    _promisedDate = provider.defaultPromisedDelivery();
+    _kmController.text =
+        widget.vehicle == null ? '' : groupDigits(widget.vehicle!.currentKm);
 
     // Edit mode: prefill everything from the job card being edited.
     final existing = widget.existing;
     if (existing != null) {
       _promisedDate = existing.promisedDeliveryDate;
-      _kmController.text = existing.kmReading.toString();
+      _kmController.text = groupDigits(existing.kmReading);
       _complaints.addAll(existing.customerComplaints);
       _selectedItems.addAll(existing.items.map((item) => item.copyWith()));
       _notesController.text = existing.supervisorNotes ?? '';
@@ -134,7 +134,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
       MaterialPageRoute(
         builder: (_) => AddMaintenanceScreen(
           initialItems: _selectedItems,
-          title: 'Add Job Card Work Items',
+          title: 'Add items',
         ),
       ),
     );
@@ -213,7 +213,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
       customerComplaints: _complaints,
       inspectionChecklist: _inspectionChecklist,
       fuelLevel: _fuelLevel,
-      kmReading: int.tryParse(_kmController.text.trim()) ??
+      kmReading: parseGroupedInt(_kmController.text) ??
           existing?.kmReading ??
           widget.vehicle?.currentKm ??
           0,
@@ -364,6 +364,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _kmController,
+                      inputFormatters: const [GroupedDigitsInputFormatter()],
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: 'Current KM *',
@@ -524,9 +525,28 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               const SizedBox(height: 24),
 
               // Inspection Checklist
-              Text(
-                'Inspection & Vehicle Health Checklist',
-                style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Inspection & Vehicle Health Checklist',
+                      style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  // One tap ticks everything (or clears it again once all
+                  // are ticked) for a routine all-OK inspection.
+                  Builder(builder: (context) {
+                    final allChecked = _inspectionChecklist.values.every((v) => v);
+                    return TextButton(
+                      onPressed: () => setState(() {
+                        for (final key in _inspectionChecklist.keys) {
+                          _inspectionChecklist[key] = !allChecked;
+                        }
+                      }),
+                      child: Text(allChecked ? 'Clear all' : 'Check all'),
+                    );
+                  }),
+                ],
               ),
               const SizedBox(height: 8),
               Container(
@@ -575,7 +595,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                   // the same explanatory tooltip as the detail screen.
                   Tooltip(
                     message: _itemsLocked
-                        ? 'Locked — billed on an invoice'
+                        ? 'Locked — already billed'
                         : 'Add parts & labour items',
                     child: TextButton.icon(
                       onPressed: _itemsLocked ? null : _openAddItems,

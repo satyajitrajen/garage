@@ -9,6 +9,7 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/quantity_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
@@ -124,6 +125,142 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
     }
   }
 
+  /// The main path a job moves along. Waiting Parts is a pause inside
+  /// "In progress", and Cancelled is an exit, so neither is a step here.
+  static const _stages = [
+    JobStatus.received,
+    JobStatus.inspection,
+    JobStatus.inProgress,
+    JobStatus.readyForDelivery,
+    JobStatus.delivered,
+  ];
+
+  /// The single forward action for the current status, or null when the
+  /// job is closed.
+  (String, JobStatus)? _nextStep(JobStatus status) => switch (status) {
+        JobStatus.received => ('Start inspection', JobStatus.inspection),
+        JobStatus.inspection => ('Start work', JobStatus.inProgress),
+        JobStatus.inProgress => ('Mark ready', JobStatus.readyForDelivery),
+        JobStatus.waitingParts => ('Parts arrived — resume work', JobStatus.inProgress),
+        JobStatus.readyForDelivery => ('Mark delivered', JobStatus.delivered),
+        JobStatus.delivered || JobStatus.cancelled => null,
+      };
+
+  Future<void> _pickStatus(JobCard jobCard) async {
+    final picked = await showModalBottomSheet<JobStatus>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final status in JobStatus.values)
+                ListTile(
+                  title: Text(status.displayName),
+                  leading: Icon(
+                    status == jobCard.status
+                        ? Icons.radio_button_checked_rounded
+                        : Icons.radio_button_off_rounded,
+                    color: status == JobStatus.cancelled
+                        ? ctx.palette.absent
+                        : null,
+                  ),
+                  onTap: () => Navigator.pop(ctx, status),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (picked != null && picked != jobCard.status && mounted) {
+      await _changeStatus(jobCard, picked);
+    }
+  }
+
+  Widget _buildStatusCard(JobCard jobCard, AppPalette palette) {
+    final status = jobCard.status;
+    final cancelled = status == JobStatus.cancelled;
+    // Waiting Parts shows as the "In progress" step, flagged below.
+    final stageIndex = _stages.indexOf(
+        status == JobStatus.waitingParts ? JobStatus.inProgress : status);
+    final next = _nextStep(status);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+        border: Border.all(color: palette.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  status.displayName,
+                  style: GoogleFonts.poppins(
+                    fontSize: AppText.subtitle,
+                    fontWeight: FontWeight.w700,
+                    color: cancelled ? palette.absent : palette.textPrimary,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _pickStatus(jobCard),
+                child: const Text('Change status'),
+              ),
+            ],
+          ),
+          if (!cancelled) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                for (var i = 0; i < _stages.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 4),
+                  Expanded(
+                    child: Container(
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: i <= stageIndex ? palette.primary : palette.border,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              status == JobStatus.waitingParts
+                  ? 'Step ${stageIndex + 1} of ${_stages.length} · paused, waiting for parts'
+                  : 'Step ${stageIndex + 1} of ${_stages.length}',
+              style: GoogleFonts.poppins(
+                fontSize: AppText.label,
+                color: status == JobStatus.waitingParts
+                    ? palette.pending
+                    : palette.textMuted,
+              ),
+            ),
+          ],
+          if (next != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _changeStatus(jobCard, next.$2),
+                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                label: Text(next.$1),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Future<void> _generateInvoice(JobCard jobCard) async {
     final provider = Provider.of<GarageProvider>(context, listen: false);
     if (jobCard.items.isEmpty) {
@@ -212,53 +349,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status Workflow Stepper / Selector
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: palette.card,
-                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
-                border: Border.all(
-                  color: palette.border,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Status',
-                    style: GoogleFonts.poppins(
-                      fontSize: AppText.body,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Wraps instead of scrolling sideways, so no status is ever
-                  // hidden off the edge of the screen.
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: JobStatus.values.map((status) {
-                        final isSelected = jobCard.status == status;
-                        return ChoiceChip(
-                            label: Text(status.shortName),
-                            selected: isSelected,
-                            showCheckmark: false,
-                            selectedColor: palette.textPrimary,
-                            labelStyle: TextStyle(
-                              color: isSelected ? palette.onPrimary : palette.textPrimary,
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              fontSize: AppText.label,
-                            ),
-                            onSelected: (selected) {
-                              if (selected) _changeStatus(jobCard, status);
-                            },
-                        );
-                      }).toList(),
-                  ),
-                ],
-              ),
-            ),
+            // Status: progress through the main stages plus one clear "next"
+            // action; every other status (waiting parts, cancel, going back)
+            // sits behind "Change status".
+            _buildStatusCard(jobCard, palette),
             const SizedBox(height: 16),
 
             // Vehicle & Customer Overview Card
@@ -326,22 +420,38 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Icon(Icons.access_time_rounded, size: 15, color: palette.primary),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                        'Promised: ${AppDateFormatter.formatDateTime(jobCard.promisedDeliveryDate)}',
-                        style: GoogleFonts.poppins(
-                          fontSize: AppText.caption,
-                          fontWeight: FontWeight.w600,
-                          color: palette.primary,
+                  // Red only when the promise is broken, amber when it is
+                  // under two hours away; otherwise neutral, so red keeps
+                  // meaning "act now".
+                  Builder(builder: (context) {
+                    final open = jobCard.status != JobStatus.delivered &&
+                        jobCard.status != JobStatus.cancelled;
+                    final left =
+                        jobCard.promisedDeliveryDate.difference(DateTime.now());
+                    final late = open && left.isNegative;
+                    final soon = open && !late && left.inMinutes < 120;
+                    final color = late
+                        ? palette.absent
+                        : soon
+                            ? palette.pending
+                            : palette.textSecondary;
+                    return Row(
+                      children: [
+                        Icon(Icons.access_time_rounded, size: 15, color: color),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            '${late ? 'Late — promised' : 'Promised'}: ${AppDateFormatter.formatDateTime(jobCard.promisedDeliveryDate)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.caption,
+                              fontWeight: FontWeight.w600,
+                              color: color,
+                            ),
+                          ),
                         ),
-                      ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    );
+                  }),
                   if (_hasText(jobCard.estimatedCostNote)) ...[
                     const SizedBox(height: 8),
                     Row(
@@ -539,7 +649,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                       // an explanatory tooltip.
                       Tooltip(
                         message: itemsLocked
-                            ? 'Locked — billed on an invoice'
+                            ? 'Locked — already billed'
                             : 'Edit the work items on this job card',
                         child: TextButton.icon(
                           onPressed: itemsLocked || !_isJobActive(jobCard)
@@ -578,7 +688,10 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                                     style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600),
                                   ),
                                   Text(
-                                    '${item.quantity} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}',
+                                    [
+                                      '${formatQuantity(item.quantity)} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}',
+                                      ?item.discountLabel,
+                                    ].join(' • '),
                                     style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
                                   ),
                                 ],
@@ -596,7 +709,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                               const SizedBox(width: 4),
                               IconButton(
                                 visualDensity: VisualDensity.compact,
-                                tooltip: itemsLocked ? 'Locked — billed on an invoice' : 'Remove item',
+                                tooltip: itemsLocked ? 'Locked — already billed' : 'Remove item',
                                 onPressed: itemsLocked ? null : () => _removeItem(jobCard, item),
                                 icon: Icon(
                                   Icons.delete_outline_rounded,
@@ -660,7 +773,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     );
                   },
                   icon: const Icon(Icons.receipt_rounded),
-                  label: Text('View Invoice #${existingInvoice.invoiceNumber}'),
+                  label: Text('View Bill #${existingInvoice.invoiceNumber}'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: palette.primary,
@@ -674,7 +787,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () => _generateInvoice(jobCard),
                   icon: const Icon(Icons.receipt_long_rounded),
-                  label: const Text('Generate Invoice & Bill Customer'),
+                  label: const Text('Create Bill'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: palette.paid,

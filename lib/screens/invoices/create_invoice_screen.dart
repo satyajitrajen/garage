@@ -11,12 +11,14 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/quantity_formatter.dart';
 import '../../utils/gst_lines.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import 'invoice_preview_screen.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
+import '../../utils/grouped_number.dart';
 
 class CreateInvoiceScreen extends StatefulWidget {
   final Customer customer;
@@ -44,7 +46,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   @override
   void initState() {
     super.initState();
-    _kmController.text = widget.vehicle.currentKm.toString();
+    _kmController.text = groupDigits(widget.vehicle.currentKm);
   }
 
   @override
@@ -61,7 +63,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       MaterialPageRoute(
         builder: (_) => AddMaintenanceScreen(
           initialItems: _items,
-          title: 'Add Invoice Line Items',
+          title: 'Add items',
         ),
       ),
     );
@@ -107,7 +109,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       customerId: widget.customer.id,
       vehicleId: widget.vehicle.id,
       kmReading:
-          int.tryParse(_kmController.text.trim()) ?? widget.vehicle.currentKm,
+          parseGroupedInt(_kmController.text) ?? widget.vehicle.currentKm,
       items: _items,
       discountAmount: discount,
       perItemTax: true,
@@ -129,7 +131,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       // replaced by the success message.
       showAppSnackBar(
         context,
-        'Invoice #${created.invoiceNumber} created successfully!',
+        'Bill #${created.invoiceNumber} created!',
         type: SnackBarType.success,
       );
       if (provider.sideEffectWarning != null) {
@@ -183,7 +185,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Create Direct Tax Invoice',
+          'New Bill',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
       ),
@@ -286,7 +288,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                       ),
                       subtitle: Text(
-                        '${item.quantity} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}',
+                        '${formatQuantity(item.quantity)} ${item.unit} @ ${CurrencyFormatter.format(item.unitPrice)}',
                       ),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
@@ -315,6 +317,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               // KM Reading
               TextFormField(
                 controller: _kmController,
+                inputFormatters: const [GroupedDigitsInputFormatter()],
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Current KM Reading',
@@ -328,7 +331,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 controller: _notesController,
                 maxLines: 2,
                 decoration: const InputDecoration(
-                  labelText: 'Invoice Notes / Customer Remarks',
+                  labelText: 'Bill notes / customer remarks',
                   hintText: 'e.g. Standard 30 days warranty on labour',
                 ),
               ),

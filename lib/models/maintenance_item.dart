@@ -83,6 +83,17 @@ class MaintenanceItem {
   double get taxAmount => taxableAmount * (taxPercent / 100);
   double get totalAmount => taxableAmount + taxAmount;
 
+  /// "10% off" for a discounted line (rounded to one decimal), else null.
+  /// Shown under the line so Rate × Qty vs Amount is explained.
+  String? get discountLabel {
+    if (discountPercent <= 0.05) return null;
+    final rounded = (discountPercent * 10).round() / 10;
+    final text = rounded == rounded.roundToDouble()
+        ? rounded.toStringAsFixed(0)
+        : rounded.toStringAsFixed(1);
+    return '$text% off';
+  }
+
   MaintenanceItem copyWith({
     String? id,
     String? name,
