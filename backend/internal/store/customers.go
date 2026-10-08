@@ -80,22 +80,15 @@ func (s *Store) CustomerBelongs(ctx context.Context, garageID, customerID string
 // deletion. Money math comes from models.InvoiceMoney so this query and the
 // payments handler can never drift apart.
 func (s *Store) CustomerHasOutstandingDues(ctx context.Context, garageID, customerID string) (bool, error) {
-	rows, err := s.Pool.Query(ctx, `SELECT i.cancelled_at,
-			COALESCE(item_sums.gross, 0), i.discount_amount, i.tax_percent,
-			COALESCE(paid_sums.paid, 0)
-		FROM invoices i
-		LEFT JOIN (SELECT invoice_id, SUM(unit_price * quantity * (1 - discount_percent / 100.0)) AS gross
-		           FROM invoice_items GROUP BY invoice_id) item_sums ON item_sums.invoice_id = i.id
-		LEFT JOIN (SELECT invoice_id, SUM(amount) AS paid
-		           FROM payments GROUP BY invoice_id) paid_sums ON paid_sums.invoice_id = i.id
-		WHERE i.garage_id = $1 AND i.customer_id = $2`, garageID, customerID)
+	rows, err := s.Pool.Query(ctx,
+		models.InvoiceMoneySelect+` WHERE i.garage_id = $1 AND i.customer_id = $2`, garageID, customerID)
 	if err != nil {
 		return false, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var m models.InvoiceMoney
-		if err := rows.Scan(&m.CancelledAt, &m.Gross, &m.Discount, &m.TaxPercent, &m.Paid); err != nil {
+		if err := rows.Scan(m.ScanTargets()...); err != nil {
 			return false, err
 		}
 		if m.CancelledAt == nil && m.Due() > 0.01 {

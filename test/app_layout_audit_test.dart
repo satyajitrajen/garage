@@ -234,7 +234,22 @@ class _AuditAuth extends AuthProvider {
           },
       ];
   @override
-  Future<void> inviteMember({required String email, String role = 'staff'}) async {}
+  Future<void> inviteMember({
+    required String email,
+    String role = 'staff',
+    List<String>? permissions,
+  }) async {}
+  @override
+  Future<List<Map<String, dynamic>>> fetchInvites() async => [
+        {
+          'id': 'inv-1',
+          'email': 'new.mechanic@example.invalid',
+          'role': 'staff',
+          'permissions': ['jobcards.manage'],
+          'expires_at':
+              DateTime.now().add(const Duration(days: 7)).toIso8601String(),
+        },
+      ];
   @override
   Future<Map<String, dynamic>> startCheckout({required String plan}) async =>
       {'configured': false, 'message': 'Offline audit checkout', 'plan': plan};
@@ -334,7 +349,7 @@ Future<void> _chooseLineItem(WidgetTester tester, _Fixture fixture) async {
   final name = fixture.garage.catalog.first.name;
   final tile = find.ancestor(of: find.text(name).first, matching: find.byType(InkWell));
   await _tap(tester, tile.first);
-  await _tap(tester, find.text('Done (1 items)'));
+  await _tap(tester, find.text('Done (1 item)'));
   expect(find.byType(AddMaintenanceScreen), findsNothing);
 }
 

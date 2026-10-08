@@ -51,3 +51,17 @@ func TestLoadPortOverride(t *testing.T) {
 		t.Fatalf("port = %q, want 3000", cfg.Port)
 	}
 }
+
+func TestLoadPlanPrices(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("JWT_SECRET", "long-enough-test-secret")
+	t.Setenv("PLAN_PRICE_MONTHLY", "499")
+	t.Setenv("PLAN_PRICE_YEARLY", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.PlanPriceMonthly != 499 || cfg.PlanPriceYearly != 0 {
+		t.Fatalf("prices = %d/%d, want 499/0", cfg.PlanPriceMonthly, cfg.PlanPriceYearly)
+	}
+}

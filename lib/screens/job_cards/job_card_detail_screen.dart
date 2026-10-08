@@ -14,6 +14,7 @@ import '../maintenance/add_maintenance_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
 import 'create_job_card_screen.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class JobCardDetailScreen extends StatefulWidget {
   final String jobCardId;
@@ -94,7 +95,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
         if (!mounted) return;
         showAppSnackBar(
           context,
-          e.toString().replaceFirst('Exception: ', ''),
+          errorMessage(e),
           type: SnackBarType.error,
         );
       }
@@ -117,7 +118,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
       if (!mounted) return;
       showAppSnackBar(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        errorMessage(e),
         type: SnackBarType.error,
       );
     }
@@ -149,7 +150,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
       if (!mounted) return;
       showAppSnackBar(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        errorMessage(e),
         type: SnackBarType.error,
       );
     }

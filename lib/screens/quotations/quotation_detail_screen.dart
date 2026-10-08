@@ -11,6 +11,7 @@ import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/contact_actions.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/gst_lines.dart';
 import '../../utils/date_formatter.dart';
 import '../../utils/quantity_formatter.dart';
 import '../../widgets/status_badge.dart';
@@ -18,6 +19,7 @@ import '../job_cards/job_card_detail_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
 import 'create_quotation_screen.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class QuotationDetailScreen extends StatefulWidget {
   final String quotationId;
@@ -48,17 +50,18 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
         type: SnackBarType.success,
       );
 
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
           builder: (_) => JobCardDetailScreen(jobCardId: jobCard.id),
         ),
+        (route) => route.isFirst,
       );
     } catch (e) {
       if (!context.mounted) return;
       showAppSnackBar(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        errorMessage(e),
         type: SnackBarType.error,
       );
     } finally {
@@ -83,6 +86,9 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           items: List.of(quote.items),
           discountAmount: quote.overallDiscount,
           taxPercent: quote.taxPercent,
+          // Bill exactly what the customer approved: legacy estimates keep
+          // their single document rate.
+          perItemTax: quote.perItemTax,
           invoiceDate: DateTime.now(),
           // Real due date so the invoice can age and become overdue, matching
           // the direct invoice form's config-driven term.
@@ -94,17 +100,18 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       await provider.updateQuotationStatus(quote.id, QuotationStatus.converted);
 
       if (!context.mounted) return;
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
           builder: (_) => InvoicePreviewScreen(invoiceId: invoice.id),
         ),
+        (route) => route.isFirst,
       );
     } catch (e) {
       if (!context.mounted) return;
       showAppSnackBar(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        errorMessage(e),
         type: SnackBarType.error,
       );
     } finally {
@@ -152,7 +159,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       if (!context.mounted) return;
       showAppSnackBar(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        errorMessage(e),
         type: SnackBarType.error,
       );
     }
@@ -199,7 +206,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       if (!context.mounted) return;
       showAppSnackBar(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        errorMessage(e),
         type: SnackBarType.error,
       );
     }
@@ -318,33 +325,29 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                                 color: palette.textMuted,
                               ),
                             ),
-                            Text(
-                              'GSTIN: ${profile.gstin}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.poppins(
-                                fontSize: AppText.label,
-                                color: palette.textMuted,
+                            // Only print header lines the garage has filled
+                            // in: an empty "GSTIN:" or a lone comma looks broken.
+                            for (final line in [
+                              if (profile.gstin.trim().isNotEmpty)
+                                'GSTIN: ${profile.gstin.trim()}',
+                              if ([profile.addressLine, profile.city]
+                                  .any((p) => p.trim().isNotEmpty))
+                                [profile.addressLine, profile.city]
+                                    .map((p) => p.trim())
+                                    .where((p) => p.isNotEmpty)
+                                    .join(', '),
+                              if (profile.phone.trim().isNotEmpty)
+                                'Phone: ${profile.phone.trim()}',
+                            ])
+                              Text(
+                                line,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  fontSize: AppText.label,
+                                  color: palette.textMuted,
+                                ),
                               ),
-                            ),
-                            Text(
-                              '${profile.addressLine}, ${profile.city}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.poppins(
-                                fontSize: AppText.label,
-                                color: palette.textMuted,
-                              ),
-                            ),
-                            Text(
-                              'Phone: ${profile.phone}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.poppins(
-                                fontSize: AppText.label,
-                                color: palette.textMuted,
-                              ),
-                            ),
                             if (profile.email.trim().isNotEmpty)
                               Text(
                                 'Email: ${profile.email.trim()}',
@@ -481,7 +484,8 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                   _buildSummaryLine('Labour Subtotal', CurrencyFormatter.format(quote.labourSubtotal), palette),
                   if (quote.overallDiscount > 0)
                     _buildSummaryLine('Discount', '- ${CurrencyFormatter.format(quote.overallDiscount)}', palette, color: palette.paid),
-                  _buildSummaryLine('Estimated Taxes (${quote.taxPercent.toInt()}%)', CurrencyFormatter.format(quote.totalTaxAmount), palette),
+                  for (final line in gstLines(quote.taxBreakdown))
+                    _buildSummaryLine('Estimated ${line.key}', CurrencyFormatter.format(line.value), palette),
                   const Divider(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

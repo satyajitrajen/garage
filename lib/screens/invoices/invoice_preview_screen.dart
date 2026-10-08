@@ -13,11 +13,13 @@ import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/contact_actions.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/gst_lines.dart';
 import '../../utils/date_formatter.dart';
 import '../../utils/payment_mode_display.dart';
 import '../../utils/quantity_formatter.dart';
 import '../payments/payment_collection_screen.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class InvoicePreviewScreen extends StatefulWidget {
   final String invoiceId;
@@ -29,6 +31,8 @@ class InvoicePreviewScreen extends StatefulWidget {
 }
 
 class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
+  bool _sharing = false;
+
   @override
   Widget build(BuildContext context) {
     final invoiceId = widget.invoiceId;
@@ -57,9 +61,17 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
           // One share action covering the whole bill — PDF/print is out of
           // scope, so the old "Print Tax Bill" stub was removed.
           IconButton(
-            icon: const Icon(Icons.share_rounded),
+            // The Android share sheet can take seconds to appear; show
+            // progress and ignore repeat taps until it has opened and closed.
+            icon: _sharing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.share_rounded),
             tooltip: 'Share Bill',
-            onPressed: () {
+            onPressed: _sharing ? null : () async {
               final lines = [
                 '${profile.name} — Tax Invoice ${invoice.invoiceNumber}',
                 'Customer: ${customer?.name ?? '-'}',
@@ -69,11 +81,16 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                 if (invoice.dueDate != null)
                   'Due Date: ${AppDateFormatter.formatDate(invoice.dueDate!)}',
               ];
-              ContactActions.shareText(
-                context,
-                title: 'Invoice ${invoice.invoiceNumber}',
-                text: lines.join('\n'),
-              );
+              setState(() => _sharing = true);
+              try {
+                await ContactActions.shareText(
+                  context,
+                  title: 'Invoice ${invoice.invoiceNumber}',
+                  text: lines.join('\n'),
+                );
+              } finally {
+                if (mounted) setState(() => _sharing = false);
+              }
             },
           ),
           // Cancel action is only meaningful while nothing has been paid and
@@ -324,10 +341,8 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     _buildSummaryRow('Discount Applied:', '- ${CurrencyFormatter.format(invoice.discountAmount)}', color: palette.paid),
                     const SizedBox(height: 4),
                   ],
-                  if (invoice.taxPercent > 0) ...[
-                    _buildSummaryRow('CGST (${(invoice.taxPercent / 2).toStringAsFixed(1)}%):', CurrencyFormatter.format(invoice.cgstAmount)),
-                    const SizedBox(height: 4),
-                    _buildSummaryRow('SGST (${(invoice.taxPercent / 2).toStringAsFixed(1)}%):', CurrencyFormatter.format(invoice.sgstAmount)),
+                  for (final line in gstLines(invoice.taxBreakdown)) ...[
+                    _buildSummaryRow('${line.key}:', CurrencyFormatter.format(line.value)),
                     const SizedBox(height: 4),
                   ],
                   const Divider(height: 16),
@@ -629,7 +644,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   if (!mounted) return;
                   showAppSnackBar(
                     context,
-                    e.toString().replaceFirst('Exception: ', ''),
+                    errorMessage(e),
                     type: SnackBarType.error,
                   );
                 }

@@ -26,6 +26,10 @@ type Config struct {
 	RazorpayWebhookSecret string
 	RazorpayPlanMonthly   string
 	RazorpayPlanYearly    string
+	// PlanPriceMonthly / PlanPriceYearly are display prices in rupees shown
+	// on the subscription screen; 0 hides the price.
+	PlanPriceMonthly int
+	PlanPriceYearly  int
 	// RazorpayAPIBase defaults to https://api.razorpay.com; tests point it at
 	// a fake server.
 	RazorpayAPIBase string
@@ -52,6 +56,8 @@ func Load() (Config, error) {
 		RazorpayPlanMonthly:   os.Getenv("RAZORPAY_PLAN_MONTHLY"),
 		RazorpayPlanYearly:    os.Getenv("RAZORPAY_PLAN_YEARLY"),
 		RazorpayAPIBase:       getenv("RAZORPAY_API_BASE", "https://api.razorpay.com"),
+		PlanPriceMonthly:      getenvInt("PLAN_PRICE_MONTHLY", 0),
+		PlanPriceYearly:       getenvInt("PLAN_PRICE_YEARLY", 0),
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("DATABASE_URL is required")

@@ -7,7 +7,7 @@ import (
 )
 
 const invoiceColumns = `id, invoice_number, job_card_id, customer_id, vehicle_id, km_reading,
-	discount_amount, tax_percent, invoice_date, due_date, cancelled_at, notes,
+	discount_amount, tax_percent, per_item_tax, invoice_date, due_date, cancelled_at, notes,
 	terms_and_conditions, created_at`
 
 const paymentColumns = `id, invoice_id, customer_id, amount, mode, transaction_ref,
@@ -16,7 +16,7 @@ const paymentColumns = `id, invoice_id, customer_id, amount, mode, transaction_r
 func scanInvoice(row scanner) (models.Invoice, error) {
 	var inv models.Invoice
 	err := row.Scan(&inv.ID, &inv.InvoiceNumber, &inv.JobCardID, &inv.CustomerID,
-		&inv.VehicleID, &inv.KmReading, &inv.DiscountAmount, &inv.TaxPercent,
+		&inv.VehicleID, &inv.KmReading, &inv.DiscountAmount, &inv.TaxPercent, &inv.PerItemTax,
 		&inv.InvoiceDate, &inv.DueDate, &inv.CancelledAt, &inv.Notes,
 		&inv.TermsAndConditions, &inv.CreatedAt)
 	return inv, mapPGError(err)
@@ -35,19 +35,8 @@ func scanPayment(row scanner) (models.Payment, error) {
 func (s *Store) InvoiceMoneyFor(ctx context.Context, garageID, invoiceID string) (models.InvoiceMoney, error) {
 	var m models.InvoiceMoney
 	err := s.Pool.QueryRow(ctx,
-		`SELECT i.cancelled_at,
-		        COALESCE(item_sums.gross, 0), i.discount_amount, i.tax_percent,
-		        COALESCE(paid_sums.paid, 0)
-		 FROM invoices i
-		 LEFT JOIN (SELECT invoice_id,
-		                   SUM(unit_price * quantity * (1 - discount_percent / 100)) AS gross
-		            FROM invoice_items GROUP BY invoice_id) item_sums
-		            ON item_sums.invoice_id = i.id
-		 LEFT JOIN (SELECT invoice_id, SUM(amount) AS paid
-		            FROM payments GROUP BY invoice_id) paid_sums
-		            ON paid_sums.invoice_id = i.id
-		 WHERE i.garage_id = $1 AND i.id = $2`, garageID, invoiceID).Scan(
-		&m.CancelledAt, &m.Gross, &m.Discount, &m.TaxPercent, &m.Paid)
+		models.InvoiceMoneySelect+` WHERE i.garage_id = $1 AND i.id = $2`,
+		garageID, invoiceID).Scan(m.ScanTargets()...)
 	return m, mapPGError(err)
 }
 
@@ -143,20 +132,8 @@ func (s *Store) RecordPaymentAtomically(ctx context.Context, garageID, invoiceID
 
 	var m models.InvoiceMoney
 	err = tx.QueryRow(ctx,
-		`SELECT i.cancelled_at,
-		        COALESCE(item_sums.gross, 0), i.discount_amount, i.tax_percent,
-		        COALESCE(paid_sums.paid, 0)
-		 FROM invoices i
-		 LEFT JOIN (SELECT invoice_id,
-		                   SUM(unit_price * quantity * (1 - discount_percent / 100)) AS gross
-		            FROM invoice_items GROUP BY invoice_id) item_sums
-		            ON item_sums.invoice_id = i.id
-		 LEFT JOIN (SELECT invoice_id, SUM(amount) AS paid
-		            FROM payments GROUP BY invoice_id) paid_sums
-		            ON paid_sums.invoice_id = i.id
-		 WHERE i.garage_id = $1 AND i.id = $2 FOR UPDATE OF i`,
-		garageID, invoiceID).Scan(
-		&m.CancelledAt, &m.Gross, &m.Discount, &m.TaxPercent, &m.Paid)
+		models.InvoiceMoneySelect+` WHERE i.garage_id = $1 AND i.id = $2 FOR UPDATE OF i`,
+		garageID, invoiceID).Scan(m.ScanTargets()...)
 	if err != nil {
 		return models.Payment{}, mapPGError(err)
 	}
@@ -240,11 +217,11 @@ func (s *Store) CreateInvoice(ctx context.Context, garageID string, inv models.I
 	created, err := scanInvoice(tx.QueryRow(ctx,
 		`INSERT INTO invoices (garage_id, invoice_number, job_card_id, customer_id, vehicle_id,
 		                      km_reading, discount_amount, tax_percent, invoice_date, due_date,
-		                      notes, terms_and_conditions)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING `+invoiceColumns,
+		                      notes, terms_and_conditions, per_item_tax)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING `+invoiceColumns,
 		garageID, inv.InvoiceNumber, inv.JobCardID, inv.CustomerID, inv.VehicleID,
 		inv.KmReading, inv.DiscountAmount, inv.TaxPercent, inv.InvoiceDate, inv.DueDate,
-		inv.Notes, inv.TermsAndConditions))
+		inv.Notes, inv.TermsAndConditions, inv.PerItemTax))
 	if err != nil {
 		return models.Invoice{}, mapPGError(err)
 	}
@@ -269,11 +246,12 @@ func (s *Store) UpdateInvoice(ctx context.Context, garageID string, inv models.I
 	updated, err := scanInvoice(tx.QueryRow(ctx,
 		`UPDATE invoices SET job_card_id=$3, customer_id=$4, vehicle_id=$5, km_reading=$6,
 		                        discount_amount=$7, tax_percent=$8, invoice_date=$9,
-		                        due_date=$10, notes=$11, terms_and_conditions=$12
+		                        due_date=$10, notes=$11, terms_and_conditions=$12,
+		                        per_item_tax=$13
 		 WHERE garage_id = $1 AND id = $2 RETURNING `+invoiceColumns,
 		garageID, inv.ID, inv.JobCardID, inv.CustomerID, inv.VehicleID, inv.KmReading,
 		inv.DiscountAmount, inv.TaxPercent, inv.InvoiceDate, inv.DueDate,
-		inv.Notes, inv.TermsAndConditions))
+		inv.Notes, inv.TermsAndConditions, inv.PerItemTax))
 	if err != nil {
 		return models.Invoice{}, mapPGError(err)
 	}

@@ -144,9 +144,11 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
       return EmptyStateWidget(
         icon: Icons.assignment_outlined,
         title: 'No Job Cards Found',
-        description: filterStatus != null
-            ? 'No vehicles currently matching status "${filterStatus.displayName}".'
-            : 'No active job cards found in the system.',
+        description: _searchQuery.trim().isNotEmpty
+            ? 'No job cards match "${_searchQuery.trim()}".'
+            : filterStatus != null
+                ? 'No vehicles currently matching status "${filterStatus.displayName}".'
+                : 'No job cards yet.',
         buttonText: 'Create New Job Card',
         onButtonPressed: _createNewJobCard,
       );

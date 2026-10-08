@@ -92,9 +92,9 @@ Future<void> openForm(
 
 Future<void> fillVehicle(WidgetTester tester, {bool customerForm = false}) async {
   await fill(tester, customerForm ? 'Vehicle Registration Number *' : 'Registration Number *', 'MH12AB1234');
-  await fill(tester, 'Make / Brand *', 'Toyota');
+  await fill(tester, 'Make *', 'Toyota');
   await fill(tester, 'Model *', 'Etios');
-  await fill(tester, 'Current KM Reading *', '42000');
+  await fill(tester, customerForm ? 'KM Reading *' : 'KM *', '42000');
 }
 
 void main() {
@@ -139,7 +139,7 @@ void main() {
       final provider = ServerIdentityProvider();
       await openForm(tester, provider, const AddVehicleDialog(customerId: 'c_1'), dialog: true);
       await fillVehicle(tester);
-      await fill(tester, 'Current KM Reading *', invalid);
+      await fill(tester, 'KM *', invalid);
       await press(tester, 'Save Vehicle');
       expect(provider.vehicleCreates, 0);
       expect(find.byType(AddVehicleDialog), findsOneWidget);

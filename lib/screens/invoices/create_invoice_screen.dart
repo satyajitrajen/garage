@@ -11,10 +11,12 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/gst_lines.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import 'invoice_preview_screen.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class CreateInvoiceScreen extends StatefulWidget {
   final Customer customer;
@@ -37,13 +39,11 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   final _notesController = TextEditingController();
 
   final List<MaintenanceItem> _items = [];
-  double _taxPercent = 0.0;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _taxPercent = context.read<GarageProvider>().config.defaultTaxPercent;
     _kmController.text = widget.vehicle.currentKm.toString();
   }
 
@@ -110,7 +110,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
           int.tryParse(_kmController.text.trim()) ?? widget.vehicle.currentKm,
       items: _items,
       discountAmount: discount,
-      taxPercent: _taxPercent,
+      perItemTax: true,
       invoiceDate: DateTime.now(),
       dueDate: DateTime.now().add(
         Duration(days: provider.config.invoiceDueDays),
@@ -140,17 +140,20 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         );
       }
 
-      Navigator.pushReplacement(
+      // Drop the customer/vehicle pickers and this form so Back from the
+      // preview returns to the main tabs, not into the creation flow.
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
           builder: (_) => InvoicePreviewScreen(invoiceId: created.id),
         ),
+        (route) => route.isFirst,
       );
     } catch (e) {
       if (!mounted) return;
       showAppSnackBar(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        errorMessage(e),
         type: SnackBarType.error,
       );
     } finally {
@@ -161,22 +164,21 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final config = context.read<GarageProvider>().config;
-
-    final partsSubtotal = _items
-        .where((i) => !i.isLabour)
-        .fold(0.0, (sum, i) => sum + i.taxableAmount);
-    final labourSubtotal = _items
-        .where((i) => i.isLabour)
-        .fold(0.0, (sum, i) => sum + i.taxableAmount);
-    final grossSubtotal = partsSubtotal + labourSubtotal;
     final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
-    final taxableSubtotal = (grossSubtotal - discount).clamp(
-      0.0,
-      double.infinity,
+    // Preview through the model so the summary matches the saved invoice.
+    final draft = Invoice(
+      id: '',
+      invoiceNumber: '',
+      customerId: widget.customer.id,
+      vehicleId: widget.vehicle.id,
+      kmReading: 0,
+      items: _items,
+      discountAmount: discount,
+      perItemTax: true,
     );
-    final taxAmount = taxableSubtotal * (_taxPercent / 100);
-    final grandTotal = taxableSubtotal + taxAmount;
+    final partsSubtotal = draft.partsSubtotal;
+    final labourSubtotal = draft.labourSubtotal;
+    final grandTotal = draft.grandTotal;
 
     return Scaffold(
       appBar: AppBar(
@@ -298,46 +300,15 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 }),
               const SizedBox(height: 20),
 
-              // Taxes & Discount Row
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<double>(
-                      isExpanded: true,
-                      initialValue: _taxPercent,
-                      decoration: const InputDecoration(
-                        labelText: 'GST Tax Rate',
-                      ),
-                      items: config.taxPercentOptions.map((rate) {
-                        return DropdownMenuItem(
-                          value: rate,
-                          child: Text(
-                            rate > 0
-                                ? '${rate.toStringAsFixed(0)}% (CGST ${(rate / 2).toStringAsFixed(1)}% + SGST ${(rate / 2).toStringAsFixed(1)}%)'
-                                : '${rate.toStringAsFixed(0)}%',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (val) => setState(
-                        () => _taxPercent = val ?? config.defaultTaxPercent,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _discountController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Discount (₹)',
-                        prefixIcon: Icon(Icons.discount_outlined),
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                ],
+              // Discount (GST comes from each item's own rate)
+              TextFormField(
+                controller: _discountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Discount (₹)',
+                  prefixIcon: Icon(Icons.discount_outlined),
+                ),
+                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 14),
 
@@ -394,11 +365,14 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                       ),
                       const SizedBox(height: 4),
                     ],
-                    _buildRow(
-                      'GST Taxes (${_taxPercent.toInt()}%):',
-                      CurrencyFormatter.format(taxAmount),
-                      palette,
-                    ),
+                    for (final line in gstLines(draft.taxBreakdown)) ...[
+                      _buildRow(
+                        '${line.key}:',
+                        CurrencyFormatter.format(line.value),
+                        palette,
+                      ),
+                      const SizedBox(height: 4),
+                    ],
                     const Divider(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

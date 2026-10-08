@@ -25,6 +25,8 @@ class CustomSearchBar extends StatelessWidget {
     final palette = context.palette;
 
     return Container(
+      // Clip to the rounded shape so nothing inside paints over the border.
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: palette.surface,
         borderRadius: BorderRadius.circular(AppDimens.radiusInput),
@@ -57,6 +59,9 @@ class CustomSearchBar extends StatelessWidget {
                   color: palette.textMuted,
                   fontSize: AppText.body,
                 ),
+                // The app's input theme fills fields grey; inside this bar
+                // that drew a square box over the right edge and border.
+                filled: false,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,

@@ -6,6 +6,7 @@ import '../data/api/api_config.dart';
 import '../providers/auth_provider.dart';
 import '../screens/billing/billing_screen.dart';
 import '../theme/app_text.dart';
+import '../utils/date_formatter.dart';
 
 /// SaaS subscription banner for the dashboard. Hidden in mock mode, when the
 /// subscription is active, or when billing can't be reached. Trialing shows
@@ -49,15 +50,17 @@ class _SubscriptionBannerState extends State<SubscriptionBanner> {
     if (status == 'trialing') {
       final end =
           DateTime.tryParse((b['trial_ends_at'] as String?) ?? '')?.toLocal();
-      if (end != null) daysLeft = end.difference(DateTime.now()).inDays;
+      if (end != null) daysLeft = AppDateFormatter.daysUntil(end);
     }
     final text = urgent
-        ? 'Subscription $status — renew to keep adding records.'
+        ? 'Subscription ${subscriptionStatusLabel(status).toLowerCase()} — renew to keep adding records.'
         : daysLeft == null
             ? 'Trial period — subscribe to keep full access.'
             : daysLeft < 0
                 ? 'Trial expired — subscribe to keep adding records.'
-                : 'Trial: $daysLeft day${daysLeft == 1 ? '' : 's'} left.';
+                : daysLeft == 0
+                    ? 'Trial ends today — subscribe to keep full access.'
+                    : 'Trial: $daysLeft day${daysLeft == 1 ? '' : 's'} left.';
     final bg = urgent ? Colors.red.shade700 : Colors.orange.shade800;
 
     return Padding(

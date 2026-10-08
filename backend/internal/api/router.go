@@ -94,6 +94,7 @@ func NewRouterWithOrigins(s *Server, allowedOrigins []string) http.Handler {
 				})
 				r.Route("/invites", func(r chi.Router) {
 					r.Use(auth.RequirePermission("staff.manage"))
+					r.Get("/", s.listInvites)
 					r.Post("/", s.createInvite)
 					r.Delete("/{inviteId}", s.revokeInvite)
 				})

@@ -32,7 +32,7 @@ func TestSettingsGetOrCreateDefaults(t *testing.T) {
 	if gs.DefaultTaxPercent != 18 || gs.InvoiceDueDays != 7 {
 		t.Fatalf("tax/due = %v/%v", gs.DefaultTaxPercent, gs.InvoiceDueDays)
 	}
-	if len(gs.TaxPercentOptions) != 4 || gs.TaxPercentOptions[2] != 18 {
+	if len(gs.TaxPercentOptions) != 5 || gs.TaxPercentOptions[3] != 18 {
 		t.Fatalf("tax options = %v", gs.TaxPercentOptions)
 	}
 	if len(gs.QuotationValidityOptions) != 3 {

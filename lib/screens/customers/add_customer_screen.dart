@@ -11,6 +11,7 @@ import '../../utils/app_snack_bar.dart';
 import '../job_cards/create_job_card_screen.dart';
 import '../quotations/create_quotation_screen.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class AddCustomerScreen extends StatefulWidget {
   final bool startJobImmediately;
@@ -28,6 +29,9 @@ class AddCustomerScreen extends StatefulWidget {
 
 class _AddCustomerScreenState extends State<AddCustomerScreen> {
   final _formKey = GlobalKey<FormState>();
+  /// Set by the first submit attempt; from then on fields re-validate
+  /// as they are edited, so fixed errors clear immediately.
+  bool _submitted = false;
 
   bool get isEditing => widget.customerToEdit != null;
 
@@ -91,6 +95,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   }
 
   Future<void> _handleSave({bool startJob = false, bool createQuote = false}) async {
+    if (!_submitted) setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
@@ -140,6 +145,22 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 
+    // Reject a duplicate plate before creating the customer, so a taken plate
+    // doesn't leave a customer behind without the vehicle.
+    if (_hasVehicle && _regNoController.text.trim().isNotEmpty) {
+      final existing =
+          provider.vehicleWithRegistration(_regNoController.text.trim());
+      if (existing != null) {
+        final owner = provider.getCustomerById(existing.customerId)?.name;
+        showAppSnackBar(
+          context,
+          'Vehicle ${existing.registrationNumber} already exists${owner == null ? '' : ' (owner: $owner)'}',
+          type: SnackBarType.error,
+        );
+        return;
+      }
+    }
+
     // Retry after vehicle failure: customer already created, skip creation
     final createdCustomer = _createdCustomer ?? await provider.addCustomer(newCustomer);
     _createdCustomer = createdCustomer;
@@ -167,7 +188,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         if (!mounted) return;
         showAppSnackBar(
           context,
-          e.toString().replaceFirst('Exception: ', ''),
+          errorMessage(e),
           type: SnackBarType.error,
         );
         return;
@@ -220,6 +241,9 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       ),
       body: Form(
         key: _formKey,
+        autovalidateMode: _submitted
+            ? AutovalidateMode.onUserInteraction
+            : AutovalidateMode.disabled,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -349,9 +373,19 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                         icon: Icons.directions_car_filled_rounded,
                       ),
                     ),
+                    // Labelled, with a white thumb: a red thumb on the red
+                    // track read as an unlabeled red button.
+                    Text(
+                      'Add vehicle',
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.caption,
+                        color: palette.textSecondary,
+                      ),
+                    ),
                     Switch.adaptive(
                       value: _hasVehicle,
                       activeTrackColor: palette.primary,
+                      thumbColor: const WidgetStatePropertyAll(Colors.white),
                       onChanged: (v) => setState(() => _hasVehicle = v),
                     ),
                   ],
@@ -386,7 +420,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                         controller: _makeController,
                         textCapitalization: TextCapitalization.words,
                         decoration: const InputDecoration(
-                          labelText: 'Make / Brand *',
+                          labelText: 'Make *',
                           hintText: 'e.g. Maruti / Hyundai / Honda',
                         ),
                         validator: (val) => _hasVehicle && (val == null || val.trim().isEmpty)
@@ -420,7 +454,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                         controller: _kmController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'Current KM Reading *',
+                          labelText: 'KM Reading *',
                           hintText: 'e.g. 45000',
                           prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
                         ),
@@ -434,7 +468,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                       child: TextFormField(
                         controller: _variantController,
                         decoration: const InputDecoration(
-                          labelText: 'Variant / Trim',
+                          labelText: 'Variant',
                           hintText: 'e.g. VXI, SX (O)',
                         ),
                       ),

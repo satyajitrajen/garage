@@ -92,3 +92,19 @@ func (s *Store) VehicleBelongs(ctx context.Context, garageID, vehicleID string) 
 		garageID, vehicleID).Scan(&ok)
 	return ok, err
 }
+
+// VehicleRegistrationTaken reports whether another vehicle in the garage
+// already uses this registration number. Spaces, dashes and case are ignored
+// so "mh 12 ab 1234" matches "MH12AB1234". excludeID skips the vehicle being
+// updated (pass "" on create).
+func (s *Store) VehicleRegistrationTaken(ctx context.Context, garageID, registration, excludeID string) (bool, error) {
+	var ok bool
+	err := s.Pool.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM vehicles
+		 WHERE garage_id = $1
+		   AND upper(regexp_replace(registration_number, '[^A-Za-z0-9]', '', 'g'))
+		     = upper(regexp_replace($2, '[^A-Za-z0-9]', '', 'g'))
+		   AND ($3 = '' OR id::text <> $3))`,
+		garageID, registration, excludeID).Scan(&ok)
+	return ok, err
+}

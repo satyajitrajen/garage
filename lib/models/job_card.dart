@@ -64,6 +64,11 @@ class JobCard {
     'Body Scratches Checked': true,
   };
 
+  /// The same checklist with nothing ticked, for job cards opened without
+  /// an inspection (converted estimates, quick-service counter sales).
+  static Map<String, bool> get uncheckedChecklist =>
+      {for (final item in defaultChecklist.keys) item: false};
+
   final String id;
   final String jobCardNumber; // e.g. JC-1001
   final String customerId;

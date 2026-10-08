@@ -15,6 +15,7 @@ import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   /// Non-null puts the screen in edit mode: fields are prefilled from this
@@ -299,7 +300,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       if (!mounted) return;
       showAppSnackBar(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        errorMessage(e),
         type: SnackBarType.error,
       );
     } finally {

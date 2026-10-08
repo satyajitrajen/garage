@@ -6,6 +6,7 @@ import '../../models/vehicle.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class AddVehicleDialog extends StatefulWidget {
   final String customerId;
@@ -23,6 +24,9 @@ class AddVehicleDialog extends StatefulWidget {
 
 class _AddVehicleDialogState extends State<AddVehicleDialog> {
   final _formKey = GlobalKey<FormState>();
+  /// Set by the first submit attempt; from then on fields re-validate
+  /// as they are edited, so fixed errors clear immediately.
+  bool _submitted = false;
   final _regNoController = TextEditingController();
   final _makeController = TextEditingController();
   final _modelController = TextEditingController();
@@ -66,6 +70,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
 
   Future<void> _saveVehicle() async {
     if (_isSaving) return;
+    if (!_submitted) setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
@@ -116,7 +121,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(errorMessage(e))),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -134,6 +139,9 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
         constraints: const BoxConstraints(maxWidth: 500),
         child: Form(
           key: _formKey,
+          autovalidateMode: _submitted
+              ? AutovalidateMode.onUserInteraction
+              : AutovalidateMode.disabled,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -184,7 +192,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                         controller: _makeController,
                         textCapitalization: TextCapitalization.words,
                         decoration: const InputDecoration(
-                          labelText: 'Make / Brand *',
+                          labelText: 'Make *',
                           hintText: 'e.g. Maruti, Hyundai',
                         ),
                         validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
@@ -213,7 +221,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                       child: TextFormField(
                         controller: _variantController,
                         decoration: const InputDecoration(
-                          labelText: 'Variant / Trim',
+                          labelText: 'Variant',
                           hintText: 'e.g. VXI, SX',
                         ),
                       ),
@@ -272,7 +280,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                         controller: _kmController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'Current KM Reading *',
+                          labelText: 'KM *',
                           hintText: 'e.g. 35000',
                           prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
                         ),

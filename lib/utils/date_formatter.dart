@@ -15,6 +15,17 @@ class AppDateFormatter {
   static String formatMonthYear(DateTime date) => _monthYearFormat.format(date);
   static String formatDayDate(DateTime date) => _dayFormat.format(date);
 
+  /// Calendar days from today until [end] (local dates), so a 14-day trial
+  /// started today reads 14 rather than 13 once a few minutes have passed.
+  /// Negative once [end] has passed; 0 when it ends later today.
+  static int daysUntil(DateTime end, {DateTime? now}) {
+    final current = now ?? DateTime.now();
+    if (end.isBefore(current)) return -1;
+    final today = DateTime.utc(current.year, current.month, current.day);
+    final endDay = DateTime.utc(end.year, end.month, end.day);
+    return endDay.difference(today).inDays;
+  }
+
   static String formatRelative(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);

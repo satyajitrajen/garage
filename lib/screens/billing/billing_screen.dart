@@ -7,6 +7,21 @@ import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/currency_formatter.dart';
+import '../../utils/date_formatter.dart';
+import '../../utils/error_message.dart';
+
+/// Display label for a backend subscription status ("past_due" → "Past due").
+String subscriptionStatusLabel(String status) => switch (status) {
+      'trialing' => 'Trial',
+      'active' => 'Active',
+      'past_due' => 'Past due',
+      'cancelled' => 'Cancelled',
+      'suspended' => 'Suspended',
+      _ => status.isEmpty
+          ? 'Unknown'
+          : status[0].toUpperCase() + status.substring(1).replaceAll('_', ' '),
+    };
 
 /// SaaS subscription screen: trial countdown, plan status, Razorpay checkout
 /// entry, and cancel. The server creates the Razorpay subscription and hands
@@ -106,7 +121,7 @@ class _BillingScreenState extends State<BillingScreen>
           'Complete payment in the browser. Your plan activates automatically.');
     } on ApiException catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, e.userMessage, type: SnackBarType.error);
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
       showAppSnackBar(context, 'Checkout failed. Please try again.',
@@ -139,7 +154,7 @@ class _BillingScreenState extends State<BillingScreen>
       await _load();
     } on ApiException catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, e.userMessage, type: SnackBarType.error);
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     }
   }
 
@@ -177,15 +192,21 @@ class _BillingScreenState extends State<BillingScreen>
                                 fontWeight: FontWeight.w700)),
                         const SizedBox(height: 8),
                         _planTile('Pro Monthly', 'Billed every month',
-                            'monthly', Icons.calendar_month_rounded),
+                            'monthly', Icons.calendar_month_rounded,
+                            price: _price('price_monthly'), per: 'month'),
                         const SizedBox(height: 8),
                         _planTile('Pro Yearly', 'Two months free vs monthly',
-                            'yearly', Icons.calendar_today_rounded),
-                        const SizedBox(height: 16),
-                        OutlinedButton(
-                          onPressed: _cancel,
-                          child: const Text('Cancel subscription'),
-                        ),
+                            'yearly', Icons.calendar_today_rounded,
+                            price: _price('price_yearly'), per: 'year'),
+                        // Only a live paid plan can be cancelled; during the
+                        // trial there is nothing to cancel.
+                        if (_canCancel) ...[
+                          const SizedBox(height: 16),
+                          OutlinedButton(
+                            onPressed: _cancel,
+                            child: const Text('Cancel subscription'),
+                          ),
+                        ],
                       ] else
                         Text(
                           'Only the workshop owner can change the subscription.',
@@ -198,6 +219,18 @@ class _BillingScreenState extends State<BillingScreen>
     );
   }
 
+  bool get _canCancel {
+    final status = (_billing?['status'] as String?) ?? '';
+    return status == 'active' || status == 'past_due';
+  }
+
+  /// Plan price in rupees from the billing response, or null when the
+  /// server has none configured.
+  num? _price(String key) {
+    final value = _billing?[key];
+    return value is num && value > 0 ? value : null;
+  }
+
   Widget _statusCard() {
     final b = _billing ?? {};
     final status = (b['status'] as String?) ?? 'unknown';
@@ -207,9 +240,9 @@ class _BillingScreenState extends State<BillingScreen>
     if (trialEnds != null && status == 'trialing') {
       final end = DateTime.tryParse(trialEnds)?.toLocal();
       if (end != null) {
-        final left = end.difference(DateTime.now()).inDays;
-        subtitle = 'Trial ends ${end.day}/${end.month}/${end.year}'
-            '${left < 0 ? ' (expired)' : ' ($left days left)'}';
+        final left = AppDateFormatter.daysUntil(end);
+        subtitle = 'Trial ends ${AppDateFormatter.formatDate(end)}'
+            '${left < 0 ? ' (expired)' : left == 0 ? ' (today)' : ' ($left day${left == 1 ? '' : 's'} left)'}';
       }
     }
     Color dot = Colors.green;
@@ -222,20 +255,23 @@ class _BillingScreenState extends State<BillingScreen>
     return Card(
       child: ListTile(
         leading: Icon(Icons.circle, color: dot, size: 14),
-        title: Text('Status: $status',
+        title: Text('Status: ${subscriptionStatusLabel(status)}',
             style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         subtitle: Text(subtitle),
       ),
     );
   }
 
-  Widget _planTile(String title, String subtitle, String plan, IconData icon) {
+  Widget _planTile(String title, String subtitle, String plan, IconData icon,
+      {num? price, required String per}) {
     return Card(
       child: ListTile(
         leading: Icon(icon),
         title: Text(title,
             style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle),
+        subtitle: Text(price == null
+            ? subtitle
+            : '${CurrencyFormatter.format(price.toDouble())} / $per · $subtitle'),
         trailing: FilledButton(
           onPressed: () => _checkout(plan),
           child: const Text('Subscribe'),

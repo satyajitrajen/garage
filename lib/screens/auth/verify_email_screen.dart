@@ -6,6 +6,7 @@ import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/error_message.dart';
 
 /// Logged-out email verification: resend the link or confirm a token.
 class VerifyEmailScreen extends StatefulWidget {
@@ -47,7 +48,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       showAppSnackBar(context, 'If the email exists, a link was sent.');
     } on ApiException catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, e.userMessage, type: SnackBarType.error);
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
       showAppSnackBar(context, 'Request failed. Please try again.',
@@ -64,7 +65,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       Navigator.pop(context);
     } on ApiException catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, e.userMessage, type: SnackBarType.error);
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
       showAppSnackBar(context, 'Verification failed. Please try again.',

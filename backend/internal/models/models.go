@@ -58,7 +58,7 @@ func DefaultSettings(garageID string) GarageSettings {
 		GarageID:                 garageID,
 		Profile:                  Profile{Name: "My Garage"},
 		DefaultTaxPercent:        18,
-		TaxPercentOptions:        []float64{0, 12, 18, 28},
+		TaxPercentOptions:        []float64{0, 5, 12, 18, 28},
 		InvoiceDueDays:           7,
 		QuotationValidityOptions: []int{7, 15, 30},
 		WorkingDaysPerMonth:      26,

@@ -19,7 +19,10 @@ class AddStaffScreen extends StatefulWidget {
 }
 
 class _AddStaffScreenState extends State<AddStaffScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
+  /// Set by the first submit attempt; from then on fields re-validate
+  /// as they are edited, so fixed errors clear immediately.
+  bool _submitted = false;
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
@@ -57,6 +60,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
 
   Future<void> _saveStaff() async {
     if (_isSaving) return;
+    if (!_submitted) setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
@@ -133,6 +137,9 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
       ),
       body: Form(
         key: _formKey,
+        autovalidateMode: _submitted
+            ? AutovalidateMode.onUserInteraction
+            : AutovalidateMode.disabled,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(

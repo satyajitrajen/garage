@@ -7,12 +7,12 @@ import (
 )
 
 const quotationColumns = `id, quotation_number, customer_id, vehicle_id, km_reading,
-	overall_discount, tax_percent, validity_days, status, notes, valid_until, created_at`
+	overall_discount, tax_percent, per_item_tax, validity_days, status, notes, valid_until, created_at`
 
 func scanQuotation(row scanner) (models.Quotation, error) {
 	var q models.Quotation
 	err := row.Scan(&q.ID, &q.QuotationNumber, &q.CustomerID, &q.VehicleID, &q.KmReading,
-		&q.OverallDiscount, &q.TaxPercent, &q.ValidityDays, &q.Status, &q.Notes,
+		&q.OverallDiscount, &q.TaxPercent, &q.PerItemTax, &q.ValidityDays, &q.Status, &q.Notes,
 		&q.ValidUntil, &q.CreatedAt)
 	return q, mapPGError(err)
 }
@@ -67,10 +67,12 @@ func (s *Store) CreateQuotation(ctx context.Context, garageID string, q models.Q
 	defer tx.Rollback(context.WithoutCancel(ctx))
 	created, err := scanQuotation(tx.QueryRow(ctx,
 		`INSERT INTO quotations (garage_id, quotation_number, customer_id, vehicle_id, km_reading,
-		                        overall_discount, tax_percent, validity_days, status, notes, valid_until)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING `+quotationColumns,
+		                        overall_discount, tax_percent, validity_days, status, notes, valid_until,
+		                        per_item_tax)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING `+quotationColumns,
 		garageID, q.QuotationNumber, q.CustomerID, q.VehicleID, q.KmReading,
-		q.OverallDiscount, q.TaxPercent, q.ValidityDays, q.Status, q.Notes, q.ValidUntil))
+		q.OverallDiscount, q.TaxPercent, q.ValidityDays, q.Status, q.Notes, q.ValidUntil,
+		q.PerItemTax))
 	if err != nil {
 		return models.Quotation{}, mapPGError(err)
 	}
@@ -91,10 +93,10 @@ func (s *Store) UpdateQuotation(ctx context.Context, garageID string, q models.Q
 	updated, err := scanQuotation(tx.QueryRow(ctx,
 		`UPDATE quotations SET customer_id=$3, vehicle_id=$4, km_reading=$5,
 		                        overall_discount=$6, tax_percent=$7, validity_days=$8,
-		                        status=$9, notes=$10, valid_until=$11
+		                        status=$9, notes=$10, valid_until=$11, per_item_tax=$12
 		 WHERE garage_id = $1 AND id = $2 RETURNING `+quotationColumns,
 		garageID, q.ID, q.CustomerID, q.VehicleID, q.KmReading, q.OverallDiscount,
-		q.TaxPercent, q.ValidityDays, q.Status, q.Notes, q.ValidUntil))
+		q.TaxPercent, q.ValidityDays, q.Status, q.Notes, q.ValidUntil, q.PerItemTax))
 	if err != nil {
 		return models.Quotation{}, mapPGError(err)
 	}

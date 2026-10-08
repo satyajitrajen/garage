@@ -155,6 +155,28 @@ func (s *Store) AcceptInvite(ctx context.Context, tokenHash, userID string) (Inv
 	return inv, tx.Commit(ctx)
 }
 
+// ListPendingInvites returns the garage's invites that are neither accepted
+// nor expired, newest first.
+func (s *Store) ListPendingInvites(ctx context.Context, garageID string) ([]Invite, error) {
+	rows, err := s.Pool.Query(ctx,
+		`SELECT id, garage_id, email, role, permissions, expires_at FROM garage_invites
+		 WHERE garage_id = $1 AND accepted_at IS NULL AND expires_at > now()
+		 ORDER BY created_at DESC, id`, garageID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	invites := []Invite{}
+	for rows.Next() {
+		var inv Invite
+		if err := rows.Scan(&inv.ID, &inv.GarageID, &inv.Email, &inv.Role, &inv.Permissions, &inv.ExpiresAt); err != nil {
+			return nil, err
+		}
+		invites = append(invites, inv)
+	}
+	return invites, rows.Err()
+}
+
 func (s *Store) RevokeInvite(ctx context.Context, garageID, inviteID string) error {
 	tag, err := s.Pool.Exec(ctx,
 		`DELETE FROM garage_invites WHERE garage_id = $1 AND id = $2`, garageID, inviteID)

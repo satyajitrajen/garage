@@ -26,6 +26,28 @@ extension ItemCategoryExtension on ItemCategory {
   }
 }
 
+/// Tax per GST rate for [items] taxed at their own rates, with a document
+/// discount spread pro-rata: each line's taxable amount is scaled by
+/// taxable / gross. Must match InvoiceMoney.Grand in the Go backend.
+Map<double, double> perItemTaxBreakdown(
+  List<MaintenanceItem> items,
+  double gross,
+  double taxable,
+) {
+  final factor = gross > 0 ? taxable / gross : 0.0;
+  final byRate = <double, double>{};
+  for (final item in items) {
+    if (item.taxPercent <= 0) continue;
+    byRate.update(
+      item.taxPercent,
+      (tax) => tax + item.taxAmount * factor,
+      ifAbsent: () => item.taxAmount * factor,
+    );
+  }
+  return Map.fromEntries(
+      byRate.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
+}
+
 class MaintenanceItem {
   final String id;
   final String name;

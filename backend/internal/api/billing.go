@@ -34,6 +34,8 @@ func (s *Server) getBilling(w http.ResponseWriter, r *http.Request) {
 		"subscription_status":      st.SubscriptionStatus,
 		"provider_subscription_id": sub.ProviderSubscription,
 		"razorpay_key_id":          s.Config.RazorpayKeyID,
+		"price_monthly":            s.Config.PlanPriceMonthly,
+		"price_yearly":             s.Config.PlanPriceYearly,
 	})
 }
 

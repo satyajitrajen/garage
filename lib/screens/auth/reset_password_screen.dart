@@ -6,6 +6,7 @@ import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/error_message.dart';
 
 /// Logged-out reset step: exchange the emailed token for a new password.
 /// Resetting revokes all sessions server-side.
@@ -49,7 +50,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       Navigator.popUntil(context, (r) => r.isFirst);
     } on ApiException catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, e.userMessage, type: SnackBarType.error);
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
       showAppSnackBar(context, 'Reset failed. Please try again.',

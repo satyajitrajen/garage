@@ -12,6 +12,7 @@ type Invoice struct {
 	Items              []MaintenanceItem `json:"items"`
 	DiscountAmount     float64           `json:"discountAmount"`
 	TaxPercent         float64           `json:"taxPercent"`
+	PerItemTax         bool              `json:"perItemTax"`
 	Payments           []Payment         `json:"payments"`
 	InvoiceDate        time.Time         `json:"invoiceDate"`
 	DueDate            *time.Time        `json:"dueDate"`

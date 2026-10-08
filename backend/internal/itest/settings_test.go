@@ -27,7 +27,7 @@ func TestGetSettingsDefaults(t *testing.T) {
 		gs.PromisedDeliveryHours != 6 || gs.DefaultReceivedBy != "Cashier" {
 		t.Fatalf("config defaults = %+v", gs)
 	}
-	if len(gs.TaxPercentOptions) != 4 || len(gs.QuotationValidityOptions) != 3 {
+	if len(gs.TaxPercentOptions) != 5 || len(gs.QuotationValidityOptions) != 3 {
 		t.Fatalf("option lists = %v / %v", gs.TaxPercentOptions, gs.QuotationValidityOptions)
 	}
 }
@@ -47,7 +47,7 @@ func TestPatchSettingsMerges(t *testing.T) {
 	if gs.InvoiceDueDays != 14 {
 		t.Fatalf("due days = %v", gs.InvoiceDueDays)
 	}
-	if gs.DefaultTaxPercent != 18 || len(gs.TaxPercentOptions) != 4 {
+	if gs.DefaultTaxPercent != 18 || len(gs.TaxPercentOptions) != 5 {
 		t.Fatalf("unpatched fields must be unchanged: %+v", gs)
 	}
 

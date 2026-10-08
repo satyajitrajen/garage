@@ -188,6 +188,16 @@ func (s *Server) acceptInvite(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, 200, inv)
 }
 
+// GET /api/garages/{garageId}/invites (staff.manage) → pending invites.
+func (s *Server) listInvites(w http.ResponseWriter, r *http.Request) {
+	invites, err := s.Store.ListPendingInvites(r.Context(), auth.GarageID(r.Context()))
+	if err != nil {
+		httputil.Error(w, 500, "internal", "could not list invites")
+		return
+	}
+	httputil.JSON(w, 200, map[string]any{"items": invites})
+}
+
 // DELETE /api/garages/{garageId}/invites/{inviteId} (staff.manage)
 func (s *Server) revokeInvite(w http.ResponseWriter, r *http.Request) {
 	if err := s.Store.RevokeInvite(r.Context(), auth.GarageID(r.Context()), chi.URLParam(r, "inviteId")); err != nil {

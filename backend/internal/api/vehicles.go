@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -33,6 +34,33 @@ func validateVehicle(v models.Vehicle) (string, int) {
 		}
 	}
 	return "", 0
+}
+
+// normalizePlate drops everything but letters and digits and upper-cases,
+// matching the SQL comparison in Store.VehicleRegistrationTaken.
+func normalizePlate(plate string) string {
+	var b strings.Builder
+	for _, r := range strings.ToUpper(plate) {
+		if (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// registrationFree writes a 409 and returns false when another vehicle in the
+// garage already has this registration number.
+func (s *Server) registrationFree(w http.ResponseWriter, r *http.Request, garageID, registration, excludeID string) bool {
+	taken, err := s.Store.VehicleRegistrationTaken(r.Context(), garageID, registration, excludeID)
+	if err != nil {
+		httputil.Error(w, 500, "internal", "could not check registration number")
+		return false
+	}
+	if taken {
+		httputil.Error(w, 409, "conflict", "a vehicle with this registration number already exists")
+		return false
+	}
+	return true
 }
 
 func (s *Server) listVehicles(w http.ResponseWriter, r *http.Request) {
@@ -72,6 +100,9 @@ func (s *Server) createVehicle(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, 404, "not_found", "customer not found")
 		return
 	}
+	if !s.registrationFree(w, r, garageID, v.RegistrationNumber, "") {
+		return
+	}
 	created, err := s.Store.CreateVehicle(r.Context(), garageID, v)
 	if err != nil {
 		httputil.Error(w, 500, "internal", "could not create vehicle")
@@ -102,6 +133,21 @@ func (s *Server) updateVehicle(w http.ResponseWriter, r *http.Request) {
 	}
 	if !ok {
 		httputil.Error(w, 404, "not_found", "customer not found")
+		return
+	}
+	// Only a plate change is checked: routine updates (KM, service date) of
+	// vehicles that already share a plate from older data must keep working.
+	current, err := s.Store.VehicleByID(r.Context(), garageID, v.ID)
+	if errors.Is(err, store.ErrNotFound) {
+		httputil.Error(w, 404, "not_found", "vehicle not found")
+		return
+	}
+	if err != nil {
+		httputil.Error(w, 500, "internal", "could not load vehicle")
+		return
+	}
+	if normalizePlate(current.RegistrationNumber) != normalizePlate(v.RegistrationNumber) &&
+		!s.registrationFree(w, r, garageID, v.RegistrationNumber, v.ID) {
 		return
 	}
 	updated, err := s.Store.UpdateVehicle(r.Context(), garageID, v)

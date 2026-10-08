@@ -1,15 +1,20 @@
 package itest
 
 import (
+	"fmt"
 	"testing"
 
 	"garage-backend/internal/models"
 )
 
+// vehicleSeq keeps fixture plates unique: a garage rejects duplicate plates.
+var vehicleSeq int
+
 func createVehicleFor(t *testing.T, token, garageID, customerID string) models.Vehicle {
 	t.Helper()
+	vehicleSeq++
 	status, data := doJSON(t, "POST", "/api/vehicles", token, garageID, map[string]any{
-		"customerId": customerID, "registrationNumber": "MH 12 AB 1234",
+		"customerId": customerID, "registrationNumber": fmt.Sprintf("MH 12 AB %04d", vehicleSeq),
 		"make": "Maruti Suzuki", "model": "Swift Dzire", "variant": "VXI",
 		"year": 2021, "fuelType": "petrol", "currentKm": 45200,
 		"lastServiceDate": "2026-08-01",
@@ -130,5 +135,68 @@ func TestVehicleDeleteGuardAndTenancy(t *testing.T) {
 	status, _ = doJSON(t, "DELETE", "/api/vehicles/"+v.ID, b.AccessToken, bGarage, nil)
 	if status != 404 {
 		t.Fatalf("B delete A's vehicle: status %d", status)
+	}
+}
+
+func TestVehicleDuplicateRegistration(t *testing.T) {
+	truncate(t)
+	owner := registerOwner(t, "vdup")
+	garageID := owner.Memberships[0].GarageID
+	_, _, customer := createCustomer(t, owner.AccessToken, garageID, customerBody("dupown"))
+	first := createVehicleFor(t, owner.AccessToken, garageID, customer.ID)
+
+	body := map[string]any{
+		"customerId": customer.ID, "make": "Honda", "model": "City",
+		"fuelType": "diesel", "currentKm": 12000,
+	}
+	for _, plate := range []string{first.RegistrationNumber, "mh12ab" + first.RegistrationNumber[9:], " MH-12-AB-" + first.RegistrationNumber[9:]} {
+		body["registrationNumber"] = plate
+		status, data := doJSON(t, "POST", "/api/vehicles", owner.AccessToken, garageID, body)
+		if status != 409 {
+			t.Fatalf("duplicate %q: status %d body %s", plate, status, data)
+		}
+	}
+
+	// A different plate is fine, and updating a vehicle to its own plate is fine.
+	body["registrationNumber"] = "MH 14 XY 9999"
+	status, data := doJSON(t, "POST", "/api/vehicles", owner.AccessToken, garageID, body)
+	if status != 201 {
+		t.Fatalf("distinct plate: %d %s", status, data)
+	}
+	var second models.Vehicle
+	mustUnmarshal(t, data, &second)
+	status, data = doJSON(t, "PUT", "/api/vehicles/"+first.ID, owner.AccessToken, garageID, first)
+	if status != 200 {
+		t.Fatalf("update to own plate: %d %s", status, data)
+	}
+	// Renaming the second vehicle onto the first's plate is rejected.
+	second.RegistrationNumber = first.RegistrationNumber
+	status, data = doJSON(t, "PUT", "/api/vehicles/"+second.ID, owner.AccessToken, garageID, second)
+	if status != 409 {
+		t.Fatalf("update onto taken plate: %d %s", status, data)
+	}
+
+	// Plates that already collide in older data (inserted before this check
+	// existed) must not block routine updates that keep the plate.
+	if _, err := pool.Exec(ctx, `UPDATE vehicles SET registration_number = $1 WHERE id = $2`,
+		first.RegistrationNumber, second.ID); err != nil {
+		t.Fatalf("seed legacy duplicate: %v", err)
+	}
+	second.RegistrationNumber = first.RegistrationNumber
+	second.CurrentKm = 13000
+	status, data = doJSON(t, "PUT", "/api/vehicles/"+second.ID, owner.AccessToken, garageID, second)
+	if status != 200 {
+		t.Fatalf("km update on legacy duplicate: %d %s", status, data)
+	}
+
+	// Another garage may use the same plate.
+	other := registerOwner(t, "vdup2")
+	otherGarage := other.Memberships[0].GarageID
+	_, _, otherCustomer := createCustomer(t, other.AccessToken, otherGarage, customerBody("dupother"))
+	body["customerId"] = otherCustomer.ID
+	body["registrationNumber"] = first.RegistrationNumber
+	status, data = doJSON(t, "POST", "/api/vehicles", other.AccessToken, otherGarage, body)
+	if status != 201 {
+		t.Fatalf("other garage same plate: %d %s", status, data)
 	}
 }

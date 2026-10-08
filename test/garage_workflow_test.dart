@@ -453,14 +453,14 @@ void main() {
       // A config whose default is already a member passes through unchanged.
       final consistent = normalizeConfig(const AppConfig());
       expect(consistent.defaultTaxPercent, 18.0);
-      expect(consistent.taxPercentOptions, const [0.0, 12.0, 18.0, 28.0]);
+      expect(consistent.taxPercentOptions, const [0.0, 5.0, 12.0, 18.0, 28.0]);
 
       // Empty option lists fall back to the default options, but the stored
       // default tax rate is still preserved as a member.
       final emptyOptions = normalizeConfig(
-          AppConfig(defaultTaxPercent: 5.0, taxPercentOptions: const []));
-      expect(emptyOptions.taxPercentOptions, const [0.0, 12.0, 18.0, 28.0, 5.0]);
-      expect(emptyOptions.defaultTaxPercent, 5.0);
+          AppConfig(defaultTaxPercent: 3.0, taxPercentOptions: const []));
+      expect(emptyOptions.taxPercentOptions, const [0.0, 5.0, 12.0, 18.0, 28.0, 3.0]);
+      expect(emptyOptions.defaultTaxPercent, 3.0);
 
       // The provider heals the repo config at fetch time, so the invariant
       // holds on the live config after load().

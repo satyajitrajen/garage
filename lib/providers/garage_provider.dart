@@ -13,6 +13,7 @@ import '../models/invoice.dart';
 import '../models/payment.dart';
 import '../models/expense.dart';
 import '../models/staff.dart';
+import '../utils/error_message.dart';
 
 /// Thrown by [GarageProvider.quickServiceCheckout] when the job card was
 /// created but billing it failed. Callers retry with [jobCard] so the retry
@@ -27,7 +28,7 @@ class QuickServiceBillingException implements Exception {
   String toString() {
     final reason = cause is ApiException
         ? (cause as ApiException).userMessage
-        : cause.toString().replaceFirst('Exception: ', '');
+        : errorMessage(cause);
     return 'Job card ${jobCard.jobCardNumber} saved, but billing failed: '
         '$reason. Tap Generate Bill to retry.';
   }
@@ -325,7 +326,36 @@ class GarageProvider extends ChangeNotifier {
     }
   }
 
+  /// Plates are compared ignoring case, spaces and dashes, matching the
+  /// backend's duplicate check ("mh 12 ab 1234" == "MH12AB1234").
+  static String normalizeRegistration(String registration) =>
+      registration.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+
+  /// The vehicle already using [registration], ignoring [excludeId] (the
+  /// vehicle being edited), or null when the plate is free.
+  Vehicle? vehicleWithRegistration(String registration, {String? excludeId}) {
+    final wanted = normalizeRegistration(registration);
+    for (final v in _vehicles) {
+      if (v.id != excludeId &&
+          normalizeRegistration(v.registrationNumber) == wanted) {
+        return v;
+      }
+    }
+    return null;
+  }
+
+  void _ensureRegistrationFree(Vehicle vehicle) {
+    final existing =
+        vehicleWithRegistration(vehicle.registrationNumber, excludeId: vehicle.id);
+    if (existing != null) {
+      final owner = getCustomerById(existing.customerId)?.name;
+      throw Exception(
+          'Vehicle ${existing.registrationNumber} already exists${owner == null ? '' : ' (owner: $owner)'}');
+    }
+  }
+
   Future<Vehicle> addVehicle(Vehicle vehicle) async {
+    _ensureRegistrationFree(vehicle);
     final created = await _repo.createVehicle(vehicle);
     _vehicles.insert(0, created);
     notifyListeners();
@@ -333,6 +363,14 @@ class GarageProvider extends ChangeNotifier {
   }
 
   Future<Vehicle> updateVehicle(Vehicle vehicle) async {
+    // Only a plate change is checked: routine updates (KM, service date) of
+    // vehicles that already share a plate from older data must keep working.
+    final current = getVehicleById(vehicle.id);
+    if (current == null ||
+        normalizeRegistration(current.registrationNumber) !=
+            normalizeRegistration(vehicle.registrationNumber)) {
+      _ensureRegistrationFree(vehicle);
+    }
     final updated = await _repo.updateVehicle(vehicle);
     final index = _vehicles.indexWhere((v) => v.id == updated.id);
     if (index != -1) _vehicles[index] = updated;
@@ -349,6 +387,20 @@ class GarageProvider extends ChangeNotifier {
   List<JobCard> getServiceHistoryForVehicle(String vehicleId) {
     return _jobCards.where((jc) => jc.vehicleId == vehicleId).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  /// Workshop visits for a vehicle: every job card plus every direct
+  /// (counter) invoice that was billed without a job card. Cancelled
+  /// invoices are not visits.
+  int visitCountForVehicle(String vehicleId) {
+    final jobs = _jobCards.where((jc) => jc.vehicleId == vehicleId).length;
+    final directBills = _invoices
+        .where((inv) =>
+            inv.vehicleId == vehicleId &&
+            inv.jobCardId == null &&
+            inv.status != InvoiceStatus.cancelled)
+        .length;
+    return jobs + directBills;
   }
 
   // -------------------------------------------------------------
@@ -486,12 +538,14 @@ class GarageProvider extends ChangeNotifier {
       customerId: quote.customerId,
       vehicleId: quote.vehicleId,
       customerComplaints: ['Converted from Estimate #${quote.quotationNumber}'],
+      // Converting an estimate is not an inspection: start unticked.
+      inspectionChecklist: JobCard.uncheckedChecklist,
       kmReading: quote.kmReading,
       assignedStaffId: assignedStaffId,
       status: JobStatus.inProgress,
       promisedDeliveryDate:
           DateTime.now().add(Duration(hours: config.promisedDeliveryHours)),
-      items: List.from(quote.items),
+      items: itemsWithDocumentDiscount(quote.items, quote.overallDiscount),
       supervisorNotes: 'Created directly from approved quotation ${quote.quotationNumber}',
     );
 
@@ -500,6 +554,26 @@ class GarageProvider extends ChangeNotifier {
     final created = await addJobCard(jobCard);
     await updateQuotationStatus(quote.id, QuotationStatus.converted);
     return created;
+  }
+
+  /// Job cards have no bill-level discount, so an estimate's discount is
+  /// carried over by spreading it across the lines as an extra per-line
+  /// discount %: every line's taxable amount shrinks by the same fraction,
+  /// which is exactly how the estimate applied it before tax. The job card
+  /// (and the invoice made from it) therefore totals what was approved.
+  static List<MaintenanceItem> itemsWithDocumentDiscount(
+    List<MaintenanceItem> items,
+    double discount,
+  ) {
+    final gross = items.fold(0.0, (sum, i) => sum + i.taxableAmount);
+    if (discount <= 0 || gross <= 0) return List.of(items);
+    final keep = (1 - discount / gross).clamp(0.0, 1.0);
+    return [
+      for (final item in items)
+        item.copyWith(
+          discountPercent: 100 - (100 - item.discountPercent) * keep,
+        ),
+    ];
   }
 
   // -------------------------------------------------------------
@@ -577,6 +651,8 @@ class GarageProvider extends ChangeNotifier {
       items: List.from(jobCard.items),
       discountAmount: discount,
       taxPercent: taxPercent ?? config.defaultTaxPercent,
+      // Job card lines already carry their own GST rates.
+      perItemTax: true,
       invoiceDate: DateTime.now(),
       dueDate: DateTime.now().add(Duration(days: config.invoiceDueDays)),
       notes: notes ?? config.invoiceNotes,
@@ -610,6 +686,7 @@ class GarageProvider extends ChangeNotifier {
       customerId: customerId,
       vehicleId: vehicleId,
       customerComplaints: const ['Quick service walk-in'],
+      inspectionChecklist: JobCard.uncheckedChecklist,
       kmReading: kmReading,
       status: JobStatus.inProgress,
       promisedDeliveryDate:
@@ -874,6 +951,10 @@ class GarageProvider extends ChangeNotifier {
   }) async {
     final staffMember = getStaffById(staffId);
     if (staffMember == null) return;
+    if (isSalaryDisbursed(staffId, month, year)) {
+      throw Exception(
+          'Salary for ${_monthName(month)} $year is already paid to ${staffMember.name}');
+    }
 
     // Mark this month's advances as settled in payroll.
     _salaryAdvances
@@ -886,9 +967,35 @@ class GarageProvider extends ChangeNotifier {
       category: ExpenseCategory.miscellaneous,
       amount: netPayable,
       paymentMode: PaymentMode.cash,
-      notes: 'Monthly salary disbursement for ${_monthName(month)} $year',
+      notes: 'Monthly salary disbursement for ${_monthName(month)} $year '
+          '${_salaryMarker(staffId, month, year)}',
     ));
   }
+
+  /// Tag stored in the salary expense's notes so a month's payout can be
+  /// found again even if the staff member is later renamed.
+  String _salaryMarker(String staffId, int month, int year) =>
+      '[salary:$staffId:$year-${month.toString().padLeft(2, '0')}]';
+
+  /// The salary expense recorded by [disburseSalary] for this staff member
+  /// and month, or null if the month is unpaid. Payouts recorded before the
+  /// marker existed are matched by their title.
+  GarageExpense? salaryPaymentFor(String staffId, int month, int year) {
+    final marker = _salaryMarker(staffId, month, year);
+    final name = getStaffById(staffId)?.name;
+    final legacyTitle = name == null
+        ? null
+        : 'Salary Paid - $name (${_monthName(month)} $year)';
+    for (final e in _expenses) {
+      if ((e.notes?.contains(marker) ?? false) || e.title == legacyTitle) {
+        return e;
+      }
+    }
+    return null;
+  }
+
+  bool isSalaryDisbursed(String staffId, int month, int year) =>
+      salaryPaymentFor(staffId, month, year) != null;
 
   String _monthName(int month) {
     const months = [

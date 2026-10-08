@@ -57,25 +57,32 @@ class MoreMenuScreen extends StatelessWidget {
               for (final s in provider.staff)
                 ListTile(
                   title: Text(s.name),
-                  subtitle: Text(s.role.displayName),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  // Labelled actions: bare calendar/receipt icons weren't
+                  // recognisable as "attendance" and "salary".
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.calendar_month_outlined),
-                        tooltip: 'Attendance',
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          _push(context, StaffAttendanceScreen(staff: s));
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.receipt_long_outlined),
-                        tooltip: 'Salary slip',
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          _push(context, StaffSalaryScreen(staff: s));
-                        },
+                      Text(s.role.displayName),
+                      Wrap(
+                        spacing: 4,
+                        children: [
+                          TextButton.icon(
+                            icon: const Icon(Icons.calendar_month_outlined, size: 18),
+                            label: const Text('Attendance'),
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _push(context, StaffAttendanceScreen(staff: s));
+                            },
+                          ),
+                          TextButton.icon(
+                            icon: const Icon(Icons.receipt_long_outlined, size: 18),
+                            label: const Text('Salary'),
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _push(context, StaffSalaryScreen(staff: s));
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),

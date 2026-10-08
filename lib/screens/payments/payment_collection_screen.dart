@@ -10,6 +10,7 @@ import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/payment_mode_display.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class PaymentCollectionScreen extends StatefulWidget {
   final Invoice invoice;
@@ -102,7 +103,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       if (!mounted) return;
       showAppSnackBar(
         context,
-        'Could not record payment: ${e.toString().replaceFirst('Exception: ', '')}',
+        'Could not record payment: ${errorMessage(e)}',
         type: SnackBarType.error,
       );
       return;
@@ -325,7 +326,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                         ),
                         Text(
                           'Paid So Far: ${CurrencyFormatter.format(invoice.totalPaidAmount)}',
-                          style: GoogleFonts.poppins(color: palette.paid, fontSize: AppText.label, fontWeight: FontWeight.w600),
+                          // White on the red card: green on red was unreadable.
+                          style: GoogleFonts.poppins(color: Colors.white, fontSize: AppText.label, fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),

@@ -40,6 +40,7 @@ granular permissions, PostgreSQL storage. The Flutter app is its only client.
    | `SMTP_HOST/PORT/USER/PASS/FROM` | SMTP for verify/reset/invite mail; unset = log-only (dev) | `smtp.mailgun.org` |
    | `RAZORPAY_KEY_ID/KEY_SECRET/WEBHOOK_SECRET` | Razorpay credentials; unset = manual billing | — |
    | `RAZORPAY_PLAN_MONTHLY/PLAN_YEARLY` | Razorpay plan ids checkout subscribes to | `plan_xxx` |
+   | `PLAN_PRICE_MONTHLY/PLAN_PRICE_YEARLY` | Plan prices in rupees shown in the app; unset = hidden | `499` |
    | `RAZORPAY_API_BASE` | Razorpay API origin (default `https://api.razorpay.com`; tests override) | — |
 
    Production: `docker compose up -d` (postgres + server + Caddy TLS, see
@@ -99,7 +100,7 @@ external needed. The first run downloads the Postgres binaries.
 | `POST /api/catalog` · `PUT`/`DELETE /api/catalog/{itemId}` | bearer + garage + `jobcards.manage` | `{name, category, unitPrice, unit?, isLabour?, partNumber?, notes?}`; subscription-gated |
 | `POST /api/auth/verify-request` · `POST /api/auth/verify` | none (rate-limited) | email verification: request (always 200) + confirm `{token}` |
 | `POST /api/auth/forgot` · `POST /api/auth/reset` | none (rate-limited) | password reset: request (always 200) + `{token, password≥8}`; revokes sessions |
-| `POST /api/garages/{garageId}/invites` · `DELETE /api/garages/{garageId}/invites/{inviteId}` | bearer + garage + `staff.manage` | invite by email (7d expiry, mailed link); revoke |
+| `GET`/`POST /api/garages/{garageId}/invites` · `DELETE /api/garages/{garageId}/invites/{inviteId}` | bearer + garage + `staff.manage` | list pending; invite by email (7d expiry, mailed link); revoke |
 | `GET /api/invites/{token}` | none | public invite preview |
 | `POST /api/invites/{token}/accept` | bearer | join the garage as a member |
 | `GET /api/garages/{garageId}/doc-numbers/next?kind=jobcard\|quotation\|invoice` | bearer + garage | server-allocated number (JC-/EST-/INV-YYYY-); POST with empty number auto-assigns |

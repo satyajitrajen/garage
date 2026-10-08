@@ -292,6 +292,7 @@ Map<String, dynamic> quotationToJson(Quotation q) => {
       'items': [for (final it in q.items) maintenanceItemToJson(it)],
       'overallDiscount': q.overallDiscount,
       'taxPercent': q.taxPercent,
+      'perItemTax': q.perItemTax,
       'validityDays': q.validityDays,
       'status': q.status.name,
       'notes': q.notes,
@@ -309,6 +310,7 @@ Quotation quotationFromJson(Map<String, dynamic> j) => Quotation(
       ],
       overallDiscount: _dbl(j['overallDiscount']),
       taxPercent: _dbl(j['taxPercent']),
+      perItemTax: j['perItemTax'] == true,
       validityDays: _int(j['validityDays']),
       status: _enumOr(
           QuotationStatus.values, j['status'] as String?, QuotationStatus.draft),
@@ -354,6 +356,7 @@ Map<String, dynamic> invoiceToJson(Invoice inv) => {
       'items': [for (final it in inv.items) maintenanceItemToJson(it)],
       'discountAmount': inv.discountAmount,
       'taxPercent': inv.taxPercent,
+      'perItemTax': inv.perItemTax,
       'invoiceDate': _instant(inv.invoiceDate),
       'dueDate': inv.dueDate == null ? null : _instant(inv.dueDate!),
       'cancelledAt': inv.cancelledAt == null ? null : _instant(inv.cancelledAt!),
@@ -374,6 +377,7 @@ Invoice invoiceFromJson(Map<String, dynamic> j) => Invoice(
       ],
       discountAmount: _dbl(j['discountAmount']),
       taxPercent: _dbl(j['taxPercent']),
+      perItemTax: j['perItemTax'] == true,
       payments: [
         for (final p in (j['payments'] as List? ?? []))
           paymentFromJson(p as Map<String, dynamic>)

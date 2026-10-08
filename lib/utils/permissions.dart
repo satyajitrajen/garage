@@ -25,4 +25,32 @@ abstract final class Permissions {
     advancesManage,
     settingsManage,
   ];
+
+  /// Granted to invited staff by default (mirrors DefaultStaffPermissions):
+  /// day-to-day workshop work, without expenses, staff, advances or settings.
+  static const defaultStaff = <String>[
+    customersManage,
+    vehiclesManage,
+    jobcardsManage,
+    quotationsManage,
+    invoicesManage,
+    paymentsRecord,
+    attendanceManage,
+  ];
+
+  /// Short label for a permission key, for checklists.
+  static String label(String key) => switch (key) {
+        customersManage => 'Customers',
+        vehiclesManage => 'Vehicles',
+        jobcardsManage => 'Job cards',
+        quotationsManage => 'Estimates',
+        invoicesManage => 'Bills',
+        paymentsRecord => 'Record payments',
+        expensesManage => 'Expenses',
+        staffManage => 'Staff & team',
+        attendanceManage => 'Attendance',
+        advancesManage => 'Salary advances',
+        settingsManage => 'Garage settings',
+        _ => key,
+      };
 }

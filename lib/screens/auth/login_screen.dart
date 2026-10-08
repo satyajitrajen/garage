@@ -6,6 +6,7 @@ import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/error_message.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import 'verify_email_screen.dart';
@@ -40,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await auth.login(email: _email.text, password: _password.text);
     } on ApiException catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, e.userMessage, type: SnackBarType.error);
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, 'Sign in failed. Please try again.',

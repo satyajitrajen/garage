@@ -11,6 +11,7 @@ type Quotation struct {
 	Items           []MaintenanceItem `json:"items"`
 	OverallDiscount float64           `json:"overallDiscount"`
 	TaxPercent      float64           `json:"taxPercent"`
+	PerItemTax      bool              `json:"perItemTax"`
 	ValidityDays    int               `json:"validityDays"`
 	Status          string            `json:"status"`
 	Notes           *string           `json:"notes"`

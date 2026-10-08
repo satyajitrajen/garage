@@ -11,10 +11,12 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/gst_lines.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import 'quotation_detail_screen.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class CreateQuotationScreen extends StatefulWidget {
   final Customer customer;
@@ -44,6 +46,11 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
   final List<MaintenanceItem> _items = [];
   int _validityDays = 7;
   double _taxPercent = 0.0;
+
+  /// New estimates tax each line at its own rate. Editing a legacy estimate
+  /// keeps its single document rate (and the rate dropdown) so its approved
+  /// total does not change under the customer.
+  bool _perItemTax = true;
   bool _isSaving = false;
 
   /// Edit mode only: set when the user actually changes the validity
@@ -82,6 +89,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           .inDays;
       _validityDays = derivedDays > 0 ? derivedDays : existing.validityDays;
       _taxPercent = existing.taxPercent;
+      _perItemTax = existing.perItemTax;
     }
   }
 
@@ -163,6 +171,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           items: _items,
           overallDiscount: discount,
           taxPercent: _taxPercent,
+          perItemTax: _perItemTax,
           validityDays: _validityDays,
           status: existing.status,
           notes: notes,
@@ -196,6 +205,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           items: _items,
           overallDiscount: discount,
           taxPercent: _taxPercent,
+          perItemTax: true,
           validityDays: _validityDays,
           status: QuotationStatus.sent,
           notes: notes,
@@ -221,7 +231,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       if (!mounted) return;
       showAppSnackBar(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        errorMessage(e),
         type: SnackBarType.error,
       );
     } finally {
@@ -246,20 +256,22 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         ? config.taxPercentOptions
         : [_taxPercent, ...config.taxPercentOptions];
 
-    final partsSubtotal = _items
-        .where((i) => !i.isLabour)
-        .fold(0.0, (sum, i) => sum + i.taxableAmount);
-    final labourSubtotal = _items
-        .where((i) => i.isLabour)
-        .fold(0.0, (sum, i) => sum + i.taxableAmount);
-    final grossSubtotal = partsSubtotal + labourSubtotal;
     final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
-    final discountedSubtotal = (grossSubtotal - discount).clamp(
-      0.0,
-      double.infinity,
+    // Preview through the model so the summary matches the saved estimate.
+    final draft = Quotation(
+      id: '',
+      quotationNumber: '',
+      customerId: widget.customer.id,
+      vehicleId: widget.vehicle.id,
+      kmReading: 0,
+      items: _items,
+      overallDiscount: discount,
+      taxPercent: _taxPercent,
+      perItemTax: _perItemTax,
     );
-    final taxAmount = discountedSubtotal * (_taxPercent / 100);
-    final grandTotal = discountedSubtotal + taxAmount;
+    final partsSubtotal = draft.partsSubtotal;
+    final labourSubtotal = draft.labourSubtotal;
+    final grandTotal = draft.grandTotal;
 
     return Scaffold(
       appBar: AppBar(
@@ -410,6 +422,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                       }),
                     ),
                   ),
+                  if (!_perItemTax) ...[
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<double>(
@@ -433,6 +446,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                       ),
                     ),
                   ),
+                  ],
                 ],
               ),
               const SizedBox(height: 14),
@@ -509,11 +523,14 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                       ),
                       const SizedBox(height: 6),
                     ],
-                    _buildSummaryRow(
-                      'Taxes (${_taxPercent.toInt()}%):',
-                      CurrencyFormatter.format(taxAmount),
-                      palette,
-                    ),
+                    for (final line in gstLines(draft.taxBreakdown)) ...[
+                      _buildSummaryRow(
+                        '${line.key}:',
+                        CurrencyFormatter.format(line.value),
+                        palette,
+                      ),
+                      const SizedBox(height: 6),
+                    ],
                     const Divider(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

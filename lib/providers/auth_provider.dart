@@ -385,10 +385,33 @@ class AuthProvider extends ChangeNotifier {
     return [for (final m in items) (m as Map<String, dynamic>)];
   }
 
-  Future<void> inviteMember({required String email, String role = 'staff'}) async {
+  Future<void> inviteMember({
+    required String email,
+    String role = 'staff',
+    List<String>? permissions,
+  }) async {
     final gid = _garageId;
     if (gid == null || gid.isEmpty) throw StateError('No active garage');
-    await _client.post('/api/garages/$gid/invites', {'email': email.trim(), 'role': role});
+    await _client.post('/api/garages/$gid/invites', {
+      'email': email.trim(),
+      'role': role,
+      'permissions': ?permissions,
+    });
+  }
+
+  /// Invites that are neither accepted nor expired.
+  Future<List<Map<String, dynamic>>> fetchInvites() async {
+    final gid = _garageId;
+    if (gid == null || gid.isEmpty) throw StateError('No active garage');
+    final json = await _client.get('/api/garages/$gid/invites');
+    final items = (json as Map<String, dynamic>)['items'] as List? ?? [];
+    return [for (final m in items) (m as Map<String, dynamic>)];
+  }
+
+  Future<void> revokeInvite(String inviteId) async {
+    final gid = _garageId;
+    if (gid == null || gid.isEmpty) throw StateError('No active garage');
+    await _client.delete('/api/garages/$gid/invites/$inviteId');
   }
 
   Future<String> nextDocNumber(String kind) async {

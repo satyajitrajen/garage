@@ -171,6 +171,8 @@ class StaffListScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                // Nothing to mark until someone active is on the roster.
+                if (staffMembers.any((s) => s.isActive)) ...[
                 const SizedBox(width: 8),
                 Flexible(
                   child: GradientButton(
@@ -190,6 +192,7 @@ class StaffListScreen extends StatelessWidget {
                   borderRadius: 14,
                 ),
                 ),
+                ],
               ],
             ),
           ),

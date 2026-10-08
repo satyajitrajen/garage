@@ -21,6 +21,7 @@ import '../payments/payment_collection_screen.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class QuickServiceWizard extends StatefulWidget {
   final Customer? initialCustomer;
@@ -185,7 +186,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       if (!mounted) return;
       showAppSnackBar(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        errorMessage(e),
         type: SnackBarType.error,
       );
     } finally {
@@ -474,12 +475,22 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
   // STEP 3: ADD ITEMS & PARTS
   Widget _buildAddItemsStep(GarageProvider provider) {
     final palette = context.palette;
-    final subtotal = _selectedItems.fold(0.0, (sum, i) => sum + i.totalAmount);
     final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
-    final taxable = (subtotal - discount).clamp(0.0, double.infinity);
-    final taxRate = provider.config.defaultTaxPercent / 100;
-    final tax = taxable * taxRate;
-    final netGrandTotal = taxable + tax;
+    // Preview through the model: lines carry their own GST rates and the
+    // bill created by quickServiceCheckout uses exactly this math.
+    final draft = Invoice(
+      id: '',
+      invoiceNumber: '',
+      customerId: '',
+      vehicleId: '',
+      kmReading: 0,
+      items: _selectedItems,
+      discountAmount: discount,
+      perItemTax: true,
+    );
+    final subtotal = draft.grossSubtotal;
+    final tax = draft.totalTaxAmount;
+    final netGrandTotal = draft.grandTotal;
     // Short viewport (keyboard up on a small phone): Scaffold strips the inset
     // from the body's MediaQuery, so decide from the space actually given.
     return LayoutBuilder(builder: (context, constraints) {
@@ -623,7 +634,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                       Text('Subtotal: ${CurrencyFormatter.format(subtotal)}', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
                       if (discount > 0)
                         Text('Discount: -${CurrencyFormatter.format(discount)}', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.paid, fontWeight: FontWeight.w600)),
-                      Text('Tax (${provider.config.defaultTaxPercent.toStringAsFixed(0)}%): ${CurrencyFormatter.format(tax)}', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
+                      Text('GST: ${CurrencyFormatter.format(tax)}', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
                     ],
                   ),
                   const SizedBox(height: 8),

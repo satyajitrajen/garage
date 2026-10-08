@@ -32,7 +32,10 @@ class Invoice {
   final int kmReading;
   final List<MaintenanceItem> items;
   final double discountAmount;
-  final double taxPercent; // e.g. 18% GST or 0
+  /// Document-level GST rate. Only used by legacy invoices
+  /// ([perItemTax] false); newer invoices tax each line at its own rate.
+  final double taxPercent;
+  final bool perItemTax;
   final List<Payment> payments;
   final DateTime invoiceDate;
   final DateTime? dueDate;
@@ -50,6 +53,7 @@ class Invoice {
     required this.items,
     this.discountAmount = 0.0,
     this.taxPercent = 18.0,
+    this.perItemTax = false,
     List<Payment>? payments,
     DateTime? invoiceDate,
     this.dueDate,
@@ -69,9 +73,17 @@ class Invoice {
 
   double get grossSubtotal => partsSubtotal + labourSubtotal;
   double get taxableSubtotal => (grossSubtotal - discountAmount).clamp(0, double.infinity);
-  double get cgstAmount => (taxPercent > 0) ? (taxableSubtotal * (taxPercent / 200)) : 0.0;
-  double get sgstAmount => (taxPercent > 0) ? (taxableSubtotal * (taxPercent / 200)) : 0.0;
-  double get totalTaxAmount => cgstAmount + sgstAmount;
+
+  /// GST per rate (rate → tax amount), after the document discount is spread
+  /// pro-rata across lines. Legacy invoices have a single entry.
+  Map<double, double> get taxBreakdown => perItemTax
+      ? perItemTaxBreakdown(items, grossSubtotal, taxableSubtotal)
+      : {if (taxPercent > 0) taxPercent: taxableSubtotal * taxPercent / 100};
+
+  double get totalTaxAmount =>
+      taxBreakdown.values.fold(0.0, (sum, tax) => sum + tax);
+  double get cgstAmount => totalTaxAmount / 2;
+  double get sgstAmount => totalTaxAmount / 2;
   double get grandTotal => taxableSubtotal + totalTaxAmount;
 
   double get totalPaidAmount => payments.fold(0.0, (sum, p) => sum + p.amount);
@@ -121,6 +133,7 @@ class Invoice {
     List<MaintenanceItem>? items,
     double? discountAmount,
     double? taxPercent,
+    bool? perItemTax,
     List<Payment>? payments,
     DateTime? invoiceDate,
     DateTime? dueDate,
@@ -141,6 +154,7 @@ class Invoice {
       items: items ?? this.items,
       discountAmount: discountAmount ?? this.discountAmount,
       taxPercent: taxPercent ?? this.taxPercent,
+      perItemTax: perItemTax ?? this.perItemTax,
       payments: payments ?? this.payments,
       invoiceDate: invoiceDate ?? this.invoiceDate,
       dueDate: clearDueDate ? null : (dueDate ?? this.dueDate),

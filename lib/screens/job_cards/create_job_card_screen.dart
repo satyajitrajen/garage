@@ -17,6 +17,7 @@ import '../../widgets/edit_item_dialog.dart';
 import '../maintenance/add_maintenance_screen.dart';
 import 'job_card_detail_screen.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class CreateJobCardScreen extends StatefulWidget {
   /// Customer/vehicle a NEW job card is created for. The screen shows them as
@@ -252,18 +253,21 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
           type: SnackBarType.success,
         );
 
-        Navigator.pushReplacement(
+        // Drop the customer/vehicle pickers and this form so Back from the
+        // new job card returns to the main tabs, not into the creation flow.
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
             builder: (_) => JobCardDetailScreen(jobCardId: created.id),
           ),
+          (route) => route.isFirst,
         );
       }
     } catch (e) {
       if (!mounted) return;
       showAppSnackBar(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        errorMessage(e),
         type: SnackBarType.error,
       );
     } finally {

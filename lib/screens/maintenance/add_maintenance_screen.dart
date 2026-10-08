@@ -46,6 +46,9 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
   ItemCategory _customCategory = ItemCategory.sparePart;
   bool _customIsLabour = false;
   bool _customSaveToCatalog = false;
+  /// GST rate for the custom line; null until the sheet first opens and
+  /// reads the garage default.
+  double? _customTaxPercent;
 
   @override
   void initState() {
@@ -117,7 +120,8 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
       quantity: qty,
       unit: _customUnitController.text.trim().isEmpty ? 'Pcs' : _customUnitController.text.trim(),
       discountPercent: discount,
-      taxPercent: context.read<GarageProvider>().config.defaultTaxPercent,
+      taxPercent: _customTaxPercent ??
+          context.read<GarageProvider>().config.defaultTaxPercent,
       isLabour: _customIsLabour || _customCategory == ItemCategory.labour,
     );
 
@@ -307,6 +311,11 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                           label: Text(cat.displayName),
                           selected: isSelected,
                           selectedColor: palette.primary.withValues(alpha: 0.15),
+                          labelStyle: TextStyle(
+                            color: isSelected ? palette.primary : palette.textPrimary,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                          checkmarkColor: palette.primary,
                           onSelected: (selected) {
                             if (selected) {
                               setSheetState(() {
@@ -318,6 +327,38 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         );
                       }).toList(),
                     ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'GST rate',
+                      style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
+                    Builder(builder: (context) {
+                      final config = context.read<GarageProvider>().config;
+                      final selectedRate = _customTaxPercent ?? config.defaultTaxPercent;
+                      final rates = config.taxPercentOptions.contains(selectedRate)
+                          ? config.taxPercentOptions
+                          : [selectedRate, ...config.taxPercentOptions];
+                      return Wrap(
+                        spacing: 8,
+                        children: rates.map((rate) {
+                          final isSelected = rate == selectedRate;
+                          return ChoiceChip(
+                            label: Text('${rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 1)}%'),
+                            selected: isSelected,
+                            selectedColor: palette.primary.withValues(alpha: 0.15),
+                            labelStyle: TextStyle(
+                              color: isSelected ? palette.primary : palette.textPrimary,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            ),
+                            checkmarkColor: palette.primary,
+                            onSelected: (selected) {
+                              if (selected) setSheetState(() => _customTaxPercent = rate);
+                            },
+                          );
+                        }).toList(),
+                      );
+                    }),
                     const SizedBox(height: 12),
                     CheckboxListTile(
                       value: _customIsLabour,
@@ -689,7 +730,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         Navigator.pop(context, _currentItems);
                       },
                       icon: const Icon(Icons.check_rounded, size: 18),
-                      label: Text('Done (${_currentItems.length} items)',
+                      label: Text('Done (${_currentItems.length} item${_currentItems.length == 1 ? '' : 's'})',
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

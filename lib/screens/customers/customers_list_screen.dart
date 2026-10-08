@@ -111,8 +111,14 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 widget.isSelectionMode
-                    ? 'Choose the customer for this job'
-                    : '${customers.length} customers',
+                    ? switch (widget.targetAction) {
+                        VehicleTargetAction.createInvoice =>
+                          'Choose the customer for this bill',
+                        VehicleTargetAction.createQuotation =>
+                          'Choose the customer for this estimate',
+                        _ => 'Choose the customer for this job',
+                      }
+                    : '${customers.length} customer${customers.length == 1 ? '' : 's'}',
                 style: GoogleFonts.poppins(
                   fontSize: AppText.caption,
                   color: palette.textSecondary,

@@ -6,6 +6,7 @@ import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/error_message.dart';
 import 'reset_password_screen.dart';
 
 /// Logged-out forgot-password step: request a reset email (always succeeds
@@ -38,7 +39,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       showAppSnackBar(context, 'If the email exists, a reset link was sent.');
     } on ApiException catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, e.userMessage, type: SnackBarType.error);
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
       showAppSnackBar(context, 'Request failed. Please try again.',

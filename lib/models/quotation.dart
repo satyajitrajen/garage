@@ -33,7 +33,10 @@ class Quotation {
   final int kmReading;
   final List<MaintenanceItem> items;
   final double overallDiscount;
-  final double taxPercent; // Default 18% GST or 0%
+  /// Document-level GST rate. Only used by legacy estimates
+  /// ([perItemTax] false); newer estimates tax each line at its own rate.
+  final double taxPercent;
+  final bool perItemTax;
   final int validityDays;
   final QuotationStatus status;
   final String? notes;
@@ -49,6 +52,7 @@ class Quotation {
     required this.items,
     this.overallDiscount = 0.0,
     this.taxPercent = 18.0,
+    this.perItemTax = false,
     this.validityDays = 7,
     this.status = QuotationStatus.draft,
     this.notes,
@@ -68,7 +72,14 @@ class Quotation {
 
   double get grossSubtotal => partsSubtotal + labourSubtotal;
   double get discountedAmount => (grossSubtotal - overallDiscount).clamp(0, double.infinity);
-  double get totalTaxAmount => discountedAmount * (taxPercent / 100);
+
+  /// GST per rate (rate → tax amount); see [Invoice.taxBreakdown].
+  Map<double, double> get taxBreakdown => perItemTax
+      ? perItemTaxBreakdown(items, grossSubtotal, discountedAmount)
+      : {if (taxPercent > 0) taxPercent: discountedAmount * taxPercent / 100};
+
+  double get totalTaxAmount =>
+      taxBreakdown.values.fold(0.0, (sum, tax) => sum + tax);
   double get grandTotal => discountedAmount + totalTaxAmount;
 
   Quotation copyWith({
@@ -80,6 +91,7 @@ class Quotation {
     List<MaintenanceItem>? items,
     double? overallDiscount,
     double? taxPercent,
+    bool? perItemTax,
     int? validityDays,
     QuotationStatus? status,
     String? notes,
@@ -95,6 +107,7 @@ class Quotation {
       items: items ?? this.items,
       overallDiscount: overallDiscount ?? this.overallDiscount,
       taxPercent: taxPercent ?? this.taxPercent,
+      perItemTax: perItemTax ?? this.perItemTax,
       validityDays: validityDays ?? this.validityDays,
       status: status ?? this.status,
       notes: notes ?? this.notes,

@@ -9,6 +9,7 @@ import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../theme/app_text.dart';
+import '../../utils/error_message.dart';
 
 class StaffSalaryScreen extends StatefulWidget {
   final Staff staff;
@@ -24,6 +25,7 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
   final _advanceReasonController = TextEditingController();
 
   late DateTime _selectedMonth;
+  bool _isDisbursing = false;
 
   @override
   void initState() {
@@ -63,6 +65,36 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
       'Salary advance of ${CurrencyFormatter.format(amount)} recorded for ${widget.staff.name}!',
       type: SnackBarType.success,
     );
+  }
+
+  Future<void> _disburse(double netPayable) async {
+    // Latch: a double-tap must not record the payout twice.
+    if (_isDisbursing) return;
+    setState(() => _isDisbursing = true);
+    final provider = Provider.of<GarageProvider>(context, listen: false);
+    try {
+      await provider.disburseSalary(
+        staffId: widget.staff.id,
+        month: _selectedMonth.month,
+        year: _selectedMonth.year,
+        netPayable: netPayable,
+      );
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        'Salary of ${CurrencyFormatter.format(netPayable)} disbursed & recorded as expense for ${widget.staff.name}!',
+        type: SnackBarType.success,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        errorMessage(e),
+        type: SnackBarType.error,
+      );
+    } finally {
+      if (mounted) setState(() => _isDisbursing = false);
+    }
   }
 
   void _showAddAdvanceDialog() {
@@ -329,35 +361,39 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Mark Salary Paid Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  final provider = Provider.of<GarageProvider>(context, listen: false);
-                  final now = DateTime.now();
-                  await provider.disburseSalary(
-                    staffId: widget.staff.id,
-                    month: now.month,
-                    year: now.year,
-                    netPayable: netPayable,
-                  );
-                  if (!context.mounted) return;
-                  showAppSnackBar(
-                    context,
-                    'Salary of ${CurrencyFormatter.format(netPayable)} disbursed & recorded as expense for ${widget.staff.name}!',
-                    type: SnackBarType.success,
-                  );
-                },
-                icon: const Icon(Icons.payments_rounded),
-                label: const Text('Disburse & Mark Salary Paid'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: palette.paid,
-                  foregroundColor: palette.onPrimary,
+            // Mark Salary Paid Button: once the month is paid it turns into a
+            // read-only "paid" state so the same payout can't be recorded twice.
+            Builder(builder: (context) {
+              final paid = provider.salaryPaymentFor(
+                widget.staff.id,
+                _selectedMonth.month,
+                _selectedMonth.year,
+              );
+              final monthLabel = AppDateFormatter.formatMonthYear(_selectedMonth);
+              return SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: paid != null || _isDisbursing
+                      ? null
+                      : () => _disburse(netPayable),
+                  icon: Icon(paid != null
+                      ? Icons.check_circle_rounded
+                      : Icons.payments_rounded),
+                  label: Text(paid != null
+                      ? 'Salary paid for $monthLabel (${CurrencyFormatter.format(paid.amount)})'
+                      : _isDisbursing
+                          ? 'Recording payout...'
+                          : 'Disburse & Mark Salary Paid'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: palette.paid,
+                    foregroundColor: palette.onPrimary,
+                    disabledBackgroundColor: palette.paid.withValues(alpha: 0.15),
+                    disabledForegroundColor: palette.paid,
+                  ),
                 ),
-              ),
-            ),
+              );
+            }),
             const SizedBox(height: 80),
           ],
         ),

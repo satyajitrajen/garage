@@ -178,7 +178,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              '${vehicles.length} Vehicles',
+                              '${vehicles.length} ${vehicles.length == 1 ? 'Vehicle' : 'Vehicles'}',
                               style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 fontWeight: FontWeight.w600,
@@ -213,7 +213,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                     itemBuilder: (context, index) {
                       final vehicle = vehicles[index];
                       final isSelected = _selectedVehicle?.id == vehicle.id;
-                      final serviceHistory = provider.getServiceHistoryForVehicle(vehicle.id);
+                      final visits = provider.visitCountForVehicle(vehicle.id);
 
                       return InkWell(
                         onTap: () {
@@ -353,7 +353,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                               if (vehicle.lastServiceDate != null) ...[
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Last serviced: ${AppDateFormatter.formatDate(vehicle.lastServiceDate!)} (${serviceHistory.length} total visits)',
+                                  'Last serviced: ${AppDateFormatter.formatDate(vehicle.lastServiceDate!)} (${visits == 1 ? '1 visit' : '$visits visits'})',
                                   style: GoogleFonts.poppins(
                                     fontSize: AppText.label,
                                     color: palette.paid,

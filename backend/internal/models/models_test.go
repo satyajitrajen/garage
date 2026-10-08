@@ -15,7 +15,7 @@ func TestDefaultSettingsMatchFlutterDefaults(t *testing.T) {
 	if s.DefaultTaxPercent != 18 {
 		t.Fatalf("default_tax_percent = %v", s.DefaultTaxPercent)
 	}
-	wantTax := []float64{0, 12, 18, 28}
+	wantTax := []float64{0, 5, 12, 18, 28}
 	for i, v := range wantTax {
 		if s.TaxPercentOptions[i] != v {
 			t.Fatalf("tax_percent_options = %v", s.TaxPercentOptions)

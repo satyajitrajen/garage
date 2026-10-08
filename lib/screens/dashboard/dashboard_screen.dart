@@ -22,6 +22,7 @@ import '../invoices/invoices_list_screen.dart';
 import '../job_cards/job_card_detail_screen.dart';
 import '../job_cards/job_cards_list_screen.dart';
 import '../workflow/quick_service_wizard.dart';
+import '../../utils/error_message.dart';
 
 /// Home: find a car, start work, see what's on the floor and what's owed.
 class DashboardScreen extends StatefulWidget {
@@ -49,7 +50,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await context.read<GarageProvider>().refresh();
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, e.toString().replaceFirst('Exception: ', ''),
+      showAppSnackBar(context, errorMessage(e),
           type: SnackBarType.error);
     }
   }

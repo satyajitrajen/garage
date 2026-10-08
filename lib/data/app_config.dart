@@ -1,7 +1,7 @@
 class AppConfig {
   const AppConfig({
     this.defaultTaxPercent = 18.0,
-    this.taxPercentOptions = const [0.0, 12.0, 18.0, 28.0],
+    this.taxPercentOptions = const [0.0, 5.0, 12.0, 18.0, 28.0],
     this.invoiceDueDays = 7,
     this.quotationValidityOptions = const [7, 15, 30],
     this.workingDaysPerMonth = 26,

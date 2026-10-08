@@ -6,6 +6,7 @@ import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/error_message.dart';
 
 /// First-run registration: creates the user + their garage (they become
 /// owner) and signs them straight in.
@@ -18,6 +19,9 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _form = GlobalKey<FormState>();
+  /// Set by the first submit attempt; from then on fields re-validate
+  /// as they are edited, so fixed errors clear immediately.
+  bool _submitted = false;
   final _name = TextEditingController();
   final _garage = TextEditingController();
   final _email = TextEditingController();
@@ -34,6 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _submit() async {
+    if (!_submitted) setState(() => _submitted = true);
     if (!(_form.currentState?.validate() ?? false)) return;
     FocusScope.of(context).unfocus();
     final auth = context.read<AuthProvider>();
@@ -48,7 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       Navigator.pop(context);
     } on ApiException catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, e.userMessage, type: SnackBarType.error);
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
       showAppSnackBar(context, 'Registration failed. Please try again.',
@@ -69,6 +74,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
                 key: _form,
+                autovalidateMode: _submitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
