@@ -4,6 +4,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -241,7 +242,15 @@ func NewRouterWithOrigins(s *Server, allowedOrigins []string) http.Handler {
 		})
 	})
 
-	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
+	// Everything outside /api is the public website (when SITE_DIR is set);
+	// unknown /api paths stay JSON 404s.
+	site := siteHandler(s.Config.SiteDir)
+	r.NotFound(func(w http.ResponseWriter, req *http.Request) {
+		isAPI := req.URL.Path == "/api" || strings.HasPrefix(req.URL.Path, "/api/")
+		if site != nil && !isAPI && (req.Method == http.MethodGet || req.Method == http.MethodHead) {
+			site.ServeHTTP(w, req)
+			return
+		}
 		httputil.Error(w, 404, "not_found", "route not found")
 	})
 	r.MethodNotAllowed(func(w http.ResponseWriter, _ *http.Request) {

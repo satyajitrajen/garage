@@ -30,6 +30,9 @@ type Config struct {
 	// on the subscription screen; 0 hides the price.
 	PlanPriceMonthly int
 	PlanPriceYearly  int
+	// SiteDir holds the built public website (index.html + assets) served
+	// for every path outside /api; empty serves the API only.
+	SiteDir string
 	// RazorpayAPIBase defaults to https://api.razorpay.com; tests point it at
 	// a fake server.
 	RazorpayAPIBase string
@@ -58,6 +61,7 @@ func Load() (Config, error) {
 		RazorpayAPIBase:       getenv("RAZORPAY_API_BASE", "https://api.razorpay.com"),
 		PlanPriceMonthly:      getenvInt("PLAN_PRICE_MONTHLY", 0),
 		PlanPriceYearly:       getenvInt("PLAN_PRICE_YEARLY", 0),
+		SiteDir:               os.Getenv("SITE_DIR"),
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("DATABASE_URL is required")

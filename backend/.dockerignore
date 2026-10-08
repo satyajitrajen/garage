@@ -1,0 +1,10 @@
+.env
+.embedded-pg/
+.embedded-pg-bin/
+internal/.embedded-pg/
+internal/.embedded-pg-bin/
+*.exe
+*.log
+site/node_modules/
+site/dist/
+.mimosa/

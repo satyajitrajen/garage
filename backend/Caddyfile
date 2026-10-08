@@ -1,4 +1,5 @@
-# Reverse-proxy for the SaaS API. Replace api.example.com with your domain.
+# Reverse-proxy for the website (/) and the API (/api), both served by the Go
+# server. Replace api.example.com with your domain.
 # Caddy issues/renews TLS automatically. Razorpay webhooks hit
 # https://api.example.com/api/billing/webhooks/razorpay.
 api.example.com {

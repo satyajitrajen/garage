@@ -41,6 +41,7 @@ granular permissions, PostgreSQL storage. The Flutter app is its only client.
    | `RAZORPAY_KEY_ID/KEY_SECRET/WEBHOOK_SECRET` | Razorpay credentials; unset = manual billing | — |
    | `RAZORPAY_PLAN_MONTHLY/PLAN_YEARLY` | Razorpay plan ids checkout subscribes to | `plan_xxx` |
    | `PLAN_PRICE_MONTHLY/PLAN_PRICE_YEARLY` | Plan prices in rupees shown in the app; unset = hidden | `499` |
+   | `SITE_DIR` | Built website served at `/` (everything outside `/api`); unset = API only. The Docker image sets it | `site/dist` |
    | `RAZORPAY_API_BASE` | Razorpay API origin (default `https://api.razorpay.com`; tests override) | — |
 
    Production: `docker compose up -d` (postgres + server + Caddy TLS, see
@@ -57,6 +58,19 @@ Migrations run automatically on boot. Health check: `GET /api/health`
 (liveness, always 200) and `GET /api/ready` (pings the DB, 503 when
 unreachable — use it as the readiness probe). The server sets 5s header /
 15s read / 30s write / 60s idle timeouts and logs JSON via slog.
+
+## Website
+
+`site/` is the public website (React + Vite): the landing page plus the pages
+the App Store and Play Store need: `/privacy`, `/terms`, `/refunds`, `/support`
+and `/delete-account`. Contact email, prices and store links live in
+`site/src/site.config.js`.
+
+```bash
+cd site && npm install
+npm run dev      # http://localhost:5174, proxies /api to :8080
+npm run build    # site/dist, served by the Go server when SITE_DIR=site/dist
+```
 
 ## Test
 

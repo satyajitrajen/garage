@@ -2,3 +2,5 @@
 .embedded-pg-bin/
 .env
 *.exe
+site/node_modules/
+site/dist/
