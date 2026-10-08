@@ -1,4 +1,4 @@
-package com.autopro.garage.garage_manager
+package com.nexory.garage
 
 import io.flutter.embedding.android.FlutterActivity
 
