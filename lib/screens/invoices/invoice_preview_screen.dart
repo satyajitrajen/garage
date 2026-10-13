@@ -20,6 +20,12 @@ import '../../utils/quantity_formatter.dart';
 import '../payments/payment_collection_screen.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
+import '../../utils/grouped_number.dart';
+import '../../utils/invoice_pdf.dart';
+import '../../models/customer.dart';
+import '../../models/vehicle.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../l10n/app_language.dart';
 
 class InvoicePreviewScreen extends StatefulWidget {
   final String invoiceId;
@@ -33,6 +39,81 @@ class InvoicePreviewScreen extends StatefulWidget {
 class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
   bool _sharing = false;
 
+  String _summary(Invoice invoice, Customer? customer, Vehicle? vehicle, GarageProfile profile) => [
+        '${profile.name}: ${profile.gstin.trim().isEmpty ? tr('Bill') : 'Tax Invoice'} ${invoice.invoiceNumber}',
+        if (vehicle != null) 'Vehicle: ${vehicle.registrationNumber}',
+        'Total: ${CurrencyFormatter.format(invoice.grandTotal)}',
+        if (invoice.balanceDue > 0) 'Balance due: ${CurrencyFormatter.format(invoice.balanceDue)}',
+        if (invoice.dueDate != null) 'Due date: ${AppDateFormatter.formatDate(invoice.dueDate!)}',
+        if (invoice.balanceDue > 0 && profile.upiId.trim().isNotEmpty) 'Pay by UPI: ${profile.upiId}',
+      ].join('\n');
+
+  Future<void> _sharePdf(Invoice invoice, Customer? customer, Vehicle? vehicle, GarageProfile profile) async {
+    setState(() => _sharing = true);
+    try {
+      final bytes = await InvoicePdf.build(
+        invoice: invoice,
+        profile: profile,
+        customer: customer,
+        vehicle: vehicle,
+      );
+      final name = InvoicePdf.fileName(invoice);
+      await SharePlus.instance.share(ShareParams(
+        title: 'Bill ${invoice.invoiceNumber}',
+        text: _summary(invoice, customer, vehicle, profile),
+        files: [XFile.fromData(bytes, mimeType: 'application/pdf', name: name)],
+        fileNameOverrides: [name],
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  void _showShareOptions(Invoice invoice, Customer? customer, Vehicle? vehicle, GarageProfile profile) {
+    final phone = (customer?.whatsappNumber?.trim().isNotEmpty ?? false)
+        ? customer!.whatsappNumber!
+        : customer?.phone ?? '';
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusSheet)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf_outlined),
+              title: Text(tr('Send PDF bill')),
+              subtitle: Text(tr('Pick WhatsApp, email or print')),
+              onTap: () {
+                Navigator.pop(ctx);
+                _sharePdf(invoice, customer, vehicle, profile);
+              },
+            ),
+            if (phone.trim().isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.chat_outlined),
+                title: Text('WhatsApp message to ${customer?.name ?? 'customer'}'),
+                subtitle: Text(tr('Total, balance and UPI as text')),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ContactActions.whatsapp(
+                    context,
+                    phone,
+                    message: _summary(invoice, customer, vehicle, profile),
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final invoiceId = widget.invoiceId;
@@ -41,8 +122,8 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
 
     if (invoice == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Bill')),
-        body: const Center(child: Text('Bill not found')),
+        appBar: AppBar(title: Text(tr('Bill'))),
+        body: Center(child: Text(tr('Bill not found'))),
       );
     }
 
@@ -58,11 +139,11 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
       appBar: AppBar(
         title: Text(invoice.invoiceNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         actions: [
-          // One share action covering the whole bill — PDF/print is out of
-          // scope, so the old "Print Tax Bill" stub was removed.
+          // Share: the PDF bill (WhatsApp, email, print via the share sheet)
+          // or a quick WhatsApp text to the customer.
           IconButton(
-            // The Android share sheet can take seconds to appear; show
-            // progress and ignore repeat taps until it has opened and closed.
+            // Building the PDF and opening the share sheet can take a few
+            // seconds; show progress and ignore repeat taps meanwhile.
             icon: _sharing
                 ? const SizedBox(
                     width: 20,
@@ -70,51 +151,38 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.share_rounded),
-            tooltip: 'Share Bill',
-            onPressed: _sharing ? null : () async {
-              final lines = [
-                '${profile.name} — ${profile.gstin.trim().isEmpty ? 'Bill' : 'Tax Invoice'} ${invoice.invoiceNumber}',
-                'Customer: ${customer?.name ?? '-'}',
-                if (vehicle != null) 'Vehicle: ${vehicle.registrationNumber}',
-                'Grand Total: ${CurrencyFormatter.format(invoice.grandTotal)}',
-                'Balance Due: ${CurrencyFormatter.format(invoice.balanceDue)}',
-                if (invoice.dueDate != null)
-                  'Due Date: ${AppDateFormatter.formatDate(invoice.dueDate!)}',
-              ];
-              setState(() => _sharing = true);
-              try {
-                await ContactActions.shareText(
-                  context,
-                  title: 'Bill ${invoice.invoiceNumber}',
-                  text: lines.join('\n'),
-                );
-              } finally {
-                if (mounted) setState(() => _sharing = false);
-              }
-            },
+            tooltip: tr('Share bill'),
+            onPressed: _sharing
+                ? null
+                : () => _showShareOptions(invoice, customer, vehicle, profile),
           ),
           // Cancel action is only meaningful while nothing has been paid and
           // the invoice is still active — paid invoices need a refund flow and
           // cancelled ones are already voided.
           if (invoice.totalPaidAmount <= 0 && invoice.status != InvoiceStatus.cancelled)
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'cancel_invoice') {
-                  _confirmCancelInvoice(context, provider, invoice);
-                }
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: 'cancel_invoice',
-                  child: Row(
-                    children: [
-                      Icon(Icons.cancel_outlined, size: 18, color: palette.absent),
-                      const SizedBox(width: 8),
-                      const Text('Cancel bill'),
-                    ],
+            // Cancelling a bill is an invoices.manage write; hide the menu
+            // from staff without the permission instead of erroring on tap.
+            PermissionGate(
+              permission: Permissions.invoicesManage,
+              child: PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'cancel_invoice') {
+                    _confirmCancelInvoice(context, provider, invoice);
+                  }
+                },
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: 'cancel_invoice',
+                    child: Row(
+                      children: [
+                        Icon(Icons.cancel_outlined, size: 18, color: palette.absent),
+                        const SizedBox(width: 8),
+                        Text(tr('Cancel bill')),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
         ],
       ),
@@ -131,13 +199,6 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                 border: Border.all(
                   color: palette.border,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,24 +250,26 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         children: [
                           // Only a GST-registered garage can issue a tax
                           // invoice; without a GSTIN this is a plain bill.
-                          Text(profile.gstin.trim().isEmpty ? 'Bill' : 'Tax invoice',
+                          Text(profile.gstin.trim().isEmpty ? tr('Bill') : 'Tax invoice',
                               style: GoogleFonts.poppins(
                                   fontSize: AppText.label, color: palette.textMuted)),
                           Text(invoice.invoiceNumber,
                               style: GoogleFonts.poppins(
                                   fontSize: AppText.body, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 6),
-                          _metaLine('Date', AppDateFormatter.formatDate(invoice.invoiceDate), palette),
+                          _metaLine(tr('Date'), AppDateFormatter.formatDate(invoice.invoiceDate), palette),
                           if (invoice.dueDate != null)
                             _metaLine(
-                              'Pay by',
+                              tr('Pay by'),
                               AppDateFormatter.formatDate(invoice.dueDate!),
                               palette,
-                              color: invoice.isOverdue ? palette.absent : null,
+                              // Same amber pending token as the breakdown
+                              // below — lateness is a warning, not an error.
+                              color: invoice.isOverdue ? palette.pending : null,
                             ),
                           if (invoice.jobCardId != null)
                             _metaLine(
-                              'Job card',
+                              tr('Job card'),
                               provider.getJobCardById(invoice.jobCardId!)?.jobCardNumber ?? '—',
                               palette,
                             ),
@@ -229,7 +292,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Billed to', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
+                            Text(tr('Billed to'), style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
                             const SizedBox(height: 2),
                             Text(customer?.name ?? '', style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
                             Text(customer?.phone ?? '', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary)),
@@ -250,11 +313,11 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text('Vehicle', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
+                            Text(tr('Vehicle'), style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
                             const SizedBox(height: 2),
                             Text(vehicle?.registrationNumber ?? '', style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
                             Text(vehicle?.displayName ?? "", style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary)),
-                            Text('${invoice.kmReading} km', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textSecondary)),
+                            Text('${groupDigits(invoice.kmReading)} km', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textSecondary)),
                           ],
                         ),
                       ),
@@ -273,19 +336,19 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                       children: [
                         Expanded(
                           flex: 4,
-                          child: Text('Item', style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(tr('Item'), style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 1,
-                          child: Text('Qty', textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(tr('Qty'), textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('Rate', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(tr('Rate'), textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('Amount', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(tr('Amount'), textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
                         ),
                       ],
                     ),
@@ -311,7 +374,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                                 ),
                                 Text(
                                   [
-                                    item.isLabour ? 'Labour Charge' : 'Part • ${item.category.displayName}',
+                                    item.isLabour ? tr('Labour Charge') : 'Part • ${item.category.displayName}',
                                     ?item.discountLabel,
                                   ].join(' • '),
                                   style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
@@ -338,12 +401,12 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   const Divider(height: 24),
 
                   // Financial Breakdown
-                  _buildSummaryRow('Parts', CurrencyFormatter.format(invoice.partsSubtotal)),
+                  _buildSummaryRow(tr('Parts'), CurrencyFormatter.format(invoice.partsSubtotal)),
                   const SizedBox(height: 4),
-                  _buildSummaryRow('Labour', CurrencyFormatter.format(invoice.labourSubtotal)),
+                  _buildSummaryRow(tr('Labour'), CurrencyFormatter.format(invoice.labourSubtotal)),
                   const SizedBox(height: 4),
                   if (invoice.discountAmount > 0) ...[
-                    _buildSummaryRow('Discount Applied:', '- ${CurrencyFormatter.format(invoice.discountAmount)}', color: palette.paid),
+                    _buildSummaryRow(tr('Discount Applied:'), '- ${CurrencyFormatter.format(invoice.discountAmount)}', color: palette.paid),
                     const SizedBox(height: 4),
                   ],
                   for (final line in gstLines(invoice.taxBreakdown)) ...[
@@ -354,14 +417,14 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Total', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                      Text(tr('Total'), style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
                       const SizedBox(width: 12),
                       Flexible(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
                             CurrencyFormatter.format(invoice.grandTotal),
-                            style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.primary),
+                            style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.textPrimary),
                           ),
                         ),
                       ),
@@ -371,7 +434,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Paid', style: GoogleFonts.poppins(fontSize: AppText.body, color: palette.paid, fontWeight: FontWeight.w600)),
+                      Text(tr('Paid'), style: GoogleFonts.poppins(fontSize: AppText.body, color: palette.paid, fontWeight: FontWeight.w600)),
                       Text(
                         CurrencyFormatter.format(invoice.totalPaidAmount),
                         style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.paid),
@@ -383,7 +446,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text('Balance due', style: GoogleFonts.poppins(fontSize: AppText.body, color: invoice.balanceDue > 0 ? palette.pending : palette.paid, fontWeight: FontWeight.w700)),
+                        child: Text(tr('Balance due'), style: GoogleFonts.poppins(fontSize: AppText.body, color: invoice.balanceDue > 0 ? palette.pending : palette.paid, fontWeight: FontWeight.w700)),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -401,7 +464,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     // Overdue bills flag the due date in the pending color so
                     // the lateness reads at a glance on the printed slip too.
                     _buildSummaryRow(
-                      'Due Date:',
+                      tr('Due Date:'),
                       AppDateFormatter.formatDate(invoice.dueDate!),
                       color: invoice.isOverdue ? palette.pending : null,
                     ),
@@ -452,7 +515,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   // Payment Logs if any
                   if (invoice.payments.isNotEmpty) ...[
                     Text(
-                      'Payment History',
+                      tr('Payment History'),
                       style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: palette.textSecondary),
                     ),
                     const SizedBox(height: 6),
@@ -499,7 +562,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     const SizedBox(height: 16),
                     if (notesText.isNotEmpty) ...[
                       Text(
-                        'Notes',
+                        tr('Notes'),
                         style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: palette.textSecondary),
                       ),
                       const SizedBox(height: 4),
@@ -511,7 +574,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     if (termsText.isNotEmpty) ...[
                       if (notesText.isNotEmpty) const SizedBox(height: 10),
                       Text(
-                        'Terms & Conditions',
+                        tr('Terms & Conditions'),
                         style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: palette.textSecondary),
                       ),
                       const SizedBox(height: 4),
@@ -544,7 +607,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     Icon(Icons.cancel_rounded, color: palette.cancelled, size: 22),
                     const SizedBox(width: 8),
                     Text(
-                      'Bill Cancelled',
+                      tr('Bill Cancelled'),
                       style: GoogleFonts.poppins(
                         fontSize: AppText.title,
                         fontWeight: FontWeight.w700,
@@ -569,9 +632,11 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   },
                   icon: const Icon(Icons.payments_rounded),
                   label: Text('Record Payment (${CurrencyFormatter.format(invoice.balanceDue)} Due)'),
+                  // Money-positive action: green `paid`, matching the green
+                  // confirm button inside the collection screen (§5).
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: palette.primary,
+                    backgroundColor: palette.paid,
                     foregroundColor: palette.onPrimary,
                   ),
                 ),
@@ -592,7 +657,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        'Bill Settled & Paid in Full',
+                        tr('Bill Settled & Paid in Full'),
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
                           fontSize: AppText.title,
@@ -619,44 +684,55 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
       context: context,
       builder: (ctx) {
         final palette = ctx.palette;
-        return AlertDialog(
-          title: const Text('Cancel Bill?'),
-          content: const Text('Cancel this bill? This cannot be undone.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Keep Bill'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: palette.pending,
-                foregroundColor: palette.onPrimary,
+        // In-flight latch: a second tap while the cancel request is running
+        // would hit the server twice (the retry fails with 422).
+        bool cancelling = false;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: Text(tr('Cancel Bill?')),
+            content: Text(
+                'Cancel bill ${invoice.invoiceNumber}? This cannot be undone.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(tr('Keep Bill')),
               ),
-              onPressed: () async {
-                try {
-                  await provider.cancelInvoice(invoice.id);
-                  if (!ctx.mounted) return;
-                  Navigator.pop(ctx);
-                  if (!mounted) return;
-                  showAppSnackBar(
-                    context,
-                    'Bill ${invoice.invoiceNumber} cancelled',
-                    type: SnackBarType.error,
-                  );
-                } catch (e) {
-                  if (!ctx.mounted) return;
-                  Navigator.pop(ctx);
-                  if (!mounted) return;
-                  showAppSnackBar(
-                    context,
-                    errorMessage(e),
-                    type: SnackBarType.error,
-                  );
-                }
-              },
-              child: const Text('Cancel Bill'),
-            ),
-          ],
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: palette.absent,
+                  foregroundColor: palette.onPrimary,
+                ),
+                onPressed: cancelling
+                    ? null
+                    : () async {
+                        setDialogState(() => cancelling = true);
+                        try {
+                          await provider.cancelInvoice(invoice.id);
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          if (!mounted) return;
+                          // A voided bill is a state change, not a failure:
+                          // informational near-black, not error red (§2).
+                          showAppSnackBar(
+                            context,
+                            'Bill ${invoice.invoiceNumber} cancelled',
+                            type: SnackBarType.info,
+                          );
+                        } catch (e) {
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          if (!mounted) return;
+                          showAppSnackBar(
+                            context,
+                            errorMessage(e),
+                            type: SnackBarType.error,
+                          );
+                        }
+                      },
+                child: Text(tr('Cancel Bill')),
+              ),
+            ],
+          ),
         );
       },
     );

@@ -1,0 +1,141 @@
+{
+  "brand": {
+    "name": "NT Garage",
+    "logo": "../assets/images/logo.png",
+    "primary": "#E5141B",
+    "accent": "#FF4A50",
+    "dark": "#171717",
+    "background": "#F5F4F4",
+    "muted": "#656565",
+    "title_background": "#171717"
+  },
+  "fonts": {
+    "regular": "fonts/Roboto-Regular.ttf",
+    "semibold": "fonts/Poppins-SemiBold.ttf",
+    "bold": "fonts/Poppins-Bold.ttf",
+    "black": "fonts/Poppins-Bold.ttf"
+  },
+  "layout": "phone",
+  "clips_dir": "recordings",
+  "out_dir": "final",
+  "voice_dir": "voiceover",
+  "footer": "Demo data · NT Garage & Body Shop, Pune",
+  "title_kicker": "NT Garage app demo",
+  "title_footer": "Recorded on the Android app · sample garage data",
+  "timing": {
+    "title": 4.0,
+    "end": 3.5,
+    "intro": 5.0,
+    "tail_hold": 3.0,
+    "words_per_second": 2.6
+  },
+  "intro": {
+    "kicker": "Car workshop management · full demo",
+    "title": "From the gate to the bill",
+    "subtitle": "Job cards  ·  GST bills  ·  Estimates  ·  Staff & payroll  ·  Expenses",
+    "say": "NT Garage runs a car workshop from one phone: job cards, GST bills, estimates, staff and expenses. Let's walk through a day at the garage."
+  },
+  "end": {
+    "title": "NT Garage",
+    "subtitle": "Job cards · GST bills · PDF & WhatsApp · Estimates · Payroll · Marathi",
+    "say": "NT Garage. Every car, every rupee, in one app."
+  },
+  "clips": [
+    {
+      "file": "00-getting-started.mp4",
+      "heading": "Getting started",
+      "tagline": "Create the workshop account, add garage details and a price list",
+      "say": "Let's set up a new workshop.",
+      "steps": [
+        {"at": 0, "title": "Welcome", "body": "The app opens on the sign-in screen.", "say": "The sign-in screen."},
+        {"at": 2.5, "title": "Create the workshop account", "body": "Owner name, garage name, email and password.", "say": "The owner creates an account with the garage's name."},
+        {"at": 24.0, "title": "Get set up", "body": "A three-step checklist guides the first day.", "say": "A short checklist guides the first day."},
+        {"at": 26.9, "title": "Garage details", "body": "Address, phone, GSTIN and UPI ID print on every bill.", "say": "First, the garage details. The address, GSTIN and UPI ID print on every bill."},
+        {"at": 53.8, "title": "GST rates and defaults", "body": "Default GST rate, bill due days, delivery time and bill notes.", "say": "GST rates and bill defaults are set here too."},
+        {"at": 59.0, "title": "1 of 3 done", "body": "Garage details are ticked off.", "say": "One step done."},
+        {"at": 64.2, "title": "Price list", "body": "Save common parts and labour once.", "say": "Next, the price list."},
+        {"at": 67.0, "title": "Add a part", "body": "Name, category, price, unit and GST.", "say": "Add a part with its price and GST rate,"},
+        {"at": 82.6, "title": "Add labour", "body": "Labour items are priced per job.", "say": "and a labour charge."},
+        {"at": 99.1, "title": "Ready to pick", "body": "These items are added to jobs in one tap.", "say": "Now they can be added to any job with one tap."}
+      ]
+    },
+    {
+      "file": "01-new-job.mp4",
+      "heading": "A car comes in",
+      "tagline": "Find the car by its plate, open a job card, add parts and labour",
+      "say": "A car arrives at the gate.",
+      "steps": [
+        {"at": 0, "title": "Today at the workshop", "body": "Money collected, spent and due, and the cars in the workshop.", "say": "Today at a glance."},
+        {"at": 2.5, "title": "Start with the plate", "body": "Type the registration number.", "say": "A new job starts with the number plate."},
+        {"at": 5.7, "title": "Returning car found", "body": "The car comes with its owner and history.", "say": "The car is found."},
+        {"at": 8.3, "title": "Job card", "body": "KM, fuel level, mechanic and promised delivery time.", "say": "The job card opens with the kilometres filled in. Assign a mechanic,"},
+        {"at": 29.6, "title": "Complaints and inspection", "body": "Note the complaints; Check all ticks the inspection.", "say": "note the complaints, and tick the inspection checklist."},
+        {"at": 33.5, "title": "Add parts and labour", "body": "Pick from the price list; totals include GST.", "say": "Parts and labour come from the price list, with GST included."},
+        {"at": 44.5, "title": "Review and issue", "body": "Four items on the job card.", "say": "Review the items, and issue the job card."},
+        {"at": 50.0, "title": "Job card JC-1004", "body": "Status steps show where the job is.", "say": "Job card issued."},
+        {"at": 53.0, "title": "Ready for delivery", "body": "Mark ready when the work is done.", "say": "The car is ready for delivery."}
+      ]
+    },
+    {
+      "file": "02-billing.mp4",
+      "heading": "Billing and payment",
+      "tagline": "GST bill from the job card, UPI payment, PDF and WhatsApp",
+      "say": "Now the bill.",
+      "steps": [
+        {"at": 0, "title": "Create the bill", "body": "One tap from the finished job card.", "say": "One tap makes the bill."},
+        {"at": 2.5, "title": "Tax invoice", "body": "Garage GSTIN, customer, car and KM on the bill.", "say": "It's a proper tax invoice with the garage's GSTIN,"},
+        {"at": 9.4, "title": "GST worked out", "body": "CGST and SGST per rate, total, and a UPI QR to scan.", "say": "GST worked out, with a UPI QR."},
+        {"at": 13.1, "title": "Record payment", "body": "Full or partial, by cash, UPI, card, bank or cheque.", "say": "The customer pays by UPI."},
+        {"at": 21.2, "title": "Payment received", "body": "Nothing left to pay on this bill.", "say": "Payment received."},
+        {"at": 23.7, "title": "Bill settled", "body": "Payment history shows on the bill.", "say": "The bill is settled, with the payment on record."},
+        {"at": 32.5, "title": "Share", "body": "Send the PDF bill, or a WhatsApp message with the total.", "say": "Share as PDF or WhatsApp."},
+        {"at": 35.2, "title": "PDF bill", "body": "The share sheet opens with the bill as a PDF.", "say": "The PDF goes to WhatsApp, email or print."}
+      ]
+    },
+    {
+      "file": "03-estimates.mp4",
+      "heading": "Estimates",
+      "tagline": "Quote a price first, then turn the approved estimate into a job",
+      "say": "Some customers want a price first.",
+      "steps": [
+        {"at": 0, "title": "Estimates", "body": "Drafts, sent, approved and converted.", "say": "Quotes before the work."},
+        {"at": 2.5, "title": "Pick the customer", "body": "Choose the customer and the car.", "say": "Pick the customer and the car,"},
+        {"at": 12.4, "title": "Add items", "body": "Two tyres at 28% GST and an alignment at 18%.", "say": "and add two tyres and a wheel alignment."},
+        {"at": 28.7, "title": "GST per rate", "body": "Each rate gets its own CGST and SGST lines.", "say": "Each GST rate gets its own lines."},
+        {"at": 34.7, "title": "Estimate EST-1001", "body": "Valid for 7 days; share it with the customer.", "say": "The estimate is ready to share."},
+        {"at": 38.2, "title": "Approve", "body": "Mark it approved when the customer says yes.", "say": "When the customer agrees, approve it,"},
+        {"at": 47.0, "title": "Converted to a job", "body": "Items carry over to job card JC-1005.", "say": "and convert it into a job card, with the items carried over."}
+      ]
+    },
+    {
+      "file": "04-staff.mp4",
+      "heading": "Staff and payroll",
+      "tagline": "Attendance, advances and the monthly salary payout",
+      "say": "Next, the team.",
+      "steps": [
+        {"at": 0, "title": "More", "body": "Price list, estimates, expenses, staff and settings.", "say": "Staff and payroll are under More."},
+        {"at": 5.2, "title": "Staff", "body": "Attendance and Salary on every row; mark all present in one tap.", "say": "Every staff member has attendance and salary one tap away."},
+        {"at": 14.4, "title": "Attendance", "body": "Month calendar: present, half day, absent, leave.", "say": "Attendance is kept on a monthly calendar."},
+        {"at": 21.1, "title": "Payslip", "body": "Half-day deduction and the advance are taken off.", "say": "The payslip deducts half days and advances automatically."},
+        {"at": 24.1, "title": "Confirm the payout", "body": "Choose how it was paid: cash, UPI or bank.", "say": "Paying salary asks for confirmation and the payment mode."},
+        {"at": 29.4, "title": "Salary paid", "body": "Recorded as an expense; it can't be paid twice.", "say": "It's recorded as an expense, and can't be paid twice by mistake."}
+      ]
+    },
+    {
+      "file": "05-more.mp4",
+      "heading": "Expenses, team and Marathi",
+      "tagline": "Daily costs, subscription, team logins and the Marathi app",
+      "say": "Finally, the rest of the workshop.",
+      "steps": [
+        {"at": 0, "title": "More", "body": "Everything else lives here.", "say": "Back to More."},
+        {"at": 5.2, "title": "Expenses", "body": "This month's and today's spending.", "say": "Expenses shows what the workshop spends,"},
+        {"at": 9.1, "title": "Add an expense", "body": "Category, title, amount, mode and a receipt photo.", "say": "and a new tool purchase is added with its amount and a receipt photo."},
+        {"at": 28.2, "title": "Totals update", "body": "The new expense is at the top.", "say": "The totals update straight away."},
+        {"at": 35.1, "title": "Subscription", "body": "14-day free trial, then monthly or yearly.", "say": "The subscription screen shows the free trial and plans."},
+        {"at": 42.6, "title": "Team logins", "body": "Invite staff with only the permissions they need.", "say": "Team logins lets the owner invite staff with limited permissions."},
+        {"at": 48.6, "title": "Marathi", "body": "Switch the whole app to मराठी.", "say": "Or switch to Marathi."},
+        {"at": 51.3, "title": "मराठी होम", "body": "Dashboard, jobs and statuses in Marathi.", "say": "Built for garages across Maharashtra."}
+      ]
+    }
+  ]
+}

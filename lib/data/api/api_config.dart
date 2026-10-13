@@ -10,7 +10,7 @@ class ApiConfig {
   static const String _override = String.fromEnvironment('API_BASE_URL');
 
   static const String productionUrl =
-      'https://backend-production-bef9.up.railway.app';
+      'https://garage.nexorytechnologies.com';
 
   static String get baseUrl {
     if (_override.isNotEmpty) return _override;

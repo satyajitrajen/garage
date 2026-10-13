@@ -8,12 +8,16 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/date_formatter.dart';
+import '../../utils/grouped_number.dart';
+import '../../utils/permissions.dart';
 import '../../widgets/empty_state_widget.dart';
+import '../../widgets/permission_gate.dart';
 import '../job_cards/create_job_card_screen.dart';
 import '../quotations/create_quotation_screen.dart';
 import '../invoices/create_invoice_screen.dart';
 import 'add_vehicle_dialog.dart';
 import '../../theme/app_text.dart';
+import '../../l10n/app_language.dart';
 
 enum VehicleTargetAction {
   createJobCard,
@@ -99,6 +103,19 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
     }
   }
 
+  /// Empty fleet state; the "Add First Vehicle" CTA is only offered to
+  /// members who can manage vehicles.
+  EmptyStateWidget _noVehiclesState({required bool withCta}) {
+    return EmptyStateWidget(
+      icon: Icons.directions_car_filled_rounded,
+      title: tr('No vehicles yet'),
+      description:
+          tr('This customer has no vehicles listed yet. Add a vehicle to begin maintenance or estimates.'),
+      buttonText: withCta ? tr('Add First Vehicle') : null,
+      onButtonPressed: withCta ? _openAddVehicleDialog : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
@@ -107,16 +124,19 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Select Vehicle', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(tr('Select Vehicle'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         actions: [
-          TextButton.icon(
-            onPressed: _openAddVehicleDialog,
-            icon: Icon(Icons.add_rounded, color: palette.primary),
-            label: Text(
-              'Add Vehicle',
-              style: GoogleFonts.poppins(
-                color: palette.primary,
-                fontWeight: FontWeight.w600,
+          PermissionGate(
+            permission: Permissions.vehiclesManage,
+            child: TextButton.icon(
+              onPressed: _openAddVehicleDialog,
+              icon: Icon(Icons.add_rounded, color: palette.primary),
+              label: Text(
+                tr('Add Vehicle'),
+                style: GoogleFonts.poppins(
+                  color: palette.primary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -133,9 +153,11 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: palette.primary.withOpacity(0.12),
+                  backgroundColor: palette.primary.withValues(alpha: 0.12),
                   child: Text(
-                    widget.customer.name.substring(0, 1).toUpperCase(),
+                    widget.customer.name.isEmpty
+                        ? '?'
+                        : widget.customer.name.substring(0, 1).toUpperCase(),
                     style: GoogleFonts.poppins(
                       fontSize: AppText.headline,
                       fontWeight: FontWeight.w700,
@@ -178,7 +200,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              '${vehicles.length} ${vehicles.length == 1 ? 'Vehicle' : 'Vehicles'}',
+                              '${vehicles.length} ${vehicles.length == 1 ? tr('Vehicle') : tr('Vehicles')}',
                               style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 fontWeight: FontWeight.w600,
@@ -199,12 +221,10 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
           // Vehicle List
           Expanded(
             child: vehicles.isEmpty
-                ? EmptyStateWidget(
-                    icon: Icons.directions_car_filled_rounded,
-                    title: 'No Vehicles Registered',
-                    description: 'This customer has no vehicles listed yet. Add a vehicle to begin maintenance or estimates.',
-                    buttonText: 'Add First Vehicle',
-                    onButtonPressed: _openAddVehicleDialog,
+                ? PermissionGate(
+                    permission: Permissions.vehiclesManage,
+                    fallback: _noVehiclesState(withCta: false),
+                    child: _noVehiclesState(withCta: true),
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 84),
@@ -245,7 +265,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                     decoration: BoxDecoration(
                                       color: palette.background,
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: palette.primary.withOpacity(0.5), width: 1.2),
+                                      border: Border.all(color: palette.primary.withValues(alpha: 0.5), width: 1.2),
                                     ),
                                     // Plate scales down as a unit on narrow cards.
                                     child: FittedBox(
@@ -254,11 +274,13 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                       child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        // Indian flag navy band — deliberate theme-invariant literal.
+                                        // Indian flag navy band — deliberate
+                                        // theme-invariant colour (§9), kept
+                                        // as a named palette token.
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF003399),
+                                            color: palette.plateIndBand,
                                             borderRadius: BorderRadius.circular(2),
                                           ),
                                           child: const Text(
@@ -286,7 +308,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: palette.primary.withOpacity(0.1),
+                                      color: palette.primary.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
@@ -317,7 +339,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                   Icon(Icons.speed_rounded, size: 15, color: palette.textMuted),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${vehicle.currentKm.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} KM',
+                                    '${groupDigits(vehicle.currentKm)} KM',
                                     style: GoogleFonts.poppins(
                                       fontSize: AppText.caption,
                                       fontWeight: FontWeight.w500,
@@ -367,7 +389,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                 children: [
                                   Flexible(
                                     child: Text(
-                                      'Tap to select & continue',
+                                      tr('Tap to select & continue'),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: GoogleFonts.poppins(

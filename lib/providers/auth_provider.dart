@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../data/api/api_client.dart';
-import '../data/api/api_config.dart';
+import '../data/api/api_exception.dart';
 import '../data/api/auth_models.dart';
 import '../data/api/token_store.dart';
 
@@ -208,7 +208,7 @@ class AuthProvider extends ChangeNotifier {
     required String garageName,
   }) {
     return _runBusy(() async {
-      final raw = ApiClient(baseUrl: ApiConfig.baseUrl);
+      final raw = ApiClient(baseUrl: _client.baseUrl);
       try {
         final json = await raw.postNoGarage('/api/auth/register', {
           'name': name.trim(),
@@ -246,6 +246,17 @@ class AuthProvider extends ChangeNotifier {
       } finally {
         raw.close();
       }
+    } on ApiException catch (e) {
+      if (e.isNetwork || e.isTimeout) {
+        // The renewal never reached the server: keep the session so the next
+        // request can retry the refresh instead of signing the user out over
+        // a flaky connection.
+        return false;
+      }
+      // The server answered and rejected the refresh token (revoked/expired,
+      // invalid_grant-style) — the session is genuinely over.
+      await logout();
+      return false;
     } catch (_) {
       await logout();
       return false;

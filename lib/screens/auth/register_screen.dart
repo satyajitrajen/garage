@@ -4,9 +4,13 @@ import 'package:provider/provider.dart';
 
 import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/error_message.dart';
+import 'auth_validators.dart';
+import '../../l10n/app_language.dart';
 
 /// First-run registration: creates the user + their garage (they become
 /// owner) and signs them straight in.
@@ -56,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Registration failed. Please try again.',
+      showAppSnackBar(context, tr('Registration failed. Please try again.'),
           type: SnackBarType.error);
     }
   }
@@ -65,11 +69,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Create workshop account')),
+      appBar: AppBar(title: Text(tr('Create workshop account'))),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppDimens.paddingScreen, vertical: 16),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
@@ -81,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Your garage, your account',
+                      tr('Your garage, your account'),
                       style: GoogleFonts.poppins(
                         fontSize: AppText.title,
                         fontWeight: FontWeight.w700,
@@ -89,61 +94,59 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'You will be the owner with full permissions.',
+                      tr('You will be the owner with full permissions.'),
                       style: GoogleFonts.poppins(
                           fontSize: AppText.body,
-                          color: Theme.of(context).hintColor),
+                          color: context.palette.textSecondary),
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _name,
                       textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
-                        labelText: 'Your name',
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: tr('Your name'),
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.person_outline),
                       ),
                       validator: (v) => (v ?? '').trim().isEmpty
-                          ? 'Name is required'
+                          ? tr('Name is required')
                           : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _garage,
                       textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
-                        labelText: 'Garage name',
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: tr('Garage name'),
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.store_outlined),
                       ),
                       validator: (v) => (v ?? '').trim().isEmpty
-                          ? 'Garage name is required'
+                          ? tr('Garage name is required')
                           : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: tr('Email'),
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.email_outlined),
                       ),
-                      validator: (v) {
-                        final t = (v ?? '').trim();
-                        if (t.isEmpty) return 'Email is required';
-                        if (!t.contains('@') || !t.contains('.')) {
-                          return 'Enter a valid email';
-                        }
-                        return null;
-                      },
+                      validator: validateEmail,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _password,
                       obscureText: _obscure,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _submit(),
                       decoration: InputDecoration(
-                        labelText: 'Password (min 8 characters)',
+                        labelText: tr('Password (min 8 characters)'),
                         border: const OutlineInputBorder(),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
@@ -155,7 +158,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       validator: (v) => (v ?? '').length < 8
-                          ? 'Minimum 8 characters'
+                          ? tr('Minimum 8 characters')
                           : null,
                     ),
                     const SizedBox(height: 20),
@@ -164,13 +167,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: auth.isBusy
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
+                                    strokeWidth: 2,
+                                    color: context.palette.onPrimary),
                               )
-                            : const Text('Create account'),
+                            : Text(tr('Create account')),
                       ),
                     ),
                   ],

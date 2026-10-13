@@ -19,6 +19,9 @@ import 'invoice_preview_screen.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
 import '../../utils/grouped_number.dart';
+import '../../utils/permissions.dart';
+import '../../widgets/permission_gate.dart';
+import '../../l10n/app_language.dart';
 
 class CreateInvoiceScreen extends StatefulWidget {
   final Customer customer;
@@ -35,7 +38,6 @@ class CreateInvoiceScreen extends StatefulWidget {
 }
 
 class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _kmController = TextEditingController();
   final _discountController = TextEditingController(text: '0');
   final _notesController = TextEditingController();
@@ -63,7 +65,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       MaterialPageRoute(
         builder: (_) => AddMaintenanceScreen(
           initialItems: _items,
-          title: 'Add items',
+          title: tr('Add items'),
         ),
       ),
     );
@@ -80,10 +82,13 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   Future<void> _saveInvoice() async {
     // Latch: a fast double-tap on Save must not create two invoices.
     if (_isSaving) return;
+    // The route can be reached by any staff; bill creation itself is a
+    // invoices.manage action, so re-check at the mutation entry.
+    if (!ensurePermission(context, Permissions.invoicesManage)) return;
     if (_items.isEmpty) {
       showAppSnackBar(
         context,
-        'Please add at least one item or labour charge to generate bill',
+        tr('Please add at least one item or labour charge to generate bill'),
         type: SnackBarType.info,
       );
       return;
@@ -185,20 +190,18 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'New Bill',
+          tr('New Bill'),
           style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(AppDimens.paddingScreen),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Customer & Vehicle summary banner
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(AppDimens.paddingCard),
                 decoration: BoxDecoration(
                   color: palette.card,
                   borderRadius: BorderRadius.circular(AppDimens.radiusTile),
@@ -265,18 +268,18 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                   ElevatedButton.icon(
                     onPressed: _openAddItems,
                     icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('Add Items'),
+                    label: Text(tr('Add Items')),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
 
               if (_items.isEmpty)
-                const EmptyStateWidget(
+                EmptyStateWidget(
                   icon: Icons.shopping_bag_outlined,
-                  title: 'No items in bill yet',
+                  title: tr('No items in bill yet'),
                   description:
-                      'Add services, spare parts or oils to create bill',
+                      tr('Add services, spare parts or oils to create bill'),
                 )
               else
                 ..._items.map((item) {
@@ -294,7 +297,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                         CurrencyFormatter.format(item.totalAmount),
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w700,
-                          color: palette.primary,
+                          color: palette.textPrimary,
                         ),
                       ),
                     ),
@@ -305,9 +308,9 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               // Discount (GST comes from each item's own rate)
               TextFormField(
                 controller: _discountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Discount (₹)',
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: tr('Discount (₹)'),
                   prefixIcon: Icon(Icons.discount_outlined),
                 ),
                 onChanged: (_) => setState(() {}),
@@ -319,8 +322,8 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 controller: _kmController,
                 inputFormatters: const [GroupedDigitsInputFormatter()],
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Current KM Reading',
+                decoration: InputDecoration(
+                  labelText: tr('Current KM Reading'),
                   prefixIcon: Icon(Icons.speed_rounded),
                 ),
               ),
@@ -330,8 +333,8 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               TextFormField(
                 controller: _notesController,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Bill notes / customer remarks',
+                decoration: InputDecoration(
+                  labelText: tr('Bill notes / customer remarks'),
                   hintText: 'e.g. Standard 30 days warranty on labour',
                 ),
               ),
@@ -339,7 +342,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
 
               // Financial Summary Box
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(AppDimens.paddingCard),
                 decoration: BoxDecoration(
                   color: palette.card,
                   borderRadius: BorderRadius.circular(AppDimens.radiusTile),
@@ -348,20 +351,20 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 child: Column(
                   children: [
                     _buildRow(
-                      'Parts',
+                      tr('Parts'),
                       CurrencyFormatter.format(partsSubtotal),
                       palette,
                     ),
                     const SizedBox(height: 4),
                     _buildRow(
-                      'Labour',
+                      tr('Labour'),
                       CurrencyFormatter.format(labourSubtotal),
                       palette,
                     ),
                     const SizedBox(height: 4),
                     if (discount > 0) ...[
                       _buildRow(
-                        'Discount:',
+                        tr('Discount:'),
                         '- ${CurrencyFormatter.format(discount)}',
                         palette,
                         color: palette.paid,
@@ -382,7 +385,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'Net Payable Total:',
+                            tr('Net Payable Total:'),
                             style: GoogleFonts.poppins(
                               fontSize: AppText.title,
                               fontWeight: FontWeight.w700,
@@ -397,7 +400,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                             style: GoogleFonts.poppins(
                               fontSize: AppText.headline,
                               fontWeight: FontWeight.w700,
-                              color: palette.primary,
+                              color: palette.textPrimary,
                             ),
                           ),
                         ),
@@ -414,9 +417,13 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _isSaving ? null : _saveInvoice,
                   icon: const Icon(Icons.check_circle_rounded),
-                  label: const Text('Save & Preview Bill'),
+                  label: Text(tr('Save & Preview Bill')),
+                  // Bill creation is money-positive: the primary action is
+                  // green `paid`, not the action-only brand red (§5).
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: palette.paid,
+                    foregroundColor: palette.onPrimary,
                   ),
                 ),
               ),
@@ -424,7 +431,6 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 

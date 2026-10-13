@@ -1,4 +1,5 @@
 import 'maintenance_item.dart';
+import '../l10n/app_language.dart';
 
 enum JobStatus {
   received,
@@ -14,38 +15,38 @@ extension JobStatusExtension on JobStatus {
   String get displayName {
     switch (this) {
       case JobStatus.received:
-        return 'Vehicle Received';
+        return tr('Vehicle Received');
       case JobStatus.inspection:
-        return 'Under Inspection';
+        return tr('Under Inspection');
       case JobStatus.inProgress:
-        return 'Work In Progress';
+        return tr('Work In Progress');
       case JobStatus.waitingParts:
-        return 'Waiting For Parts';
+        return tr('Waiting For Parts');
       case JobStatus.readyForDelivery:
-        return 'Ready For Delivery';
+        return tr('Ready For Delivery');
       case JobStatus.delivered:
-        return 'Delivered & Invoiced';
+        return tr('Delivered & Invoiced');
       case JobStatus.cancelled:
-        return 'Cancelled';
+        return tr('Cancelled');
     }
   }
 
   String get shortName {
     switch (this) {
       case JobStatus.received:
-        return 'Received';
+        return tr('Received');
       case JobStatus.inspection:
-        return 'Inspection';
+        return tr('Inspection');
       case JobStatus.inProgress:
-        return 'In Progress';
+        return tr('In Progress');
       case JobStatus.waitingParts:
-        return 'Waiting Parts';
+        return tr('Waiting Parts');
       case JobStatus.readyForDelivery:
-        return 'Ready';
+        return tr('Ready');
       case JobStatus.delivered:
-        return 'Delivered';
+        return tr('Delivered');
       case JobStatus.cancelled:
-        return 'Cancelled';
+        return tr('Cancelled');
     }
   }
 }

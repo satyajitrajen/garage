@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/api/api_config.dart';
-import '../../models/staff.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_dimens.dart';
@@ -18,10 +17,9 @@ import '../catalog/price_list_screen.dart';
 import '../expenses/expenses_list_screen.dart';
 import '../quotations/quotations_list_screen.dart';
 import '../settings/garage_settings_screen.dart';
-import '../staff/staff_attendance_screen.dart';
 import '../staff/staff_list_screen.dart';
-import '../staff/staff_salary_screen.dart';
 import '../team/members_screen.dart';
+import '../../l10n/app_language.dart';
 
 class MoreMenuScreen extends StatelessWidget {
   const MoreMenuScreen({super.key});
@@ -29,69 +27,43 @@ class MoreMenuScreen extends StatelessWidget {
   void _push(BuildContext context, Widget screen) =>
       Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
 
-  void _openPayroll(BuildContext context, GarageProvider provider) {
-    if (provider.staff.isEmpty) {
-      _push(context, const StaffListScreen());
-      return;
-    }
-    showModalBottomSheet(
+  void _pickLanguage(BuildContext context) {
+    showModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusSheet)),
       ),
       builder: (ctx) => SafeArea(
-        // Scrolls when the roster is taller than the sheet.
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                child: Text('Choose a staff member',
-                    style: GoogleFonts.poppins(
-                        fontSize: AppText.title, fontWeight: FontWeight.w600)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final entry in AppLanguage.supported.entries)
+              ListTile(
+                title: Text(entry.value),
+                trailing: entry.key == AppLanguage.code
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  AppLanguage.instance.set(entry.key);
+                },
               ),
-              for (final s in provider.staff)
-                ListTile(
-                  title: Text(s.name),
-                  // Labelled actions: bare calendar/receipt icons weren't
-                  // recognisable as "attendance" and "salary".
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(s.role.displayName),
-                      Wrap(
-                        spacing: 4,
-                        children: [
-                          TextButton.icon(
-                            icon: const Icon(Icons.calendar_month_outlined, size: 18),
-                            label: const Text('Attendance'),
-                            onPressed: () {
-                              Navigator.pop(ctx);
-                              _push(context, StaffAttendanceScreen(staff: s));
-                            },
-                          ),
-                          TextButton.icon(
-                            icon: const Icon(Icons.receipt_long_outlined, size: 18),
-                            label: const Text('Salary'),
-                            onPressed: () {
-                              Navigator.pop(ctx);
-                              _push(context, StaffSalaryScreen(staff: s));
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
+  }
+
+  /// Same visibility rule PermissionGate applies to each child, lifted to the
+  /// group so an empty bordered card never renders.
+  bool _anyChildVisible(BuildContext context, List<String> permissions) {
+    try {
+      final auth = context.watch<AuthProvider>();
+      return !auth.isAuthenticated || permissions.any(auth.can);
+    } catch (_) {
+      // No AuthProvider in scope — everything visible, like PermissionGate.
+      return true;
+    }
   }
 
   @override
@@ -99,6 +71,12 @@ class MoreMenuScreen extends StatelessWidget {
     final provider = context.watch<GarageProvider>();
     final palette = context.palette;
     final profile = provider.profile;
+    final staffItem = _Item(
+      icon: Icons.people_outline_rounded,
+      title: tr('Staff & payroll'),
+      value: '${provider.staff.length}',
+      onTap: () => _push(context, const StaffListScreen()),
+    );
     final headerDetail = [
       if (profile.gstin.isNotEmpty) 'GSTIN ${profile.gstin}',
       if (profile.city.isNotEmpty) profile.city,
@@ -106,9 +84,10 @@ class MoreMenuScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: palette.background,
-      appBar: AppBar(title: const Text('More')),
+      appBar: AppBar(title: Text(tr('More'))),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: EdgeInsets.fromLTRB(
+            AppDimens.paddingScreen, 4, AppDimens.paddingScreen, 32),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 0, 4, 20),
@@ -120,7 +99,7 @@ class MoreMenuScreen extends StatelessWidget {
                         fontSize: AppText.headline, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(
-                  headerDetail.isEmpty ? 'GSTIN and address not set' : headerDetail,
+                  headerDetail.isEmpty ? tr('GSTIN and address not set') : headerDetail,
                   style: GoogleFonts.poppins(
                     fontSize: AppText.caption,
                     color: headerDetail.isEmpty ? palette.pending : palette.textSecondary,
@@ -129,12 +108,22 @@ class MoreMenuScreen extends StatelessWidget {
               ],
             ),
           ),
-          _Group(title: 'Workshop', children: [
+          // Skip the whole group card when every child is gated off — mirror
+          // PermissionGate's visibility rule (mock mode / unauthenticated
+          // shows everything, owners bypass, otherwise any one permission).
+          if (_anyChildVisible(context, const [
+            Permissions.jobcardsManage,
+            Permissions.quotationsManage,
+            Permissions.expensesManage,
+            Permissions.staffManage,
+            Permissions.attendanceManage,
+          ]))
+            _Group(title: tr('Workshop'), children: [
             PermissionGate(
               permission: Permissions.jobcardsManage,
               child: _Item(
                 icon: Icons.inventory_2_outlined,
-                title: 'Spare parts & price list',
+                title: tr('Spare parts & price list'),
                 value: '${provider.catalog.length}',
                 onTap: () => _push(context, const PriceListScreen()),
               ),
@@ -143,7 +132,7 @@ class MoreMenuScreen extends StatelessWidget {
               permission: Permissions.quotationsManage,
               child: _Item(
                 icon: Icons.request_quote_outlined,
-                title: 'Estimates',
+                title: tr('Estimates'),
                 value: '${provider.quotations.length}',
                 onTap: () => _push(context, const QuotationsListScreen()),
               ),
@@ -152,41 +141,42 @@ class MoreMenuScreen extends StatelessWidget {
               permission: Permissions.expensesManage,
               child: _Item(
                 icon: Icons.account_balance_wallet_outlined,
-                title: 'Expenses',
+                title: tr('Expenses'),
                 value: '${CurrencyFormatter.format(provider.thisMonthExpenses)} this month',
                 onTap: () => _push(context, const ExpensesListScreen()),
               ),
             ),
+            // Attendance and salary live on each staff row, so one entry
+            // serves both the staff.manage and attendance.manage roles.
             PermissionGate(
               permission: Permissions.staffManage,
-              child: _Item(
-                icon: Icons.people_outline_rounded,
-                title: 'Staff',
-                value: '${provider.staff.length}',
-                onTap: () => _push(context, const StaffListScreen()),
+              fallback: PermissionGate(
+                permission: Permissions.attendanceManage,
+                child: staffItem,
               ),
-            ),
-            PermissionGate(
-              permission: Permissions.attendanceManage,
-              child: _Item(
-                icon: Icons.calendar_month_outlined,
-                title: 'Attendance & payroll',
-                onTap: () => _openPayroll(context, provider),
-              ),
+              child: staffItem,
             ),
           ]),
           PermissionGate(
             permission: Permissions.settingsManage,
-            child: _Group(title: 'Garage', children: [
+            child: _Group(title: tr('Garage'), children: [
               _Item(
                 icon: Icons.storefront_outlined,
-                title: 'Garage settings',
-                value: profile.gstin.isEmpty ? 'Add GSTIN' : null,
+                title: tr('Garage settings'),
+                value: profile.gstin.isEmpty ? tr('Add GSTIN') : null,
                 valueColor: palette.pending,
                 onTap: () => _push(context, const GarageSettingsScreen()),
               ),
             ]),
           ),
+          _Group(title: tr('Language'), children: [
+            _Item(
+              icon: Icons.translate_rounded,
+              title: 'Language / भाषा',
+              value: AppLanguage.supported[AppLanguage.code],
+              onTap: () => _pickLanguage(context),
+            ),
+          ]),
           if (!ApiConfig.useMock) const _AccountGroup(),
         ],
       ),
@@ -197,6 +187,30 @@ class MoreMenuScreen extends StatelessWidget {
 class _AccountGroup extends StatelessWidget {
   const _AccountGroup();
 
+  /// Sign out behind a confirmation so a stray tap can't end the session.
+  Future<void> _confirmSignOut(BuildContext context) async {
+    final auth = context.read<AuthProvider>();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tr('Sign out?')),
+        content: Text(
+            tr('You will need to sign in again to access this garage.')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(tr('Cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(tr('Sign out')),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await auth.logout();
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -204,7 +218,7 @@ class _AccountGroup extends StatelessWidget {
     void push(Widget s) =>
         Navigator.push(context, MaterialPageRoute(builder: (_) => s));
     return _Group(
-      title: 'Account',
+      title: tr('Account'),
       footer: [
         auth.user?.email,
         if (m != null) '${m.role} at ${m.garageName}',
@@ -212,24 +226,24 @@ class _AccountGroup extends StatelessWidget {
       children: [
         _Item(
           icon: Icons.credit_card_outlined,
-          title: 'Subscription',
+          title: tr('Subscription'),
           onTap: () => push(const BillingScreen()),
         ),
         _Item(
           icon: Icons.group_outlined,
-          title: 'Team logins',
+          title: tr('Team logins'),
           onTap: () => push(const MembersScreen()),
         ),
         _Item(
           icon: Icons.swap_horiz_rounded,
-          title: 'Switch garage',
+          title: tr('Switch garage'),
           onTap: () => GarageSwitcherSheet.show(context),
         ),
         _Item(
           icon: Icons.logout_rounded,
-          title: 'Sign out',
+          title: tr('Sign out'),
           showChevron: false,
-          onTap: auth.logout,
+          onTap: () => _confirmSignOut(context),
         ),
       ],
     );
@@ -318,7 +332,8 @@ class _Item extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppDimens.paddingCard, vertical: AppDimens.paddingCard),
         child: Row(
           children: [
             Icon(icon, size: 20, color: palette.textSecondary),

@@ -17,18 +17,28 @@ import '../utils/error_message.dart';
 
 /// Thrown by [GarageProvider.quickServiceCheckout] when the job card was
 /// created but billing it failed. Callers retry with [jobCard] so the retry
-/// bills the same walk-in instead of opening a second job card.
+/// bills the same walk-in instead of opening a second job card. [invoice] is
+/// non-null when the bill itself was committed and only recording its payment
+/// failed, so a retry can settle that payment against the existing bill
+/// instead of billing a second invoice.
 class QuickServiceBillingException implements Exception {
-  QuickServiceBillingException(this.jobCard, this.cause);
+  QuickServiceBillingException(this.jobCard, this.cause, {this.invoice});
 
   final JobCard jobCard;
   final Object cause;
+
+  /// The committed invoice when only its payment recording failed.
+  final Invoice? invoice;
 
   @override
   String toString() {
     final reason = cause is ApiException
         ? (cause as ApiException).userMessage
         : errorMessage(cause);
+    if (invoice != null) {
+      return 'Bill ${invoice!.invoiceNumber} saved, but recording the payment '
+          'failed: $reason. Record the payment again to retry.';
+    }
     return 'Job card ${jobCard.jobCardNumber} saved, but billing failed: '
         '$reason. Tap Generate Bill to retry.';
   }
@@ -48,10 +58,12 @@ class GarageProvider extends ChangeNotifier {
   GarageProfile? _profile;
   AppConfig? _config;
 
-  /// Best-effort post-commit failure from [addInvoice]'s follow-up side
-  /// effects (vehicle odometer/service date, job card delivery). Surfaces as
-  /// a warning instead of failing the save, so a retry cannot duplicate the
-  /// committed invoice. Cleared at the start of every [addInvoice].
+  /// Best-effort post-commit failure from [addInvoice]'s and
+  /// [addSalaryAdvance]'s follow-up side effects (vehicle odometer/service
+  /// date, job card delivery, advance expense entry). Surfaces as a warning
+  /// instead of failing the save, so a retry cannot duplicate the committed
+  /// record. Cleared at the start of every [addInvoice] and
+  /// [addSalaryAdvance].
   String? _lastSideEffectWarning;
 
   // State collections
@@ -70,8 +82,8 @@ class GarageProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get loadError => _loadError;
 
-  /// Non-null when the last [addInvoice] committed the invoice but a
-  /// follow-up side effect failed (see [addInvoice]).
+  /// Non-null when the last [addInvoice] or [addSalaryAdvance] committed its
+  /// record but a follow-up side effect failed (see [addInvoice]).
   String? get sideEffectWarning => _lastSideEffectWarning;
 
   /// Screens are gated behind the loading state in MainNavigationScreen, so
@@ -463,8 +475,23 @@ class GarageProvider extends ChangeNotifier {
     return updated;
   }
 
+  /// Items are locked once a job is delivered or cancelled (guidelines §8.4):
+  /// a screen holding a stale copy must fail fast instead of pushing item
+  /// edits onto a closed job.
+  void _ensureJobCardItemsEditable(String jobCardId) {
+    final job = getJobCardById(jobCardId);
+    if (job == null) return;
+    if (job.status == JobStatus.delivered) {
+      throw Exception('Cannot edit items on a delivered job');
+    }
+    if (job.status == JobStatus.cancelled) {
+      throw Exception('Cannot edit items on a cancelled job');
+    }
+  }
+
   Future<JobCard> addOrUpdateItemInJobCard(
       String jobCardId, MaintenanceItem item) async {
+    _ensureJobCardItemsEditable(jobCardId);
     final updated = await _repo.upsertJobCardItem(jobCardId, item);
     final index = _jobCards.indexWhere((jc) => jc.id == jobCardId);
     if (index != -1) _jobCards[index] = updated;
@@ -473,6 +500,7 @@ class GarageProvider extends ChangeNotifier {
   }
 
   Future<JobCard> removeItemFromJobCard(String jobCardId, String itemId) async {
+    _ensureJobCardItemsEditable(jobCardId);
     final updated = await _repo.removeJobCardItem(jobCardId, itemId);
     final index = _jobCards.indexWhere((jc) => jc.id == jobCardId);
     if (index != -1) _jobCards[index] = updated;
@@ -532,6 +560,24 @@ class GarageProvider extends ChangeNotifier {
         _quotations[currentIndex].status != QuotationStatus.approved) {
       throw Exception('Only approved estimates can be converted to a job card');
     }
+    // Duplicate backstop: if a previous attempt committed the job card but
+    // failed the status flip, the cached quotation still reads "approved"
+    // above — a retry must not open a second job card for the same estimate.
+    // Converted job cards reference the estimate number in their complaint
+    // line and supervisor notes (the model has no quotation id field).
+    final convertedNumber = quote.quotationNumber;
+    final alreadyConverted = _jobCards.any(
+      (jc) =>
+          jc.customerComplaints
+              .contains('Converted from Estimate #$convertedNumber') ||
+          (jc.supervisorNotes
+                  ?.contains('approved estimate $convertedNumber') ??
+              false),
+    );
+    if (alreadyConverted) {
+      throw Exception(
+          'Estimate $convertedNumber has already been converted to a job card');
+    }
     final jobCard = JobCard(
       id: _uuid.v4(),
       jobCardNumber: generateJobCardNumber(),
@@ -552,7 +598,22 @@ class GarageProvider extends ChangeNotifier {
     // Store the repository-created job card (the cache already holds it) so
     // callers see the persisted object, not a local pre-insert copy.
     final created = await addJobCard(jobCard);
-    await updateQuotationStatus(quote.id, QuotationStatus.converted);
+    try {
+      await updateQuotationStatus(quote.id, QuotationStatus.converted);
+    } catch (_) {
+      // The job card is committed at this point. If the status call actually
+      // landed server-side and only its response was lost, the cache still
+      // reads "approved" and an immediate retry would hit the same state —
+      // re-sync the quotations (best effort) so a retry cannot double-create,
+      // then surface the original failure.
+      try {
+        _quotations = await _repo.fetchQuotations();
+        notifyListeners();
+      } catch (_) {
+        // Keep the cached copy; the duplicate backstop above still guards.
+      }
+      rethrow;
+    }
     return created;
   }
 
@@ -593,7 +654,7 @@ class GarageProvider extends ChangeNotifier {
       t = DateTime(t.year, t.month, t.day, t.hour + 1);
     }
     if (t.hour < open) return DateTime(t.year, t.month, t.day, open);
-    if (t.hour > close || (t.hour == close && t.minute > 0)) {
+    if (t.hour > close) {
       return DateTime(t.year, t.month, t.day + 1, open);
     }
     return t;
@@ -716,7 +777,11 @@ class GarageProvider extends ChangeNotifier {
     ));
     // addInvoice marks the job delivered as a side effect (invoice is tied
     // to the job card), so the counter sale is closed out in one pass.
-    final Invoice invoice;
+    // recordPayment stays inside the same guard: the invoice is committed by
+    // then, so a failed payment must surface as a retryable billing failure
+    // carrying the committed invoice — not a raw error after the bill was
+    // written.
+    Invoice? invoice;
     try {
       invoice = await createInvoiceFromJobCard(
         jobCard,
@@ -724,20 +789,20 @@ class GarageProvider extends ChangeNotifier {
         taxPercent: taxPercent,
         notes: 'Quick Service counter bill',
       );
+      if (paymentAmount > 0) {
+        await recordPayment(
+          invoiceId: invoice.id,
+          amount: paymentAmount,
+          mode: paymentMode,
+        );
+        // recordPayment replaces the invoice object in cache; hand back the
+        // paid version so callers see the payment reflected.
+        return getInvoiceById(invoice.id) ?? invoice;
+      }
+      return invoice;
     } catch (e) {
-      throw QuickServiceBillingException(jobCard, e);
+      throw QuickServiceBillingException(jobCard, e, invoice: invoice);
     }
-    if (paymentAmount > 0) {
-      await recordPayment(
-        invoiceId: invoice.id,
-        amount: paymentAmount,
-        mode: paymentMode,
-      );
-      // recordPayment replaces the invoice object in cache; hand back the
-      // paid version so callers see the payment reflected.
-      return getInvoiceById(invoice.id) ?? invoice;
-    }
-    return invoice;
   }
 
   /// Cancels an unpaid invoice. Invoices with recorded payments are blocked
@@ -935,6 +1000,7 @@ class GarageProvider extends ChangeNotifier {
     required double amount,
     String? reason,
   }) async {
+    _lastSideEffectWarning = null;
     final advance = SalaryAdvance(
       id: _uuid.v4(),
       staffId: staffId,
@@ -944,19 +1010,27 @@ class GarageProvider extends ChangeNotifier {
     );
     final saved = await _repo.createSalaryAdvance(advance);
     _salaryAdvances.insert(0, saved);
+
+    // The advance is committed at this point: a failed follow-up expense
+    // must NOT surface as an error — the caller would show a failure and the
+    // user's retry would record the advance twice. Record a warning instead
+    // (same mechanism as [addInvoice]).
+    try {
+      // Also record this as a Garage Expense under miscellaneous.
+      final staffMember = getStaffById(staffId);
+      await addExpense(GarageExpense(
+        id: _uuid.v4(),
+        title: 'Salary Advance - ${staffMember?.name ?? "Staff"}',
+        category: ExpenseCategory.miscellaneous,
+        amount: amount,
+        paymentMode: PaymentMode.cash,
+        notes: reason,
+      ));
+    } catch (_) {
+      _lastSideEffectWarning =
+          'Advance saved, but recording its expense entry failed';
+    }
     notifyListeners();
-
-    // Also record this as a Garage Expense under staff salaries/refreshments
-    final staffMember = getStaffById(staffId);
-    await addExpense(GarageExpense(
-      id: _uuid.v4(),
-      title: 'Salary Advance - ${staffMember?.name ?? "Staff"}',
-      category: ExpenseCategory.miscellaneous,
-      amount: amount,
-      paymentMode: PaymentMode.cash,
-      notes: reason,
-    ));
-
     return saved;
   }
 
@@ -968,25 +1042,38 @@ class GarageProvider extends ChangeNotifier {
     required int month,
     required int year,
     required double netPayable,
+    PaymentMode paymentMode = PaymentMode.cash,
   }) async {
     final staffMember = getStaffById(staffId);
-    if (staffMember == null) return;
+    if (staffMember == null) {
+      throw Exception('Staff not found');
+    }
     if (isSalaryDisbursed(staffId, month, year)) {
       throw Exception(
           'Salary for ${_monthName(month)} $year is already paid to ${staffMember.name}');
     }
 
-    // Mark this month's advances as settled in payroll.
-    _salaryAdvances
-      ..clear()
-      ..addAll(await _repo.settleSalaryAdvances(staffId, month, year));
+    // Mark this month's advances as settled in payroll, then merge the
+    // settled rows back into the cache by id: the repo returns only this
+    // staff's settled subset (mock mode returns every row), and swapping the
+    // whole cache would make every other staff member's advances vanish from
+    // memory until the next load.
+    final settled = await _repo.settleSalaryAdvances(staffId, month, year);
+    final settledById = {for (final advance in settled) advance.id: advance};
+    final cachedIds = _salaryAdvances.map((a) => a.id).toSet();
+    _salaryAdvances = [
+      for (final advance in _salaryAdvances)
+        settledById[advance.id] ?? advance,
+      ...settled.where((advance) => !cachedIds.contains(advance.id)),
+    ];
+    notifyListeners();
 
     await addExpense(GarageExpense(
       id: _uuid.v4(),
       title: 'Salary Paid - ${staffMember.name} (${_monthName(month)} $year)',
       category: ExpenseCategory.miscellaneous,
       amount: netPayable,
-      paymentMode: PaymentMode.cash,
+      paymentMode: paymentMode,
       notes: 'Monthly salary disbursement for ${_monthName(month)} $year '
           '${_salaryMarker(staffId, month, year)}',
     ));

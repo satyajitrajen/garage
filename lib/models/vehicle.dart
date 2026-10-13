@@ -1,3 +1,5 @@
+import '../l10n/app_language.dart';
+
 enum FuelType {
   petrol,
   diesel,
@@ -10,15 +12,15 @@ extension FuelTypeExtension on FuelType {
   String get displayName {
     switch (this) {
       case FuelType.petrol:
-        return 'Petrol';
+        return tr('Petrol');
       case FuelType.diesel:
-        return 'Diesel';
+        return tr('Diesel');
       case FuelType.cng:
-        return 'CNG';
+        return tr('CNG');
       case FuelType.electric:
-        return 'Electric';
+        return tr('Electric');
       case FuelType.hybrid:
-        return 'Hybrid';
+        return tr('Hybrid');
     }
   }
 }

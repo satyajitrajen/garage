@@ -4,10 +4,14 @@ import 'package:provider/provider.dart';
 
 import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/error_message.dart';
+import 'auth_validators.dart';
 import 'reset_password_screen.dart';
+import '../../l10n/app_language.dart';
 
 /// Logged-out forgot-password step: request a reset email (always succeeds
 /// server-side to avoid account enumeration).
@@ -36,13 +40,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       await context.read<AuthProvider>().forgot(email: _email.text);
       if (!mounted) return;
       setState(() => _sent = true);
-      showAppSnackBar(context, 'If the email exists, a reset link was sent.');
+      showAppSnackBar(context, tr('If the email exists, a reset link was sent.'));
     } on ApiException catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Request failed. Please try again.',
+      showAppSnackBar(context, tr('Request failed. Please try again.'),
           type: SnackBarType.error);
     }
   }
@@ -51,11 +55,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Reset password')),
+      appBar: AppBar(title: Text(tr('Reset password'))),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppDimens.paddingScreen, vertical: 16),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
@@ -63,37 +68,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Forgot your password?',
+                    Text(tr('Forgot your password?'),
                         style: GoogleFonts.poppins(
                             fontSize: AppText.title,
                             fontWeight: FontWeight.w700)),
                     const SizedBox(height: 6),
                     Text(
-                      'Enter your account email and we will send a reset link.',
+                      tr('Enter your account email and we will send a reset link.'),
                       style: GoogleFonts.poppins(
                           fontSize: AppText.body,
-                          color: Theme.of(context).hintColor),
+                          color: context.palette.textSecondary),
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
+                      decoration: InputDecoration(
+                        labelText: tr('Email'),
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.email_outlined),
                       ),
-                      validator: (v) {
-                        final t = (v ?? '').trim();
-                        if (t.isEmpty) return 'Email is required';
-                        if (!t.contains('@')) return 'Enter a valid email';
-                        return null;
-                      },
+                      validator: validateEmail,
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: auth.isBusy ? null : _submit,
-                      child: Text(_sent ? 'Resend email' : 'Send reset email'),
+                      child: Text(_sent ? tr('Resend email') : tr('Send reset email')),
                     ),
                     if (_sent) ...[
                       const SizedBox(height: 12),
@@ -103,7 +103,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           MaterialPageRoute(
                               builder: (_) => const ResetPasswordScreen()),
                         ),
-                        child: const Text('I have a reset token'),
+                        child: Text(tr('I have a reset token')),
                       ),
                     ],
                   ],

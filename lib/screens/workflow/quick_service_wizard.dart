@@ -24,6 +24,7 @@ import '../../widgets/gradient_button.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
 import '../../utils/grouped_number.dart';
+import '../../l10n/app_language.dart';
 
 class QuickServiceWizard extends StatefulWidget {
   final Customer? initialCustomer;
@@ -114,7 +115,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       MaterialPageRoute(
         builder: (_) => AddMaintenanceScreen(
           initialItems: _selectedItems,
-          title: 'Select Work Items for Bill',
+          title: tr('Select Work Items for Bill'),
         ),
       ),
     );
@@ -143,16 +144,26 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       if (_selectedItems.isEmpty) {
         showAppSnackBar(
           context,
-          'Please add at least one work item or spare part',
+          tr('Please add at least one item or labour charge to generate bill'),
           type: SnackBarType.info,
         );
         return;
       }
 
+      // §7: the odometer field is prefilled from the vehicle and a cleared
+      // field legitimately falls back to that prefill — but typed junk must
+      // be flagged, not silently parsed to 0.
+      final typedKm = parseGroupedInt(_kmController.text);
+      if (typedKm == null && _kmController.text.trim().isNotEmpty) {
+        showAppSnackBar(context, tr('Enter a valid KM reading'), type: SnackBarType.error);
+        return;
+      }
+      final kmReading = typedKm ?? _selectedVehicle!.currentKm;
+
       final provider = Provider.of<GarageProvider>(context, listen: false);
       final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
       if (discount < 0) {
-        showAppSnackBar(context, 'Discount cannot be negative', type: SnackBarType.info);
+        showAppSnackBar(context, tr('Discount cannot be negative'), type: SnackBarType.info);
         return;
       }
       final gross = _selectedItems.fold(0.0, (sum, i) => sum + i.totalAmount);
@@ -165,13 +176,16 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
         return;
       }
 
+      // Write action — billing the walk-in needs invoices.manage.
+      if (!ensurePermission(context, Permissions.invoicesManage)) return;
+
       // Full counter flow in one call: opens the walk-in job card, bills it
       // (tax stays config-driven inside the provider) and auto-delivers the
       // job. Payment, if any, is recorded afterwards from the success step.
       final invoice = await provider.quickServiceCheckout(
         customerId: _selectedCustomer!.id,
         vehicleId: _selectedVehicle!.id,
-        kmReading: parseGroupedInt(_kmController.text) ?? _selectedVehicle!.currentKm,
+        kmReading: kmReading,
         items: List.of(_selectedItems),
         discount: discount,
         existingJobCard: _reusableJobCard,
@@ -219,7 +233,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               }
             },
           ),
-          title: Text('Quick Service Flow', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+          title: Text(tr('Quick Service Flow'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         ),
         body: Column(
           children: [
@@ -230,13 +244,13 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildStepIndicator(0, 'Customer', Icons.person_rounded),
+                _buildStepIndicator(0, tr('Customer'), Icons.person_rounded),
                 _buildStepLine(0),
-                _buildStepIndicator(1, 'Vehicle', Icons.directions_car_rounded),
+                _buildStepIndicator(1, tr('Vehicle'), Icons.directions_car_rounded),
                 _buildStepLine(1),
-                _buildStepIndicator(2, 'Items', Icons.build_rounded),
+                _buildStepIndicator(2, tr('Items'), Icons.build_rounded),
                 _buildStepLine(2),
-                _buildStepIndicator(3, 'Bill / Pay', Icons.payments_rounded),
+                _buildStepIndicator(3, tr('Bill / Pay'), Icons.payments_rounded),
               ],
             ),
           ),
@@ -264,9 +278,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       children: [
         CircleAvatar(
           radius: 16,
-          // Filled with a palette slot in both states, so the foreground
-          // follows onPrimary (white in light, dark navy in dark mode).
-          backgroundColor: isActive ? palette.primary : palette.textMuted,
+          // Progress is informational, not an action — near-black (§2).
+          backgroundColor: isActive ? palette.accent : palette.textMuted,
           child: Icon(
             isCurrent ? icon : (isActive ? Icons.check_rounded : icon),
             size: 16,
@@ -282,7 +295,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           style: GoogleFonts.poppins(
             fontSize: AppText.label,
             fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-            color: isActive ? palette.primary : palette.textSecondary,
+            color: isActive ? palette.accent : palette.textSecondary,
           ),
         ),
       ],
@@ -296,7 +309,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       child: Container(
         height: 2,
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-        color: isActive ? context.palette.primary : context.palette.textMuted,
+        // Connector line follows the stepper's near-black (§2).
+        color: isActive ? context.palette.accent : context.palette.textMuted,
       ),
     );
   }
@@ -336,12 +350,14 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
             children: [
               Expanded(
                 child: Text(
-                  'Choose customer',
+                  tr('Choose customer'),
                   style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
                 ),
               ),
               OutlinedButton.icon(
                 onPressed: () async {
+                  // Write action — creating a customer needs customers.manage.
+                  if (!ensurePermission(context, Permissions.customersManage)) return;
                   final newCust = await Navigator.push<Customer>(
                     context,
                     MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
@@ -350,7 +366,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                   if (newCust != null) _onCustomerSelected(newCust);
                 },
                 icon: const Icon(Icons.person_add_rounded, size: 16),
-                label: const Text('New'),
+                label: Text(tr('New')),
               ),
             ],
           ),
@@ -361,7 +377,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
             controller: _searchController,
             onChanged: (val) => setState(() => _searchQuery = val.trim()),
             decoration: InputDecoration(
-              hintText: 'Search customer by name or phone...',
+              hintText: tr('Search customer by name or phone...'),
               prefixIcon: const Icon(Icons.search_rounded, size: 20),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
@@ -378,10 +394,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
         ),
         Expanded(
           child: filteredCustomers.isEmpty
-              ? const EmptyStateWidget(
+              ? EmptyStateWidget(
                   icon: Icons.person_search_rounded,
-                  title: 'No matching customers found',
-                  description: 'Try searching a different name or phone number',
+                  title: tr('No matching customers found'),
+                  description: tr('Try searching a different name or phone number'),
                 )
               : ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -396,7 +412,11 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                         onTap: () => _onCustomerSelected(c),
                         leading: CircleAvatar(
                           backgroundColor: palette.primary.withValues(alpha: 0.12),
-                          child: Text(c.name.substring(0, 1).toUpperCase(), style: TextStyle(fontWeight: FontWeight.bold, color: palette.primary)),
+                          child: Text(
+                            // Guard: a blank name must not RangeError (§10).
+                            c.name.isEmpty ? '?' : c.name.substring(0, 1).toUpperCase(),
+                            style: TextStyle(fontWeight: FontWeight.bold, color: palette.primary),
+                          ),
                         ),
                         title: Text(c.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
                         subtitle: Text('${c.phone} · ${vehicles.length} ${vehicles.length == 1 ? 'vehicle' : 'vehicles'}'),
@@ -415,6 +435,17 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     final palette = context.palette;
     final vehicles = provider.getVehiclesForCustomer(_selectedCustomer!.id);
 
+    Future<void> addVehicle() async {
+      // Write action — creating a vehicle needs vehicles.manage.
+      if (!ensurePermission(context, Permissions.vehiclesManage)) return;
+      final newV = await showDialog<Vehicle>(
+        context: context,
+        builder: (_) => AddVehicleDialog(customerId: _selectedCustomer!.id),
+      );
+      if (!mounted) return;
+      if (newV != null) _onVehicleSelected(newV);
+    }
+
     return Column(
       children: [
         Padding(
@@ -426,49 +457,51 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Choose vehicle', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                    Text(tr('Choose vehicle'), style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
                     Text('For ${_selectedCustomer!.name}', maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.primary, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
               OutlinedButton.icon(
-                onPressed: () async {
-                  final newV = await showDialog<Vehicle>(
-                    context: context,
-                    builder: (_) => AddVehicleDialog(customerId: _selectedCustomer!.id),
-                  );
-                  if (!mounted) return;
-                  if (newV != null) _onVehicleSelected(newV);
-                },
+                onPressed: addVehicle,
                 icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('New'),
+                label: Text(tr('New')),
               ),
             ],
           ),
         ),
         Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: vehicles.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final v = vehicles[index];
-              return Card(
-                child: ListTile(
-                  onTap: () => _onVehicleSelected(v),
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: palette.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                    child: Icon(Icons.directions_car_rounded, color: palette.primary),
-                  ),
-                  title: Text(v.registrationNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-                  subtitle: Text('${v.displayName} • ${v.currentKm} KM • ${v.fuelType.displayName}'),
-                  trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: palette.textMuted),
+          // A customer without vehicles must not render a blank step (§10).
+          child: vehicles.isEmpty
+              ? EmptyStateWidget(
+                  icon: Icons.directions_car_rounded,
+                  title: tr('No vehicles yet'),
+                  description: 'Add a vehicle for ${_selectedCustomer!.name} to continue.',
+                  buttonText: tr('Add Vehicle'),
+                  onButtonPressed: addVehicle,
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: vehicles.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final v = vehicles[index];
+                    return Card(
+                      child: ListTile(
+                        onTap: () => _onVehicleSelected(v),
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: palette.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                          child: Icon(Icons.directions_car_rounded, color: palette.primary),
+                        ),
+                        title: Text(v.registrationNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                        subtitle: Text('${v.displayName} • ${groupDigits(v.currentKm)} km • ${v.fuelType.displayName}'),
+                        trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: palette.textMuted),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
@@ -514,7 +547,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Work & parts', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                    Text(tr('Work & parts'), style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
                     Text(
                       '${_selectedVehicle!.registrationNumber} (${_selectedVehicle!.displayName})',
                       maxLines: 1,
@@ -528,7 +561,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               OutlinedButton.icon(
                 onPressed: _openAddItems,
                 icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('Add'),
+                label: Text(tr('Add')),
               ),
             ],
           ),
@@ -550,8 +583,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                     controller: _kmController,
                     inputFormatters: const [GroupedDigitsInputFormatter()],
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Odometer (KM)',
+                    decoration: InputDecoration(
+                      labelText: tr('Odometer (KM)'),
                       prefixIcon: Icon(Icons.speed_rounded, size: 18),
                       isDense: true,
                     ),
@@ -563,8 +596,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                     controller: _discountController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (_) => setState(() {}),
-                    decoration: const InputDecoration(
-                      labelText: 'Discount (₹)',
+                    decoration: InputDecoration(
+                      labelText: tr('Discount (₹)'),
                       prefixIcon: Icon(Icons.discount_rounded, size: 18),
                       isDense: true,
                     ),
@@ -581,13 +614,13 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                 ? (scrolling
                     ? Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text('No items added yet',
+                        child: Text(tr('No items added yet'),
                             style: GoogleFonts.poppins(color: palette.textMuted)),
                       )
-                    : const EmptyStateWidget(
+                    : EmptyStateWidget(
                         icon: Icons.build_circle_outlined,
-                        title: 'No items added yet',
-                        description: 'Tap "Add Items" to choose oil, filters, labour, etc.',
+                        title: tr('No items added yet'),
+                        description: tr('Tap "Add Items" to choose oil, filters, labour, etc.'),
                       ))
                 : ListView.separated(
                     shrinkWrap: scrolling,
@@ -606,7 +639,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                               Text(CurrencyFormatter.format(item.totalAmount), style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary)),
                               const SizedBox(width: 8),
                               IconButton(
-                                icon: Icon(Icons.delete_outline_rounded, size: 18, color: palette.pending),
+                                icon: Icon(Icons.delete_outline_rounded, size: 18, color: palette.textMuted),
                                 onPressed: () => setState(() => _selectedItems.removeAt(index)),
                               ),
                             ],
@@ -648,11 +681,11 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Net Bill Total:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
+                            Text(tr('Net Bill Total:'), style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
                             FittedBox(
                               fit: BoxFit.scaleDown,
                               alignment: Alignment.centerLeft,
-                              child: Text(CurrencyFormatter.format(netGrandTotal), style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.primary)),
+                              child: Text(CurrencyFormatter.format(netGrandTotal), style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.textPrimary)),
                             ),
                           ],
                         ),
@@ -660,9 +693,12 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                       const SizedBox(width: 8),
                       Flexible(
                         child: GradientButton(
-                          onPressed: _generateFinalBill,
+                          // Disabled while a bill is in flight (double-submit
+                          // latch); the invoices.manage gate lives inside
+                          // _generateFinalBill so it fires on tap, not on build.
+                          onPressed: _isGeneratingBill ? null : _generateFinalBill,
                           icon: const Icon(Icons.receipt_long_rounded),
-                          label: const Text('Generate Bill'),
+                          label: Text(tr('Generate Bill')),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
                       ),
@@ -708,13 +744,13 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Job Card & Bill Generated!',
+            tr('Job Card & Bill Generated!'),
             style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
             'Bill #${inv.invoiceNumber}',
-            style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.primary),
+            style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.textPrimary),
           ),
           if (job != null) ...[
             const SizedBox(height: 6),
@@ -759,7 +795,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                 );
               },
               icon: const Icon(Icons.receipt_rounded),
-              label: const Text('View Bill'),
+              label: Text(tr('View Bill')),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
             ),
           ),
@@ -767,7 +803,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
 
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Back to Dashboard'),
+            child: Text(tr('Back to Dashboard')),
           ),
         ],
       ),

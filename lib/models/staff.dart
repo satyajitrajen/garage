@@ -1,3 +1,5 @@
+import '../l10n/app_language.dart';
+
 enum StaffRole {
   headMechanic,
   seniorTechnician,
@@ -12,19 +14,19 @@ extension StaffRoleExtension on StaffRole {
   String get displayName {
     switch (this) {
       case StaffRole.headMechanic:
-        return 'Head Mechanic';
+        return tr('Head Mechanic');
       case StaffRole.seniorTechnician:
-        return 'Senior Technician';
+        return tr('Senior Technician');
       case StaffRole.autoElectrician:
-        return 'Auto Electrician';
+        return tr('Auto Electrician');
       case StaffRole.denterPainter:
-        return 'Denter & Painter';
+        return tr('Denter & Painter');
       case StaffRole.helperTrainee:
-        return 'Helper / Trainee';
+        return tr('Helper / Trainee');
       case StaffRole.serviceAdvisor:
-        return 'Service Advisor';
+        return tr('Service Advisor');
       case StaffRole.manager:
-        return 'Workshop Manager';
+        return tr('Workshop Manager');
     }
   }
 }
@@ -40,13 +42,13 @@ extension AttendanceStatusExtension on AttendanceStatus {
   String get displayName {
     switch (this) {
       case AttendanceStatus.present:
-        return 'Present';
+        return tr('Present');
       case AttendanceStatus.halfDay:
-        return 'Half Day';
+        return tr('Half Day');
       case AttendanceStatus.absent:
-        return 'Absent';
+        return tr('Absent');
       case AttendanceStatus.leave:
-        return 'Paid Leave';
+        return tr('Paid Leave');
     }
   }
 }

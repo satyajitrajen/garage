@@ -1,7 +1,7 @@
-import 'dart:typed_data';
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'api_config.dart';
@@ -107,7 +107,11 @@ class ApiClient {
         throw const ApiException(0, 'timeout', 'Request timed out.');
       } catch (e) {
         if (e is ApiException) rethrow;
-        throw ApiException(0, 'network_error', 'Network error: $e');
+        // The raw exception goes to the debug log only; users get a plain
+        // message they can act on.
+        debugPrint('Network error: $e');
+        throw const ApiException(0, 'network_error',
+            'Could not reach the server. Check your internet connection and try again.');
       }
     }
 

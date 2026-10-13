@@ -11,6 +11,10 @@ import '../../utils/currency_formatter.dart';
 import '../../utils/payment_mode_display.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
+import '../../utils/permissions.dart';
+import '../../widgets/permission_gate.dart';
+import '../../l10n/app_language.dart';
+import '../../utils/form_errors.dart';
 
 class PaymentCollectionScreen extends StatefulWidget {
   final Invoice invoice;
@@ -30,11 +34,15 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   PaymentMode _selectedMode = PaymentMode.upi;
   bool _isFullPayment = true;
   bool _isSaving = false;
+  /// Amount the last Full/Partial preset wrote into the field, so the next
+  /// toggle only overwrites when the user has not typed their own amount.
+  String _lastPresetAmount = '';
 
   @override
   void initState() {
     super.initState();
-    _amountController.text = widget.invoice.balanceDue.toStringAsFixed(2);
+    _lastPresetAmount = widget.invoice.balanceDue.toStringAsFixed(2);
+    _amountController.text = _lastPresetAmount;
   }
 
   @override
@@ -46,13 +54,17 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   }
 
   void _onPaymentTypeToggle(bool isFull) {
+    final preset = isFull
+        ? widget.invoice.balanceDue.toStringAsFixed(2)
+        : (widget.invoice.balanceDue / 2).toStringAsFixed(2);
     setState(() {
       _isFullPayment = isFull;
-      if (isFull) {
-        _amountController.text = widget.invoice.balanceDue.toStringAsFixed(2);
-      } else {
-        _amountController.text = (widget.invoice.balanceDue / 2).toStringAsFixed(2);
+      // Only overwrite when the field still holds the previous preset — an
+      // amount the user typed by hand must survive switching Full/Partial.
+      if (_amountController.text.trim() == _lastPresetAmount) {
+        _amountController.text = preset;
       }
+      _lastPresetAmount = preset;
     });
   }
 
@@ -62,7 +74,13 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     // Latch: a fast double-tap on Confirm must not record the payment twice —
     // both taps would pass the balance check before the first save lands.
     if (_isSaving) return;
-    if (!_formKey.currentState!.validate()) return;
+    // Re-check at the mutation entry: recording a payment is a
+    // payments.record write, not just a screen the staff can open.
+    if (!ensurePermission(context, Permissions.paymentsRecord)) return;
+    if (!_formKey.currentState!.validate()) {
+      scrollToFirstFormError(_formKey);
+      return;
+    }
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
     // Always validate against the live invoice, not the snapshot passed to
@@ -73,7 +91,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     if (amount <= 0) {
       showAppSnackBar(
         context,
-        'Payment amount must be greater than zero',
+        tr('Payment amount must be greater than zero'),
         type: SnackBarType.error,
       );
       return;
@@ -142,7 +160,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Payment Received!',
+              tr('Payment Received!'),
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: AppText.headline),
             ),
@@ -187,7 +205,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Flexible(
-                  child: Text('Bill:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
+                  child: Text(tr('Bill:'), style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
                 ),
                 const SizedBox(width: 8),
                 Flexible(
@@ -202,7 +220,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Flexible(
-                  child: Text('Remaining Due:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
+                  child: Text(tr('Remaining Due:'), style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
                 ),
                 const SizedBox(width: 8),
                 Flexible(
@@ -229,7 +247,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 Navigator.pop(dialogContext); // Close dialog
                 Navigator.pop(context, true); // Return to invoice preview
               },
-              child: const Text('Done'),
+              child: Text(tr('Done')),
             ),
           ),
         ],
@@ -248,7 +266,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Record Payment / Collection', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(tr('Record Payment / Collection'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
@@ -262,21 +280,15 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  // A fixed dark slate, not the brand red: a big red card read
-                  // as an error. White text sits on top in both themes.
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF22262B), Color(0xFF3B4148)],
+                  // Design-system banner gradient (near-black), not brand
+                  // red: a big red card read as an error. White text sits on
+                  // top in both themes.
+                  gradient: LinearGradient(
+                    colors: palette.bannerGradient,
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,7 +314,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'Outstanding Balance Due',
+                      tr('Outstanding Balance Due'),
                       style: GoogleFonts.poppins(color: Colors.white70, fontSize: AppText.caption),
                     ),
                     const SizedBox(height: 4),
@@ -338,7 +350,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
               // Full vs Partial Payment Choice
               Text(
-                'Payment Type',
+                tr('Payment Type'),
                 style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
@@ -348,9 +360,11 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     child: OutlinedButton(
                       onPressed: () => _onPaymentTypeToggle(true),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: _isFullPayment ? palette.primary.withOpacity(0.12) : Colors.transparent,
+                        // Selected = accent near-black; brand red is for
+                        // actions only, and picking a type is informational.
+                        backgroundColor: _isFullPayment ? palette.accent.withOpacity(0.12) : Colors.transparent,
                         side: BorderSide(
-                          color: _isFullPayment ? palette.primary : palette.textMuted,
+                          color: _isFullPayment ? palette.accent : palette.textMuted,
                           width: _isFullPayment ? 2 : 1,
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -359,7 +373,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                         'Full Payment (${CurrencyFormatter.format(invoice.balanceDue)})',
                         style: GoogleFonts.poppins(
                           fontWeight: _isFullPayment ? FontWeight.w700 : FontWeight.w500,
-                          color: _isFullPayment ? palette.primary : palette.textPrimary,
+                          color: _isFullPayment ? palette.accent : palette.textPrimary,
                         ),
                       ),
                     ),
@@ -369,18 +383,18 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     child: OutlinedButton(
                       onPressed: () => _onPaymentTypeToggle(false),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: !_isFullPayment ? palette.primary.withOpacity(0.12) : Colors.transparent,
+                        backgroundColor: !_isFullPayment ? palette.accent.withOpacity(0.12) : Colors.transparent,
                         side: BorderSide(
-                          color: !_isFullPayment ? palette.primary : palette.textMuted,
+                          color: !_isFullPayment ? palette.accent : palette.textMuted,
                           width: !_isFullPayment ? 2 : 1,
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(
-                        'Partial Payment',
+                        tr('Partial Payment'),
                         style: GoogleFonts.poppins(
                           fontWeight: !_isFullPayment ? FontWeight.w700 : FontWeight.w500,
-                          color: !_isFullPayment ? palette.primary : palette.textPrimary,
+                          color: !_isFullPayment ? palette.accent : palette.textPrimary,
                         ),
                       ),
                     ),
@@ -392,16 +406,16 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               // Amount Field
               TextFormField(
                 controller: _amountController,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
-                  labelText: 'Amount Received (₹) *',
+                  labelText: tr('Amount Received (₹) *'),
                   prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.primary),
                 ),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Enter amount';
+                  if (val == null || val.trim().isEmpty) return tr('Enter amount');
                   final num = double.tryParse(val.trim());
-                  if (num == null || num <= 0) return 'Invalid amount';
+                  if (num == null || num <= 0) return tr('Invalid amount');
                   return null;
                 },
               ),
@@ -409,7 +423,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
               // Payment Mode Selector
               Text(
-                'Payment Mode',
+                tr('Payment Mode'),
                 style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
@@ -425,14 +439,16 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                         Icon(
                           mode.icon,
                           size: 16,
-                          color: isSelected ? palette.onPrimary : palette.primary,
+                          color: isSelected ? palette.onPrimary : palette.textSecondary,
                         ),
                         const SizedBox(width: 6),
                         Text(mode.label),
                       ],
                     ),
                     selected: isSelected,
-                    selectedColor: palette.primary,
+                    // Selected chip = accent near-black; brand red is for
+                    // actions only (§2).
+                    selectedColor: palette.accent,
                     labelStyle: TextStyle(
                       color: isSelected ? palette.onPrimary : palette.textPrimary,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -450,12 +466,12 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 controller: _refController,
                 decoration: InputDecoration(
                   labelText: _selectedMode == PaymentMode.cash
-                      ? 'Cash Receipt / Handover Note (Optional)'
+                      ? tr('Cash Receipt / Handover Note (Optional)')
                       : _selectedMode == PaymentMode.upi
-                          ? 'UPI Reference / UTR Number'
+                          ? tr('UPI Reference / UTR Number')
                           : _selectedMode == PaymentMode.card
-                              ? 'POS Approval / Last 4 Digits'
-                              : 'Bank UTR / Cheque Number',
+                              ? tr('POS Approval / Last 4 Digits')
+                              : tr('Bank UTR / Cheque Number'),
                   prefixIcon: const Icon(Icons.pin_outlined),
                 ),
               ),
@@ -465,8 +481,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               TextFormField(
                 controller: _notesController,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Payment Notes / Receiver Remarks',
+                decoration: InputDecoration(
+                  labelText: tr('Payment Notes / Receiver Remarks'),
                   hintText: 'e.g. Received full settlement in cash with receipt issued',
                   prefixIcon: Icon(Icons.note_alt_outlined),
                 ),
@@ -486,7 +502,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                               strokeWidth: 2, color: Colors.white),
                         )
                       : const Icon(Icons.verified_rounded),
-                  label: const Text('Confirm & Record Payment'),
+                  label: Text(tr('Confirm & Record Payment')),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: palette.paid,

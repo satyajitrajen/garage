@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../l10n/app_language.dart';
 
 /// Hides [child] when the current membership lacks [permission].
 /// Owners always pass. Optionally shows [fallback] instead of nothing.
@@ -49,8 +50,8 @@ bool ensurePermission(BuildContext context, String permission) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(
-      const SnackBar(
-        content: Text('You do not have permission for this action.'),
+      SnackBar(
+        content: Text(tr('You do not have permission for this action.')),
         behavior: SnackBarBehavior.floating,
       ),
     );

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_dimens.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text.dart';
+import '../l10n/app_language.dart';
 
 class CustomSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -54,7 +55,7 @@ class CustomSearchBar extends StatelessWidget {
                 color: palette.textPrimary,
               ),
               decoration: InputDecoration(
-                hintText: hintText,
+                hintText: tr(hintText),
                 hintStyle: GoogleFonts.poppins(
                   color: palette.textMuted,
                   fontSize: AppText.body,

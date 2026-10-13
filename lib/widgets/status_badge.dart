@@ -7,6 +7,7 @@ import '../models/quotation.dart';
 import '../models/staff.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_text.dart';
+import '../l10n/app_language.dart';
 
 class StatusBadge extends StatelessWidget {
   final String label;
@@ -44,25 +45,25 @@ class StatusBadge extends StatelessWidget {
     switch (status) {
       case InvoiceStatus.paid:
         return StatusBadge._themed(
-          label: 'PAID',
+          label: tr('PAID'),
           icon: Icons.check_circle_outline_rounded,
           paletteColor: (p) => p.paid,
         );
       case InvoiceStatus.partial:
         return StatusBadge._themed(
-          label: 'PARTIAL',
+          label: tr('PARTIAL'),
           icon: Icons.timelapse_rounded,
           paletteColor: (p) => p.partial,
         );
       case InvoiceStatus.pending:
         return StatusBadge._themed(
-          label: 'PENDING',
+          label: tr('PENDING'),
           icon: Icons.error_outline_rounded,
           paletteColor: (p) => p.pending,
         );
       case InvoiceStatus.cancelled:
         return StatusBadge._themed(
-          label: 'CANCELLED',
+          label: tr('CANCELLED'),
           icon: Icons.cancel_outlined,
           paletteColor: (p) => p.textMuted,
         );
@@ -120,31 +121,31 @@ class StatusBadge extends StatelessWidget {
     switch (status) {
       case QuotationStatus.draft:
         return StatusBadge._themed(
-          label: 'DRAFT',
+          label: tr('DRAFT'),
           icon: Icons.edit_note_rounded,
           paletteColor: (p) => p.textMuted,
         );
       case QuotationStatus.sent:
         return StatusBadge._themed(
-          label: 'SENT',
+          label: tr('SENT'),
           icon: Icons.send_rounded,
           paletteColor: (p) => p.accent,
         );
       case QuotationStatus.approved:
         return StatusBadge._themed(
-          label: 'APPROVED',
+          label: tr('APPROVED'),
           icon: Icons.check_circle_rounded,
           paletteColor: (p) => p.paid,
         );
       case QuotationStatus.converted:
         return StatusBadge._themed(
-          label: 'CONVERTED',
+          label: tr('CONVERTED'),
           icon: Icons.swap_horiz_rounded,
           paletteColor: (p) => p.received,
         );
       case QuotationStatus.rejected:
         return StatusBadge._themed(
-          label: 'DECLINED',
+          label: tr('DECLINED'),
           icon: Icons.close_rounded,
           paletteColor: (p) => p.pending,
         );
@@ -161,7 +162,7 @@ class StatusBadge extends StatelessWidget {
         );
       case AttendanceStatus.halfDay:
         return StatusBadge._themed(
-          label: 'HD',
+          label: tr('HD'),
           isCompact: true,
           paletteColor: (p) => p.halfDay,
         );

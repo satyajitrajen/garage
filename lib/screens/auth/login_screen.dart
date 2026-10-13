@@ -4,12 +4,15 @@ import 'package:provider/provider.dart';
 
 import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/error_message.dart';
+import 'auth_validators.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
-import 'verify_email_screen.dart';
+import '../../l10n/app_language.dart';
 
 /// Email + password gate. On success the [AuthProvider] session is stored and
 /// the app shell (AppGate) swaps to the main navigation.
@@ -44,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Sign in failed. Please try again.',
+      showAppSnackBar(context, tr('Sign in failed. Please try again.'),
           type: SnackBarType.error);
     }
   }
@@ -56,7 +59,8 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppDimens.paddingScreen, vertical: 16),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
@@ -80,11 +84,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Sign in to your workshop',
+                      tr('Sign in to your workshop'),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                         fontSize: AppText.body,
-                        color: Theme.of(context).hintColor,
+                        color: context.palette.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 28),
@@ -93,19 +97,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       autofillHints: const [AutofillHints.email],
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
+                      decoration: InputDecoration(
+                        labelText: tr('Email'),
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.email_outlined),
                       ),
-                      validator: (v) {
-                        final t = (v ?? '').trim();
-                        if (t.isEmpty) return 'Email is required';
-                        if (!t.contains('@') || !t.contains('.')) {
-                          return 'Enter a valid email';
-                        }
-                        return null;
-                      },
+                      validator: validateEmail,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -115,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       autofillHints: const [AutofillHints.password],
                       onFieldSubmitted: (_) => _submit(),
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: tr('Password'),
                         border: const OutlineInputBorder(),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
@@ -135,13 +132,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: auth.isBusy
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
+                                    strokeWidth: 2,
+                                    color: context.palette.onPrimary),
                               )
-                            : const Text('Sign in'),
+                            : Text(tr('Sign in')),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -153,35 +151,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                 MaterialPageRoute(
                                     builder: (_) => const RegisterScreen()),
                               ),
-                      child: const Text(
-                          'New workshop? Create an account'),
+                      child: Text(
+                          tr('New workshop? Create an account')),
                     ),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      children: [
-                        TextButton(
-                          onPressed: auth.isBusy
-                              ? null
-                              : () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const ForgotPasswordScreen()),
-                                  ),
-                          child: const Text('Forgot password?'),
-                        ),
-                        TextButton(
-                          onPressed: auth.isBusy
-                              ? null
-                              : () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const VerifyEmailScreen()),
-                                  ),
-                          child: const Text('Verify email'),
-                        ),
-                      ],
+                    TextButton(
+                      onPressed: auth.isBusy
+                          ? null
+                          : () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const ForgotPasswordScreen()),
+                              ),
+                      child: Text(tr('Forgot password?')),
                     ),
                   ],
                 ),

@@ -5,8 +5,10 @@ import 'package:provider/provider.dart';
 import '../data/api/api_config.dart';
 import '../providers/auth_provider.dart';
 import '../screens/billing/billing_screen.dart';
+import '../theme/app_palette.dart';
 import '../theme/app_text.dart';
 import '../utils/date_formatter.dart';
+import '../l10n/app_language.dart';
 
 /// SaaS subscription banner for the dashboard. Hidden in mock mode, when the
 /// subscription is active, or when billing can't be reached. Trialing shows
@@ -55,13 +57,51 @@ class _SubscriptionBannerState extends State<SubscriptionBanner> {
     final text = urgent
         ? 'Subscription ${subscriptionStatusLabel(status).toLowerCase()} — renew to keep adding records.'
         : daysLeft == null
-            ? 'Trial period — subscribe to keep full access.'
+            ? tr('Trial period — subscribe to keep full access.')
             : daysLeft < 0
-                ? 'Trial expired — subscribe to keep adding records.'
+                ? tr('Trial expired — subscribe to keep adding records.')
                 : daysLeft == 0
-                    ? 'Trial ends today — subscribe to keep full access.'
+                    ? tr('Trial ends today — subscribe to keep full access.')
                     : 'Trial: $daysLeft day${daysLeft == 1 ? '' : 's'} left.';
     final bg = urgent ? Colors.red.shade700 : Colors.orange.shade800;
+
+    // Early in the trial a quiet line is enough; the loud bar would compete
+    // with "New job card" every day. It turns prominent in the last 3 days.
+    final quiet = !urgent && daysLeft != null && daysLeft > 3;
+    if (quiet) {
+      final palette = context.palette;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const BillingScreen()),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Icon(Icons.schedule_rounded, size: 16, color: palette.textSecondary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Free trial: $daysLeft days left',
+                    style: GoogleFonts.poppins(
+                        fontSize: AppText.label, color: palette.textSecondary),
+                  ),
+                ),
+                Text(tr('See plans'),
+                    style: GoogleFonts.poppins(
+                        fontSize: AppText.label,
+                        fontWeight: FontWeight.w600,
+                        color: palette.primary)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),

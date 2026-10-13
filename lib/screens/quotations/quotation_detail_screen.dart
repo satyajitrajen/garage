@@ -14,12 +14,17 @@ import '../../utils/currency_formatter.dart';
 import '../../utils/gst_lines.dart';
 import '../../utils/date_formatter.dart';
 import '../../utils/quantity_formatter.dart';
+import '../../utils/permissions.dart';
+import '../../widgets/empty_state_widget.dart';
+import '../../widgets/permission_gate.dart';
 import '../../widgets/status_badge.dart';
 import '../job_cards/job_card_detail_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
 import 'create_quotation_screen.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
+import '../../utils/grouped_number.dart';
+import '../../l10n/app_language.dart';
 
 class QuotationDetailScreen extends StatefulWidget {
   final String quotationId;
@@ -74,6 +79,12 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     final provider = Provider.of<GarageProvider>(context, listen: false);
     setState(() => _isConverting = true);
     try {
+      // Transition FIRST: the server rejects a non-approved estimate with 422
+      // before any invoice exists, so a failed attempt can never leave a
+      // committed bill behind for a retry to double (same guard order
+      // convertQuotationToJobCard enforces on the job-card path).
+      await provider.updateQuotationStatus(quote.id, QuotationStatus.converted);
+
       final invoice = await provider.addInvoice(
         Invoice(
           id: const Uuid().v4(),
@@ -96,8 +107,6 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
               DateTime.now().add(Duration(days: provider.config.invoiceDueDays)),
         ),
       );
-
-      await provider.updateQuotationStatus(quote.id, QuotationStatus.converted);
 
       if (!context.mounted) return;
       Navigator.pushAndRemoveUntil(
@@ -126,7 +135,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     if (customer == null || vehicle == null) {
       showAppSnackBar(
         context,
-        'Customer or vehicle for this estimate no longer exists',
+        tr('Customer or vehicle for this estimate no longer exists'),
         type: SnackBarType.error,
       );
       return;
@@ -172,21 +181,21 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       builder: (dialogCtx) {
         final palette = dialogCtx.palette;
         return AlertDialog(
-          title: const Text('Decline Estimate?'),
+          title: Text(tr('Decline Estimate?')),
           content: Text(
               'Mark estimate #${quote.quotationNumber} as declined by the customer? This cannot be undone.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text('Keep Estimate'),
+              child: Text(tr('Keep Estimate')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: palette.pending,
+                backgroundColor: palette.absent,
                 foregroundColor: palette.onPrimary,
               ),
               onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('Decline'),
+              child: Text(tr('Decline')),
             ),
           ],
         );
@@ -200,7 +209,8 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       showAppSnackBar(
         context,
         'Estimate #${quote.quotationNumber} declined',
-        type: SnackBarType.error,
+        // A deliberate status change is success feedback, not an error (§2).
+        type: SnackBarType.success,
       );
     } catch (e) {
       if (!context.mounted) return;
@@ -220,8 +230,14 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
 
     if (quote == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Estimate Details')),
-        body: const Center(child: Text('Estimate not found')),
+        appBar: AppBar(title: Text(tr('Estimate Details'))),
+        body: EmptyStateWidget(
+          icon: Icons.request_quote_outlined,
+          title: tr('Estimate not found'),
+          description: tr('This estimate may have been removed.'),
+          buttonText: tr('Go back'),
+          onButtonPressed: () => Navigator.of(context).maybePop(),
+        ),
       );
     }
 
@@ -236,7 +252,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.share_rounded),
-            tooltip: 'Share Estimate',
+            tooltip: tr('Share Estimate'),
             onPressed: () async {
               final lines = [
                 '${profile.name} — Estimate ${quote.quotationNumber}',
@@ -272,7 +288,8 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Estimate Slip Card
+            // Estimate Slip Card — flat like every card (§4); the 1px border
+            // provides the separation.
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -281,13 +298,6 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                 border: Border.all(
                   color: palette.border,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,7 +319,8 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: AppText.title,
                                 fontWeight: FontWeight.w700,
-                                color: palette.primary,
+                                // Letterhead text, not an action (§2).
+                                color: palette.textPrimary,
                               ),
                             ),
                             if (profile.tagline.trim().isNotEmpty) ...[
@@ -414,7 +425,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                           Text('VEHICLE:', style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w600, color: palette.textMuted)),
                           const SizedBox(height: 2),
                           Text(vehicle?.registrationNumber ?? '', style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
-                          Text('${vehicle?.displayName ?? ""} • ${quote.kmReading} KM', textAlign: TextAlign.end, style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary)),
+                          Text('${vehicle?.displayName ?? ""} • ${groupDigits(quote.kmReading)} km', textAlign: TextAlign.end, style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary)),
                         ],
                       ),
                       ),
@@ -466,7 +477,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                                 Text(item.name, style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600)),
                                 Text(
                                   [
-                                    item.isLabour ? 'Labour' : 'Part (${item.category.displayName})',
+                                    item.isLabour ? tr('Labour') : 'Part (${item.category.displayName})',
                                     ?item.discountLabel,
                                   ].join(' • '),
                                   style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
@@ -493,10 +504,10 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                   const Divider(height: 24),
 
                   // Summary
-                  _buildSummaryLine('Parts Subtotal', CurrencyFormatter.format(quote.partsSubtotal), palette),
-                  _buildSummaryLine('Labour Subtotal', CurrencyFormatter.format(quote.labourSubtotal), palette),
+                  _buildSummaryLine(tr('Parts Subtotal'), CurrencyFormatter.format(quote.partsSubtotal), palette),
+                  _buildSummaryLine(tr('Labour Subtotal'), CurrencyFormatter.format(quote.labourSubtotal), palette),
                   if (quote.overallDiscount > 0)
-                    _buildSummaryLine('Discount', '- ${CurrencyFormatter.format(quote.overallDiscount)}', palette, color: palette.paid),
+                    _buildSummaryLine(tr('Discount'), '- ${CurrencyFormatter.format(quote.overallDiscount)}', palette, color: palette.paid),
                   for (final line in gstLines(quote.taxBreakdown))
                     _buildSummaryLine('Estimated ${line.key}', CurrencyFormatter.format(line.value), palette),
                   const Divider(height: 20),
@@ -504,14 +515,14 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text('Net Estimated Total:', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                        child: Text(tr('Net Estimated Total:'), style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
                       ),
                       const SizedBox(width: 8),
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
                           CurrencyFormatter.format(quote.grandTotal),
-                          style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.primary),
+                          style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.textPrimary),
                         ),
                       ),
                     ],
@@ -550,29 +561,37 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isConverting
-                          ? null
-                          : () => _convertJobCard(context, quote),
-                      icon: const Icon(Icons.assignment_turned_in_rounded),
-                      label: const Text('Convert to Job Card'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: palette.primary,
-                        foregroundColor: palette.onPrimary,
+                    // Write action — hidden from staff without jobcards.manage.
+                    child: PermissionGate(
+                      permission: Permissions.jobcardsManage,
+                      child: ElevatedButton.icon(
+                        onPressed: _isConverting
+                            ? null
+                            : () => _convertJobCard(context, quote),
+                        icon: const Icon(Icons.assignment_turned_in_rounded),
+                        label: Text(tr('Convert to Job Card')),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          backgroundColor: palette.primary,
+                          foregroundColor: palette.onPrimary,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _isConverting
-                          ? null
-                          : () => _convertInvoice(context, quote),
-                      icon: const Icon(Icons.receipt_rounded),
-                      label: const Text('Bill Now'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                    // Write action — hidden from staff without invoices.manage.
+                    child: PermissionGate(
+                      permission: Permissions.invoicesManage,
+                      child: OutlinedButton.icon(
+                        onPressed: _isConverting
+                            ? null
+                            : () => _convertInvoice(context, quote),
+                        icon: const Icon(Icons.receipt_rounded),
+                        label: Text(tr('Bill Now')),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
                       ),
                     ),
                   ),
@@ -580,44 +599,53 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
               )
             else if (quote.status == QuotationStatus.draft ||
                 quote.status == QuotationStatus.sent)
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _editQuotation(context, quote),
-                      icon: const Icon(Icons.edit_rounded, size: 18),
-                      label: const Text('Edit'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+              // Edit/Approve/Decline are all quotation write actions — gated
+              // together; staff without quotations.manage see none of them.
+              PermissionGate(
+                permission: Permissions.quotationsManage,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _editQuotation(context, quote),
+                        icon: const Icon(Icons.edit_rounded, size: 18),
+                        label: Text(tr('Edit')),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _approveQuotation(context, quote),
-                      icon: const Icon(Icons.check_circle_rounded, size: 18),
-                      label: const Text('Approve'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: palette.paid,
-                        foregroundColor: palette.onPrimary,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _isConverting
+                            ? null
+                            : () => _approveQuotation(context, quote),
+                        icon: const Icon(Icons.check_circle_rounded, size: 18),
+                        label: Text(tr('Approve')),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          backgroundColor: palette.paid,
+                          foregroundColor: palette.onPrimary,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _declineQuotation(context, quote),
-                      icon: const Icon(Icons.block_rounded, size: 18),
-                      label: const Text('Decline'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        foregroundColor: palette.pending,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _isConverting
+                            ? null
+                            : () => _declineQuotation(context, quote),
+                        icon: const Icon(Icons.block_rounded, size: 18),
+                        label: Text(tr('Decline')),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          foregroundColor: palette.absent,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               )
             else
               Container(

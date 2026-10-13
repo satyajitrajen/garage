@@ -19,6 +19,7 @@ class ListRow extends StatelessWidget {
     this.trailingBottom,
     this.onTap,
     this.onLongPress,
+    this.footer,
   });
 
   /// Small muted line above the title (e.g. a document number).
@@ -30,6 +31,9 @@ class ListRow extends StatelessWidget {
   final Widget? trailingBottom;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+
+  /// Optional row of inline actions under the text (e.g. staff shortcuts).
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +78,11 @@ class ListRow extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.poppins(
                                 fontSize: AppText.label, color: palette.textMuted)),
+                      ),
+                    if (footer != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: footer!,
                       ),
                   ],
                 ),

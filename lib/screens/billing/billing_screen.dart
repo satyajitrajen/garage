@@ -5,21 +5,23 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../utils/error_message.dart';
+import '../../l10n/app_language.dart';
 
 /// Display label for a backend subscription status ("past_due" → "Past due").
 String subscriptionStatusLabel(String status) => switch (status) {
-      'trialing' => 'Trial',
-      'active' => 'Active',
-      'past_due' => 'Past due',
-      'cancelled' => 'Cancelled',
-      'suspended' => 'Suspended',
+      'trialing' => tr('Trial'),
+      'active' => tr('Active'),
+      'past_due' => tr('Past due'),
+      'cancelled' => tr('Cancelled'),
+      'suspended' => tr('Suspended'),
       _ => status.isEmpty
-          ? 'Unknown'
+          ? tr('Unknown')
           : status[0].toUpperCase() + status.substring(1).replaceAll('_', ' '),
     };
 
@@ -40,6 +42,9 @@ class _BillingScreenState extends State<BillingScreen>
   bool _loading = true;
   String? _error;
   bool _awaitingPayment = false;
+  // Latch for the Subscribe buttons: a double-tap must not start two
+  // checkouts.
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -85,25 +90,27 @@ class _BillingScreenState extends State<BillingScreen>
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Could not load billing status.';
+        _error = tr('Could not load billing status.');
         _loading = false;
       });
     }
   }
 
   Future<void> _checkout(String plan) async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
     try {
       final res =
           await context.read<AuthProvider>().startCheckout(plan: plan);
       if (!mounted) return;
       if (res['configured'] == false) {
         showAppSnackBar(
-            context, (res['message'] as String?) ?? 'Payment not configured.');
+            context, (res['message'] as String?) ?? tr('Payment not configured.'));
         return;
       }
       final url = Uri.tryParse((res['short_url'] as String?) ?? '');
       if (url == null || !url.hasScheme) {
-        showAppSnackBar(context, 'Checkout link missing. Please try again.',
+        showAppSnackBar(context, tr('Checkout link missing. Please try again.'),
             type: SnackBarType.error);
         return;
       }
@@ -113,46 +120,67 @@ class _BillingScreenState extends State<BillingScreen>
       if (!mounted) return;
       if (!opened) {
         _awaitingPayment = false;
-        showAppSnackBar(context, 'Could not open the payment page.',
+        showAppSnackBar(context, tr('Could not open the payment page.'),
             type: SnackBarType.error);
         return;
       }
       showAppSnackBar(context,
-          'Complete payment in the browser. Your plan activates automatically.');
+          tr('Complete payment in the browser. Your plan activates automatically.'));
     } on ApiException catch (e) {
+      _awaitingPayment = false;
       if (!mounted) return;
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
+      // launchUrl throwing (no browser, etc.) must not leave the screen
+      // believing a payment page is open — reset so the resume handler
+      // doesn't reload needlessly.
+      _awaitingPayment = false;
       if (!mounted) return;
-      showAppSnackBar(context, 'Checkout failed. Please try again.',
+      showAppSnackBar(context, tr('Checkout failed. Please try again.'),
           type: SnackBarType.error);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   Future<void> _cancel() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Cancel subscription?'),
-        content: const Text(
-            'Writes will be blocked when the subscription lapses. You can resubscribe anytime.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Keep')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Cancel')),
-        ],
-      ),
+      builder: (ctx) {
+        final palette = ctx.palette;
+        return AlertDialog(
+          title: Text(tr('Cancel subscription?')),
+          content: Text(
+              tr('Writes will be blocked when the subscription lapses. You can resubscribe anytime.')),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(tr('Keep'),
+                    style: TextStyle(color: palette.textSecondary))),
+            // Destructive confirm is amber, not the theme red (§5).
+            FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: palette.absent,
+                  foregroundColor: palette.onPrimary,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(tr('Cancel'))),
+          ],
+        );
+      },
     );
     if (ok != true || !mounted) return;
     try {
       await context.read<AuthProvider>().cancelBilling();
       if (!mounted) return;
-      showAppSnackBar(context, 'Subscription cancelled.');
+      showAppSnackBar(context, tr('Subscription cancelled.'));
       await _load();
     } on ApiException catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
+    } catch (e) {
+      // Network timeouts and other non-HTTP failures surface the same way
+      // instead of crashing as unhandled async errors.
       if (!mounted) return;
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     }
@@ -163,7 +191,7 @@ class _BillingScreenState extends State<BillingScreen>
     final auth = context.watch<AuthProvider>();
     final isOwner = auth.isOwner;
     return Scaffold(
-      appBar: AppBar(title: const Text('Subscription')),
+      appBar: AppBar(title: Text(tr('Subscription'))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -174,7 +202,7 @@ class _BillingScreenState extends State<BillingScreen>
                       Text(_error!),
                       const SizedBox(height: 12),
                       FilledButton(
-                          onPressed: _load, child: const Text('Retry')),
+                          onPressed: _load, child: Text(tr('Retry'))),
                     ],
                   ),
                 )
@@ -186,16 +214,16 @@ class _BillingScreenState extends State<BillingScreen>
                       _statusCard(),
                       const SizedBox(height: 16),
                       if (isOwner) ...[
-                        Text('Plans',
+                        Text(tr('Plans'),
                             style: GoogleFonts.poppins(
                                 fontSize: AppText.subtitle,
                                 fontWeight: FontWeight.w700)),
                         const SizedBox(height: 8),
-                        _planTile('Pro Monthly', 'Billed every month',
+                        _planTile('Pro Monthly', tr('Billed every month'),
                             'monthly', Icons.calendar_month_rounded,
                             price: _price('price_monthly'), per: 'month'),
                         const SizedBox(height: 8),
-                        _planTile('Pro Yearly', 'Two months free vs monthly',
+                        _planTile('Pro Yearly', tr('Two months free vs monthly'),
                             'yearly', Icons.calendar_today_rounded,
                             price: _price('price_yearly'), per: 'year'),
                         // Only a live paid plan can be cancelled; during the
@@ -204,12 +232,12 @@ class _BillingScreenState extends State<BillingScreen>
                           const SizedBox(height: 16),
                           OutlinedButton(
                             onPressed: _cancel,
-                            child: const Text('Cancel subscription'),
+                            child: Text(tr('Cancel subscription')),
                           ),
                         ],
                       ] else
                         Text(
-                          'Only the workshop owner can change the subscription.',
+                          tr('Only the workshop owner can change the subscription.'),
                           style: GoogleFonts.poppins(
                               color: Theme.of(context).hintColor),
                         ),
@@ -245,12 +273,14 @@ class _BillingScreenState extends State<BillingScreen>
             '${left < 0 ? ' (expired)' : left == 0 ? ' (today)' : ' ($left day${left == 1 ? '' : 's'} left)'}';
       }
     }
-    Color dot = Colors.green;
-    if (status == 'trialing') dot = Colors.orange;
+    // Status dots use the semantic status tokens, not raw material colours.
+    final palette = context.palette;
+    Color dot = palette.paid;
+    if (status == 'trialing') dot = palette.partial;
     if (status == 'past_due' ||
         status == 'cancelled' ||
         status == 'suspended') {
-      dot = Colors.red;
+      dot = palette.absent;
     }
     return Card(
       child: ListTile(
@@ -273,8 +303,8 @@ class _BillingScreenState extends State<BillingScreen>
             ? subtitle
             : '${CurrencyFormatter.format(price.toDouble())} / $per · $subtitle'),
         trailing: FilledButton(
-          onPressed: () => _checkout(plan),
-          child: const Text('Subscribe'),
+          onPressed: _isSaving ? null : () => _checkout(plan),
+          child: Text(tr('Subscribe')),
         ),
       ),
     );

@@ -6,8 +6,10 @@ import '../../models/vehicle.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
+import '../../utils/app_snack_bar.dart';
 import '../../utils/error_message.dart';
 import '../../utils/grouped_number.dart';
+import '../../l10n/app_language.dart';
 
 class AddVehicleDialog extends StatefulWidget {
   final String customerId;
@@ -121,8 +123,10 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
       Navigator.pop(context, created);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage(e))),
+      showAppSnackBar(
+        context,
+        errorMessage(e),
+        type: SnackBarType.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -153,7 +157,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                   children: [
                     Expanded(
                       child: Text(
-                        isEditing ? 'Edit Vehicle' : 'Add New Vehicle',
+                        isEditing ? tr('Edit Vehicle') : tr('Add New Vehicle'),
                         style: GoogleFonts.poppins(
                           fontSize: AppText.headline,
                           fontWeight: FontWeight.w700,
@@ -174,12 +178,12 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                   controller: _regNoController,
                   textCapitalization: TextCapitalization.characters,
                   decoration: InputDecoration(
-                    labelText: 'Registration Number *',
+                    labelText: tr('Registration Number *'),
                     hintText: 'e.g. MH 12 AB 1234',
                     prefixIcon: Icon(Icons.pin_rounded, color: palette.primary),
                   ),
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Registration number is required';
+                    if (val == null || val.trim().isEmpty) return tr('Registration number is required');
                     return null;
                   },
                 ),
@@ -192,11 +196,11 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                       child: TextFormField(
                         controller: _makeController,
                         textCapitalization: TextCapitalization.words,
-                        decoration: const InputDecoration(
-                          labelText: 'Make *',
+                        decoration: InputDecoration(
+                          labelText: tr('Make *'),
                           hintText: 'e.g. Maruti, Hyundai',
                         ),
-                        validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
+                        validator: (val) => val == null || val.trim().isEmpty ? tr('Required') : null,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -204,11 +208,11 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                       child: TextFormField(
                         controller: _modelController,
                         textCapitalization: TextCapitalization.words,
-                        decoration: const InputDecoration(
-                          labelText: 'Model *',
+                        decoration: InputDecoration(
+                          labelText: tr('Model *'),
                           hintText: 'e.g. Swift, Creta',
                         ),
-                        validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
+                        validator: (val) => val == null || val.trim().isEmpty ? tr('Required') : null,
                       ),
                     ),
                   ],
@@ -221,8 +225,8 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _variantController,
-                        decoration: const InputDecoration(
-                          labelText: 'Variant',
+                        decoration: InputDecoration(
+                          labelText: tr('Variant'),
                           hintText: 'e.g. VXI, SX',
                         ),
                       ),
@@ -232,8 +236,8 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                       child: TextFormField(
                         controller: _yearController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Mfg Year',
+                        decoration: InputDecoration(
+                          labelText: tr('Mfg Year'),
                           hintText: 'e.g. 2021',
                         ),
                       ),
@@ -244,7 +248,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
 
                 // Fuel Type Selector
                 Text(
-                  'Fuel Type',
+                  tr('Fuel Type'),
                   style: GoogleFonts.poppins(
                     fontSize: AppText.caption,
                     fontWeight: FontWeight.w600,
@@ -282,14 +286,14 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                         inputFormatters: const [GroupedDigitsInputFormatter()],
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'KM *',
+                          labelText: tr('KM *'),
                           hintText: 'e.g. 35000',
                           prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
                         ),
                         validator: (val) {
-                          if (val == null || val.trim().isEmpty) return 'KM is required';
+                          if (val == null || val.trim().isEmpty) return tr('KM is required');
                           final km = parseGroupedInt(val);
-                          if (km == null || km < 0) return 'Enter a valid KM reading';
+                          if (km == null || km < 0) return tr('Enter a valid KM reading');
                           return null;
                         },
                       ),
@@ -298,8 +302,8 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _colorController,
-                        decoration: const InputDecoration(
-                          labelText: 'Vehicle Color',
+                        decoration: InputDecoration(
+                          labelText: tr('Vehicle Color'),
                           hintText: 'e.g. White, Black',
                         ),
                       ),
@@ -312,9 +316,9 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: _saveVehicle,
+                    onPressed: _isSaving ? null : _saveVehicle,
                     icon: const Icon(Icons.check_rounded),
-                    label: Text(isEditing ? 'Update Vehicle' : 'Save Vehicle'),
+                    label: Text(isEditing ? tr('Update Vehicle') : tr('Save Vehicle')),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),

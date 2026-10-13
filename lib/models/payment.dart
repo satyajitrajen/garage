@@ -1,3 +1,5 @@
+import '../l10n/app_language.dart';
+
 enum PaymentMode {
   cash,
   upi,
@@ -11,34 +13,34 @@ extension PaymentModeExtension on PaymentMode {
   String get displayName {
     switch (this) {
       case PaymentMode.cash:
-        return 'Cash';
+        return tr('Cash');
       case PaymentMode.upi:
-        return 'UPI / QR / GPay';
+        return tr('UPI / QR / GPay');
       case PaymentMode.card:
-        return 'Credit / Debit Card';
+        return tr('Credit / Debit Card');
       case PaymentMode.bankTransfer:
-        return 'Bank Transfer / NEFT';
+        return tr('Bank Transfer / NEFT');
       case PaymentMode.cheque:
-        return 'Cheque';
+        return tr('Cheque');
       case PaymentMode.other:
-        return 'Other';
+        return tr('Other');
     }
   }
 
   String get shortName {
     switch (this) {
       case PaymentMode.cash:
-        return 'Cash';
+        return tr('Cash');
       case PaymentMode.upi:
-        return 'UPI';
+        return tr('UPI');
       case PaymentMode.card:
-        return 'Card';
+        return tr('Card');
       case PaymentMode.bankTransfer:
-        return 'Bank';
+        return tr('Bank');
       case PaymentMode.cheque:
-        return 'Cheque';
+        return tr('Cheque');
       case PaymentMode.other:
-        return 'Other';
+        return tr('Other');
     }
   }
 }

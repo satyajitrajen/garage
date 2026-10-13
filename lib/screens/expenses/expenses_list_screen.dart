@@ -11,12 +11,14 @@ import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
+import '../../utils/error_message.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/gradient_button.dart';
 import '../../widgets/search_bar_widget.dart';
 import '../../widgets/list_row.dart';
 import 'add_expense_screen.dart';
 import '../../theme/app_text.dart';
+import '../../l10n/app_language.dart';
 
 class ExpensesListScreen extends StatefulWidget {
   const ExpensesListScreen({super.key});
@@ -55,13 +57,15 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
       context: context,
       builder: (ctx) {
         final palette = ctx.palette;
+        // Latch: a double-tap on Delete must not fire the request twice.
+        var deleting = false;
         return AlertDialog(
-          title: const Text('Delete this expense?'),
+          title: Text(tr('Delete this expense?')),
           content: Text('"${exp.title}" (${CurrencyFormatter.format(exp.amount)}) will be removed.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(tr('Cancel'), style: TextStyle(color: palette.textSecondary)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -69,22 +73,51 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                 foregroundColor: palette.onPrimary,
               ),
               onPressed: () async {
-                final provider = Provider.of<GarageProvider>(context, listen: false);
-                await provider.deleteExpense(exp.id);
+                if (deleting) return;
+                deleting = true;
+                final provider =
+                    Provider.of<GarageProvider>(context, listen: false);
+                try {
+                  await provider.deleteExpense(exp.id);
+                } catch (e) {
+                  if (!ctx.mounted) return;
+                  // Failure keeps the dialog open so the delete can be retried.
+                  showAppSnackBar(ctx, errorMessage(e),
+                      type: SnackBarType.error);
+                  return;
+                }
                 if (!ctx.mounted) return;
                 Navigator.pop(ctx);
                 if (!mounted) return;
                 showAppSnackBar(
                   context,
                   'Expense "${exp.title}" deleted',
-                  type: SnackBarType.error,
+                  type: SnackBarType.success,
                 );
               },
-              child: const Text('Delete'),
+              child: Text(tr('Delete')),
             ),
           ],
         );
       },
+    );
+  }
+
+  /// Empty / search-miss state. The Add CTA is permission-gated: staff
+  /// without expenses.manage see the explanation only.
+  Widget _expensesEmptyState({required bool withCta}) {
+    final query = _searchQuery.trim();
+    final description = query.isNotEmpty
+        ? 'Nothing matches "$query".'
+        : _selectedCategory != null
+            ? 'No expenses logged under "${_selectedCategory!.displayName}".'
+            : tr('Record rent, parts stock and daily costs to see where money goes.');
+    return EmptyStateWidget(
+      icon: Icons.account_balance_wallet_outlined,
+      title: query.isNotEmpty || _selectedCategory != null ? tr('No matches') : tr('No expenses yet'),
+      description: description,
+      buttonText: withCta && query.isEmpty ? tr('Add expense') : null,
+      onButtonPressed: withCta ? _openAddExpense : null,
     );
   }
 
@@ -108,7 +141,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
       backgroundColor: palette.background,
       appBar: AppBar(
         title: Text(
-          'Garage Expenses',
+          tr('Garage Expenses'),
           style: GoogleFonts.poppins(
             fontSize: AppText.title,
             fontWeight: FontWeight.w700,
@@ -122,7 +155,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
         child: GradientFloatingActionButton(
         onPressed: _openAddExpense,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Expense'),
+        label: Text(tr('Add Expense')),
       ),
       ),
       body: Column(
@@ -144,7 +177,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'This Month Expenses',
+                        tr('This Month Expenses'),
                         style: GoogleFonts.poppins(
                           color: palette.textSecondary,
                           fontSize: AppText.label,
@@ -207,7 +240,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: CustomSearchBar(
               controller: _searchController,
-              hintText: 'Search expenses by title or vendor...',
+              hintText: tr('Search expenses by title or vendor...'),
               onChanged: (val) => setState(() => _searchQuery = val),
             ),
           ),
@@ -220,7 +253,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
             child: Row(
               children: [
                 FilterChip(
-                  label: const Text('All Categories'),
+                  label: Text(tr('All Categories')),
                   selected: _selectedCategory == null,
                   selectedColor: palette.primary.withOpacity(0.15),
                   labelStyle: TextStyle(
@@ -256,14 +289,10 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
           // Expenses List
           Expanded(
             child: expenses.isEmpty
-                ? EmptyStateWidget(
-                    icon: Icons.account_balance_wallet_outlined,
-                    title: 'No Expenses Found',
-                    description: _selectedCategory != null
-                        ? 'No expenses logged under "${_selectedCategory!.displayName}".'
-                        : 'No expenses recorded in this period.',
-                    buttonText: 'Add First Expense',
-                    onButtonPressed: _openAddExpense,
+                ? PermissionGate(
+                    permission: Permissions.expensesManage,
+                    fallback: _expensesEmptyState(withCta: false),
+                    child: _expensesEmptyState(withCta: true),
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.only(top: 8, bottom: 120),

@@ -1,3 +1,5 @@
+import '../l10n/app_language.dart';
+
 enum ItemCategory {
   sparePart,
   labour,
@@ -11,17 +13,17 @@ extension ItemCategoryExtension on ItemCategory {
   String get displayName {
     switch (this) {
       case ItemCategory.sparePart:
-        return 'Spare Parts';
+        return tr('Spare Parts');
       case ItemCategory.labour:
-        return 'Labour & Service';
+        return tr('Labour & Service');
       case ItemCategory.fluids:
-        return 'Oils & Fluids';
+        return tr('Oils & Fluids');
       case ItemCategory.tyresBattery:
-        return 'Tyres & Battery';
+        return tr('Tyres & Battery');
       case ItemCategory.transportMisc:
-        return 'Transport / Misc';
+        return tr('Transport / Misc');
       case ItemCategory.custom:
-        return 'Custom Item';
+        return tr('Custom Item');
     }
   }
 }

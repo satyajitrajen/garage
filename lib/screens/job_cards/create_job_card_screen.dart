@@ -19,6 +19,8 @@ import 'job_card_detail_screen.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
 import '../../utils/grouped_number.dart';
+import '../../utils/quantity_formatter.dart';
+import '../../l10n/app_language.dart';
 
 class CreateJobCardScreen extends StatefulWidget {
   /// Customer/vehicle a NEW job card is created for. The screen shows them as
@@ -63,7 +65,48 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
   late DateTime _promisedDate;
   bool _isSaving = false;
 
+  /// Whether the KM field was seeded from the vehicle (or the record being
+  /// edited) instead of left empty for the user to type. A blank field then
+  /// legitimately falls back to that prefill at save time; typed junk never
+  /// does and is rejected by [_validateKm].
+  bool _kmPrefilled = false;
+
   bool get _isEditing => widget.existing != null;
+
+  /// Anything typed on a new job card that Back would silently throw away.
+  bool get _hasUnsavedInput =>
+      _complaints.isNotEmpty ||
+      _selectedItems.isNotEmpty ||
+      _complaintController.text.trim().isNotEmpty ||
+      _notesController.text.trim().isNotEmpty ||
+      _estCostController.text.trim().isNotEmpty;
+
+  /// Back on a new job card with input asks before discarding it.
+  Future<void> _confirmLeave() async {
+    if (!_hasUnsavedInput) {
+      Navigator.pop(context);
+      return;
+    }
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tr('Discard this job card?')),
+        content: Text(tr('The complaints and items you added will be lost.')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(tr('Keep editing')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: ctx.palette.absent),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(tr('Discard')),
+          ),
+        ],
+      ),
+    );
+    if (leave == true && mounted) Navigator.pop(context);
+  }
 
   /// Items are only ever locked on the edit path (a billed job card); the
   /// create path has no originals to preserve, so the flag alone is not enough.
@@ -82,12 +125,14 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
     _promisedDate = provider.defaultPromisedDelivery();
     _kmController.text =
         widget.vehicle == null ? '' : groupDigits(widget.vehicle!.currentKm);
+    _kmPrefilled = widget.vehicle != null;
 
     // Edit mode: prefill everything from the job card being edited.
     final existing = widget.existing;
     if (existing != null) {
       _promisedDate = existing.promisedDeliveryDate;
       _kmController.text = groupDigits(existing.kmReading);
+      _kmPrefilled = true;
       _complaints.addAll(existing.customerComplaints);
       _selectedItems.addAll(existing.items.map((item) => item.copyWith()));
       _notesController.text = existing.supervisorNotes ?? '';
@@ -134,7 +179,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
       MaterialPageRoute(
         builder: (_) => AddMaintenanceScreen(
           initialItems: _selectedItems,
-          title: 'Add items',
+          title: tr('Add items'),
         ),
       ),
     );
@@ -174,13 +219,26 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
     }
   }
 
+  /// §7: a KM reading is required, but a blank field is tolerated when it was
+  /// legitimately prefilled from the vehicle/record (the save path falls back
+  /// to that prefill). Typed junk is always rejected.
+  String? _validateKm(String? value) {
+    final typed = parseGroupedInt(value ?? '');
+    if (typed != null && typed >= 0) return null;
+    if (_kmPrefilled && (value == null || value.trim().isEmpty)) return null;
+    return (value == null || value.trim().isEmpty)
+        ? tr('KM is required')
+        : tr('Enter a valid KM reading');
+  }
+
   Future<void> _saveJobCard() async {
     // Latch: a fast double-tap on Save must not create two job cards.
     if (_isSaving) return;
+    if (_formKey.currentState?.validate() == false) return;
     if (_complaints.isEmpty && _complaintController.text.trim().isEmpty) {
       showAppSnackBar(
         context,
-        'Please add at least one customer complaint or service requirement',
+        tr('Please add at least one customer complaint or service requirement'),
         type: SnackBarType.info,
       );
       return;
@@ -287,9 +345,15 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
     final Vehicle? vehicle =
         _isEditing ? provider.getVehicleById(widget.existing!.vehicleId) : widget.vehicle;
 
-    return Scaffold(
+    return PopScope(
+      // New job cards confirm before Back discards typed input.
+      canPop: _isEditing,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmLeave();
+      },
+      child: Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Job Card' : 'New Job Card',
+        title: Text(_isEditing ? tr('Edit Job Card') : tr('New Job Card'),
             style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
       body: Form(
@@ -323,7 +387,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            vehicle?.registrationNumber ?? 'Vehicle',
+                            vehicle?.registrationNumber ?? tr('Vehicle'),
                             style: GoogleFonts.poppins(
                               fontSize: AppText.title,
                               fontWeight: FontWeight.w700,
@@ -366,8 +430,9 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                       controller: _kmController,
                       inputFormatters: const [GroupedDigitsInputFormatter()],
                       keyboardType: TextInputType.number,
+                      validator: _validateKm,
                       decoration: InputDecoration(
-                        labelText: 'Current KM *',
+                        labelText: tr('Current KM *'),
                         prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
                       ),
                     ),
@@ -378,15 +443,15 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                       isExpanded: true,
                       initialValue: _fuelLevel,
                       decoration: InputDecoration(
-                        labelText: 'Fuel Gauge',
+                        labelText: tr('Fuel Gauge'),
                         prefixIcon: Icon(Icons.local_gas_station_rounded, color: palette.primary),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'Empty', child: Text('Empty / Reserve')),
-                        DropdownMenuItem(value: '1/4', child: Text('1/4 Tank')),
-                        DropdownMenuItem(value: '1/2', child: Text('1/2 Tank')),
-                        DropdownMenuItem(value: '3/4', child: Text('3/4 Tank')),
-                        DropdownMenuItem(value: 'Full', child: Text('Full Tank')),
+                      items: [
+                        DropdownMenuItem(value: 'Empty', child: Text(tr('Empty / Reserve'))),
+                        DropdownMenuItem(value: '1/4', child: Text(tr('1/4 Tank'))),
+                        DropdownMenuItem(value: '1/2', child: Text(tr('1/2 Tank'))),
+                        DropdownMenuItem(value: '3/4', child: Text(tr('3/4 Tank'))),
+                        DropdownMenuItem(value: 'Full', child: Text(tr('Full Tank'))),
                       ],
                       onChanged: (val) => setState(() => _fuelLevel = val ?? '1/2'),
                     ),
@@ -403,10 +468,10 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                       isExpanded: true,
                       initialValue: _assignedStaffId,
                       decoration: InputDecoration(
-                        labelText: 'Assign Mechanic',
+                        labelText: tr('Assign Mechanic'),
                         prefixIcon: Icon(Icons.person_pin_rounded, color: palette.primary),
                       ),
-                      hint: const Text('Select Mechanic'),
+                      hint: Text(tr('Select Mechanic')),
                       items: provider.staff
                           .where((s) => s.isActive)
                           .map((s) => DropdownMenuItem(
@@ -442,7 +507,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Promised Delivery Time',
+                              tr('Promised Delivery Time'),
                               style: GoogleFonts.poppins(
                                 fontSize: AppText.label,
                                 color: palette.textMuted,
@@ -467,7 +532,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
 
               // Customer Complaints / Demands
               Text(
-                'Customer Complaints & Voice',
+                tr('Customer Complaints & Voice'),
                 style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
@@ -500,12 +565,14 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     margin: const EdgeInsets.only(bottom: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: palette.primary.withOpacity(0.08),
+                      // Informational rows, not actions — near-black tint, not
+                      // brand red (§2 colour-usage ratio).
+                      color: palette.accent.withOpacity(0.06),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.arrow_right_rounded, color: palette.primary),
+                        Icon(Icons.arrow_right_rounded, color: palette.accent),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -529,7 +596,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Inspection & Vehicle Health Checklist',
+                      tr('Inspection & Vehicle Health Checklist'),
                       style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -543,7 +610,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                           _inspectionChecklist[key] = !allChecked;
                         }
                       }),
-                      child: Text(allChecked ? 'Clear all' : 'Check all'),
+                      child: Text(allChecked ? tr('Clear all') : tr('Check all')),
                     );
                   }),
                 ],
@@ -595,12 +662,12 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                   // the same explanatory tooltip as the detail screen.
                   Tooltip(
                     message: _itemsLocked
-                        ? 'Locked — already billed'
-                        : 'Add parts & labour items',
+                        ? tr('Locked — already billed')
+                        : tr('Add parts & labour items'),
                     child: TextButton.icon(
                       onPressed: _itemsLocked ? null : _openAddItems,
                       icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-                      label: const Text('Add Items'),
+                      label: Text(tr('Add Items')),
                     ),
                   ),
                 ],
@@ -614,12 +681,12 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                     child: ListTile(
                       dense: true,
                       title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                      subtitle: Text('${item.quantity} x ${CurrencyFormatter.format(item.unitPrice)}'
+                      subtitle: Text('${formatQuantity(item.quantity)} x ${CurrencyFormatter.format(item.unitPrice)}'
                           '${_itemsLocked ? '' : '  ·  tap to edit price'}'),
                       onTap: _itemsLocked ? null : () => _editSelectedItem(entry.key),
                       trailing: Text(
                         CurrencyFormatter.format(item.totalAmount),
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary),
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.textPrimary),
                       ),
                     ),
                   );
@@ -631,8 +698,8 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               TextFormField(
                 controller: _notesController,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Supervisor Diagnostic Remarks',
+                decoration: InputDecoration(
+                  labelText: tr('Supervisor Diagnostic Remarks'),
                   hintText: 'e.g. Scratches on front left bumper noted, spare wheel in trunk',
                 ),
               ),
@@ -642,7 +709,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
               TextFormField(
                 controller: _estCostController,
                 decoration: InputDecoration(
-                  labelText: 'Est. cost note (optional)',
+                  labelText: tr('Est. cost note (optional)'),
                   hintText: 'e.g. Approx 4,000 depending on parts availability',
                   prefixIcon: Icon(Icons.request_quote_rounded, color: palette.primary),
                 ),
@@ -655,7 +722,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _isSaving ? null : _saveJobCard,
                   icon: const Icon(Icons.check_circle_rounded),
-                  label: Text(_isEditing ? 'Save Changes' : 'Create & Issue Job Card'),
+                  label: Text(_isEditing ? tr('Save Changes') : tr('Create & Issue Job Card')),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -666,6 +733,7 @@ class _CreateJobCardScreenState extends State<CreateJobCardScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

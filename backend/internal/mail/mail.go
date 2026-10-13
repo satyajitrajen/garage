@@ -2,6 +2,7 @@ package mail
 
 import (
 	"fmt"
+	"log"
 	"net/smtp"
 )
 
@@ -26,4 +27,9 @@ func (s SMTPSender) Send(to, subject, body string) error {
 
 type LogSender struct{}
 
-func (LogSender) Send(to, subject, body string) error { return nil }
+// Send logs only the recipient and subject: the body can carry reset and
+// verification tokens, which must not end up in server logs.
+func (LogSender) Send(to, subject, body string) error {
+	log.Printf("mail (not sent, SMTP not configured): to=%s subject=%q", to, subject)
+	return nil
+}

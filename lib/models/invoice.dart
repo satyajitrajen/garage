@@ -1,5 +1,6 @@
 import 'maintenance_item.dart';
 import 'payment.dart';
+import '../l10n/app_language.dart';
 
 enum InvoiceStatus {
   paid,
@@ -12,13 +13,13 @@ extension InvoiceStatusExtension on InvoiceStatus {
   String get displayName {
     switch (this) {
       case InvoiceStatus.paid:
-        return 'Paid';
+        return tr('Paid');
       case InvoiceStatus.partial:
-        return 'Partially Paid';
+        return tr('Partially Paid');
       case InvoiceStatus.pending:
-        return 'Pending';
+        return tr('Pending');
       case InvoiceStatus.cancelled:
-        return 'Cancelled';
+        return tr('Cancelled');
     }
   }
 }

@@ -13,6 +13,9 @@ import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
+import '../../utils/permissions.dart';
+import '../../widgets/empty_state_widget.dart';
+import '../../widgets/permission_gate.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/subscription_banner.dart';
 import '../customers/customer_detail_screen.dart';
@@ -21,8 +24,12 @@ import '../invoices/invoice_preview_screen.dart';
 import '../invoices/invoices_list_screen.dart';
 import '../job_cards/job_card_detail_screen.dart';
 import '../job_cards/job_cards_list_screen.dart';
+import '../job_cards/start_job_screen.dart';
+import '../catalog/price_list_screen.dart';
+import '../settings/garage_settings_screen.dart';
 import '../workflow/quick_service_wizard.dart';
 import '../../utils/error_message.dart';
+import '../../l10n/app_language.dart';
 
 /// Home: find a car, start work, see what's on the floor and what's owed.
 class DashboardScreen extends StatefulWidget {
@@ -83,7 +90,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onRefresh: _refresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          padding: const EdgeInsets.fromLTRB(
+              AppDimens.paddingScreen, 4, AppDimens.paddingScreen, 24),
           children: [
             const SubscriptionBanner(),
             TextField(
@@ -91,12 +99,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onChanged: (v) => setState(() => _query = v.trim()),
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'Search plate, phone or name',
+                hintText: tr('Search plate, phone or name'),
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
-                        tooltip: 'Clear',
+                        tooltip: tr('Clear'),
                         icon: const Icon(Icons.close_rounded),
                         onPressed: () => setState(() {
                           _search.clear();
@@ -112,37 +120,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _push(
-                          const CustomersListScreen(isSelectionMode: true)),
-                      icon: const Icon(Icons.add_rounded, size: 18),
-                      label: const Text('New job card'),
+                    child: PermissionGate(
+                      permission: Permissions.jobcardsManage,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _push(const StartJobScreen()),
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: Text(tr('New job card')),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _push(const QuickServiceWizard()),
-                      icon: const Icon(Icons.receipt_long_outlined, size: 18),
-                      label: const Text('Quick bill'),
+                    child: PermissionGate(
+                      permission: Permissions.invoicesManage,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _push(const QuickServiceWizard()),
+                        icon: const Icon(Icons.receipt_long_outlined, size: 18),
+                        label: Text(tr('Quick bill')),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
+              _SetupCard(provider: provider, push: _push),
               _MoneyToday(provider: provider),
               const SizedBox(height: 24),
               _SectionTitle(
-                'In the workshop',
+                tr('In the workshop'),
                 count: provider.activeJobCards.length,
-                action: 'All jobs',
+                action: tr('All jobs'),
                 onAction: () => _push(const JobCardsListScreen()),
               ),
               _workshopList(provider, palette),
               const SizedBox(height: 24),
               _SectionTitle(
-                'Recent bills',
-                action: 'All bills',
+                tr('Recent bills'),
+                action: tr('All bills'),
                 onAction: () => _push(const InvoicesListScreen()),
               ),
               _billsList(provider, palette),
@@ -171,16 +185,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 32),
-          child: Column(
-            children: [
-              Text('No match for "$_query"',
-                  style: GoogleFonts.poppins(color: palette.textSecondary)),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () => _push(const CustomersListScreen()),
-                child: const Text('Add a customer'),
-              ),
-            ],
+          child: EmptyStateWidget(
+            icon: Icons.search_off_rounded,
+            title: 'No results found for "$_query"',
+            description: tr('Try a different plate, phone number or name.'),
+            buttonText: tr('Add a customer'),
+            onButtonPressed: () => _push(const CustomersListScreen()),
           ),
         ),
       ];
@@ -211,7 +221,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final jobs = provider.activeJobCards
       ..sort((a, b) => a.promisedDeliveryDate.compareTo(b.promisedDeliveryDate));
     if (jobs.isEmpty) {
-      return const _Empty('No vehicles in the workshop.');
+      return _Empty(tr('No vehicles in the workshop.'));
     }
     return _Group(children: [
       for (final jc in jobs.take(5)) _jobRow(jc, provider, palette),
@@ -237,7 +247,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 : 'Due ${AppDateFormatter.formatRelative(jc.promisedDeliveryDate)}',
             style: GoogleFonts.poppins(
               fontSize: AppText.label,
-              color: late ? palette.absent : palette.textMuted,
+              color: late ? palette.pending : palette.textMuted,
               fontWeight: late ? FontWeight.w600 : FontWeight.w400,
             ),
           ),
@@ -249,7 +259,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _billsList(GarageProvider provider, AppPalette palette) {
     final bills = provider.recentInvoices.take(4).toList();
-    if (bills.isEmpty) return const _Empty('No bills yet.');
+    if (bills.isEmpty) return _Empty(tr('No bills yet.'));
     return _Group(children: [
       for (final inv in bills)
         _Row(
@@ -263,11 +273,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Text(CurrencyFormatter.format(inv.grandTotal),
                   style: GoogleFonts.poppins(
-                      fontSize: AppText.body, fontWeight: FontWeight.w600)),
+                      fontSize: AppText.subtitle,
+                      fontWeight: FontWeight.w600)),
               Text(
                 switch (inv.status) {
-                  InvoiceStatus.paid => 'Paid',
-                  InvoiceStatus.cancelled => 'Cancelled',
+                  InvoiceStatus.paid => tr('Paid'),
+                  InvoiceStatus.cancelled => tr('Cancelled'),
                   _ => '${CurrencyFormatter.format(inv.balanceDue)} due',
                 },
                 style: GoogleFonts.poppins(
@@ -287,6 +298,102 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
+/// First-run guide: three steps that make the garage ready to bill. Each
+/// ticks itself off from real data and the card disappears once all are done.
+class _SetupCard extends StatelessWidget {
+  const _SetupCard({required this.provider, required this.push});
+  final GarageProvider provider;
+  final void Function(Widget) push;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final p = provider.profile;
+    final steps = [
+      (
+        tr('Add your garage details'),
+        tr('Address and GSTIN print on every bill'),
+        p.addressLine.trim().isNotEmpty || p.gstin.trim().isNotEmpty,
+        const GarageSettingsScreen() as Widget,
+      ),
+      (
+        tr('Add your common parts and labour'),
+        tr('Save prices once, add them to any job in a tap'),
+        provider.catalog.isNotEmpty,
+        const PriceListScreen() as Widget,
+      ),
+      (
+        tr('Open your first job'),
+        "Start with the car's registration number",
+        provider.jobCards.isNotEmpty,
+        const StartJobScreen() as Widget,
+      ),
+    ];
+    final done = steps.where((s) => s.$3).length;
+    if (done == steps.length) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+        decoration: BoxDecoration(
+          color: palette.card,
+          borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+          border: Border.all(color: palette.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(tr('Get set up'),
+                      style: GoogleFonts.poppins(
+                          fontSize: AppText.subtitle,
+                          fontWeight: FontWeight.w600,
+                          color: palette.textPrimary)),
+                ),
+                Text('$done of ${steps.length} done',
+                    style: GoogleFonts.poppins(
+                        fontSize: AppText.label, color: palette.textSecondary)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: done / steps.length,
+                minHeight: 6,
+                backgroundColor: palette.border,
+                color: palette.paid,
+              ),
+            ),
+            const SizedBox(height: 4),
+            for (final s in steps)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  s.$3 ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                  color: s.$3 ? palette.paid : palette.textSecondary,
+                ),
+                title: Text(s.$1,
+                    style: GoogleFonts.poppins(
+                      fontSize: AppText.body,
+                      fontWeight: FontWeight.w600,
+                      color: s.$3 ? palette.textSecondary : palette.textPrimary,
+                      decoration: s.$3 ? TextDecoration.lineThrough : null,
+                    )),
+                subtitle: s.$3 ? null : Text(s.$2),
+                trailing: s.$3 ? null : const Icon(Icons.chevron_right_rounded),
+                onTap: s.$3 ? null : () => push(s.$4),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Today's money in three plain figures. Tapping "Due" opens the bills list.
 class _MoneyToday extends StatelessWidget {
   const _MoneyToday({required this.provider});
@@ -299,7 +406,7 @@ class _MoneyToday extends StatelessWidget {
         Expanded(
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Column(
@@ -314,7 +421,7 @@ class _MoneyToday extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: Text(CurrencyFormatter.format(value),
                         style: GoogleFonts.poppins(
-                            fontSize: AppText.title,
+                            fontSize: AppText.headline,
                             fontWeight: FontWeight.w600,
                             color: color)),
                   ),
@@ -324,7 +431,7 @@ class _MoneyToday extends StatelessWidget {
           ),
         );
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppDimens.paddingCard),
       decoration: BoxDecoration(
         color: palette.surface,
         borderRadius: BorderRadius.circular(AppDimens.radiusCard),
@@ -332,10 +439,10 @@ class _MoneyToday extends StatelessWidget {
       ),
       child: Row(
         children: [
-          figure('Collected today', provider.todayCollection, palette.textPrimary),
-          figure('Spent today', provider.todayExpenses, palette.textPrimary),
+          figure(tr('Collected today'), provider.todayCollection, palette.textPrimary),
+          figure(tr('Spent today'), provider.todayExpenses, palette.textPrimary),
           figure(
-            'Due from customers',
+            tr('Due from customers'),
             provider.totalPendingPayments,
             provider.totalPendingPayments > 0 ? palette.pending : palette.textPrimary,
             onTap: () => Navigator.push(context,
@@ -401,7 +508,9 @@ class _Group extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) Divider(height: 1, indent: 14, color: palette.divider),
+            if (i > 0)
+              Divider(
+                  height: 1, indent: AppDimens.paddingCard, color: palette.divider),
             children[i],
           ],
         ],
@@ -423,7 +532,8 @@ class _Row extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppDimens.paddingCard, vertical: 12),
         child: Row(
           children: [
             Expanded(
@@ -479,6 +589,7 @@ class _Empty extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Text(text,
-            style: GoogleFonts.poppins(color: context.palette.textMuted)),
+            style: GoogleFonts.poppins(
+                fontSize: AppText.body, color: context.palette.textMuted)),
       );
 }

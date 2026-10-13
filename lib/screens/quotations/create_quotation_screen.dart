@@ -19,6 +19,7 @@ import 'quotation_detail_screen.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
 import '../../utils/grouped_number.dart';
+import '../../l10n/app_language.dart';
 
 class CreateQuotationScreen extends StatefulWidget {
   final Customer customer;
@@ -62,6 +63,24 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
   bool _validityChanged = false;
 
   bool get _isEditing => widget.existing != null;
+
+  /// §7 validators. The KM field is always prefilled from the vehicle (or the
+  /// edited estimate) and save falls back to that prefill, so a cleared field
+  /// is legitimate — only typed junk is rejected.
+  String? _validateKm(String? value) {
+    final typed = parseGroupedInt(value ?? '');
+    if (typed != null && typed >= 0) return null;
+    if (value == null || value.trim().isEmpty) return null;
+    return tr('Enter a valid KM reading');
+  }
+
+  /// Optional field: blank means no discount; non-numeric text must not
+  /// silently save as 0 (§7).
+  String? _validateDiscount(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return null;
+    return double.tryParse(text) == null ? tr('Invalid amount') : null;
+  }
 
   @override
   void initState() {
@@ -109,7 +128,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       MaterialPageRoute(
         builder: (_) => AddMaintenanceScreen(
           initialItems: _items,
-          title: 'Add items',
+          title: tr('Add items'),
         ),
       ),
     );
@@ -126,10 +145,11 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
   Future<void> _saveQuotation() async {
     // Latch: a fast double-tap on Save must not create two quotations.
     if (_isSaving) return;
+    if (_formKey.currentState?.validate() == false) return;
     if (_items.isEmpty) {
       showAppSnackBar(
         context,
-        'Please add at least one service or spare part item',
+        tr('Please add at least one work item or spare part'),
         type: SnackBarType.info,
       );
       return;
@@ -281,7 +301,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing ? 'Edit Estimate' : 'New Estimate',
+          _isEditing ? tr('Edit Estimate') : tr('New Estimate'),
           style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
       ),
@@ -361,18 +381,18 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                   ElevatedButton.icon(
                     onPressed: _openAddItems,
                     icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('Add Items'),
+                    label: Text(tr('Add Items')),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
 
               if (_items.isEmpty)
-                const EmptyStateWidget(
+                EmptyStateWidget(
                   icon: Icons.add_shopping_cart_rounded,
-                  title: 'No services or parts added yet',
+                  title: tr('No services or parts added yet'),
                   description:
-                      'Tap "+ Add Items" to pick from catalogue or add custom items',
+                      tr('Tap "+ Add Items" to pick from catalogue or add custom items'),
                 )
               else
                 ..._items.map((item) {
@@ -390,7 +410,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                         CurrencyFormatter.format(item.totalAmount),
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w700,
-                          color: palette.primary,
+                          color: palette.textPrimary,
                         ),
                       ),
                     ),
@@ -405,8 +425,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     child: DropdownButtonFormField<int>(
                       isExpanded: true,
                       initialValue: _validityDays,
-                      decoration: const InputDecoration(
-                        labelText: 'Quote Validity',
+                      decoration: InputDecoration(
+                        labelText: tr('Quote Validity'),
                       ),
                       items: validityOptions
                           .map(
@@ -433,7 +453,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     child: DropdownButtonFormField<double>(
                       isExpanded: true,
                       initialValue: _taxPercent,
-                      decoration: const InputDecoration(labelText: 'Tax Rate'),
+                      decoration: InputDecoration(labelText: tr('Tax Rate')),
                       items: taxOptions.map((rate) {
                         return DropdownMenuItem(
                           value: rate,
@@ -462,9 +482,10 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _discountController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Discount (₹)',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      validator: _validateDiscount,
+                      decoration: InputDecoration(
+                        labelText: tr('Discount (₹)'),
                         prefixIcon: Icon(Icons.discount_outlined),
                       ),
                       onChanged: (_) => setState(() {}),
@@ -476,8 +497,9 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                       controller: _kmController,
                       inputFormatters: const [GroupedDigitsInputFormatter()],
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'KM Reading',
+                      validator: _validateKm,
+                      decoration: InputDecoration(
+                        labelText: tr('KM Reading'),
                         prefixIcon: Icon(Icons.speed_rounded),
                       ),
                     ),
@@ -490,8 +512,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
               TextFormField(
                 controller: _notesController,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Estimate notes / terms',
+                decoration: InputDecoration(
+                  labelText: tr('Estimate notes / terms'),
                   hintText:
                       'e.g. Price valid for genuine OEM parts. Labour included.',
                 ),
@@ -509,20 +531,20 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 child: Column(
                   children: [
                     _buildSummaryRow(
-                      'Parts',
+                      tr('Parts'),
                       CurrencyFormatter.format(partsSubtotal),
                       palette,
                     ),
                     const SizedBox(height: 6),
                     _buildSummaryRow(
-                      'Labour',
+                      tr('Labour'),
                       CurrencyFormatter.format(labourSubtotal),
                       palette,
                     ),
                     const SizedBox(height: 6),
                     if (discount > 0) ...[
                       _buildSummaryRow(
-                        'Discount:',
+                        tr('Discount:'),
                         '- ${CurrencyFormatter.format(discount)}',
                         palette,
                         color: palette.paid,
@@ -543,7 +565,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'Estimated Total:',
+                            tr('Estimated Total:'),
                             style: GoogleFonts.poppins(
                               fontSize: AppText.title,
                               fontWeight: FontWeight.w700,
@@ -558,7 +580,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                             style: GoogleFonts.poppins(
                               fontSize: AppText.headline,
                               fontWeight: FontWeight.w700,
-                              color: palette.primary,
+                              color: palette.textPrimary,
                             ),
                           ),
                         ),
@@ -573,10 +595,10 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _saveQuotation,
+                  onPressed: _isSaving ? null : _saveQuotation,
                   icon: const Icon(Icons.check_circle_outline_rounded),
                   label: Text(
-                    _isEditing ? 'Save Changes' : 'Save Estimate',
+                    _isEditing ? tr('Save Changes') : tr('Save Estimate'),
                   ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),

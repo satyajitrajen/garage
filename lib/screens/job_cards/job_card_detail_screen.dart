@@ -16,6 +16,11 @@ import '../invoices/invoice_preview_screen.dart';
 import 'create_job_card_screen.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
+import '../../utils/permissions.dart';
+import '../../widgets/empty_state_widget.dart';
+import '../../widgets/permission_gate.dart';
+import '../../utils/grouped_number.dart';
+import '../../l10n/app_language.dart';
 
 class JobCardDetailScreen extends StatefulWidget {
   final String jobCardId;
@@ -27,6 +32,10 @@ class JobCardDetailScreen extends StatefulWidget {
 }
 
 class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
+  /// Double-submit latch: a second tap while the bill is being created must
+  /// not open (or create) a second invoice.
+  bool _isGeneratingInvoice = false;
+
   /// A delivered or cancelled job card is closed: no more edits or item
   /// changes are allowed on it.
   bool _isJobActive(JobCard jobCard) =>
@@ -51,14 +60,54 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
   }
 
   Future<void> _removeItem(JobCard jobCard, MaintenanceItem item) async {
-    final provider = Provider.of<GarageProvider>(context, listen: false);
-    await provider.removeItemFromJobCard(jobCard.id, item.id);
-    if (!mounted) return;
-    showAppSnackBar(
-      context,
-      'Removed "${item.name}" from this job card',
-      type: SnackBarType.success,
+    // Destructive: name the line being dropped before it disappears from the
+    // totals. Destructive, so the confirm button is red.
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final palette = ctx.palette;
+        return AlertDialog(
+          title: Text(tr('Remove Item?')),
+          content: Text(
+              'Remove "${item.name}" from this job card? Its amount will be dropped from the totals.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(tr('Cancel')),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: palette.absent,
+                foregroundColor: palette.onPrimary,
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(tr('Remove')),
+            ),
+          ],
+        );
+      },
     );
+    if (confirmed != true || !mounted) return;
+
+    final provider = Provider.of<GarageProvider>(context, listen: false);
+    try {
+      await provider.removeItemFromJobCard(jobCard.id, item.id);
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        'Removed "${item.name}" from this job card',
+        type: SnackBarType.success,
+      );
+    } catch (e) {
+      // API-path failures (network, 402, lock) must surface as feedback, not
+      // as an unhandled async error that leaves the row seemingly removed.
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        errorMessage(e),
+        type: SnackBarType.error,
+      );
+    }
   }
 
   Future<void> _editWorkItems(JobCard jobCard) async {
@@ -67,7 +116,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
       MaterialPageRoute(
         builder: (_) => AddMaintenanceScreen(
           initialItems: jobCard.items,
-          title: 'Edit Job Card Items',
+          title: tr('Edit Job Card Items'),
         ),
       ),
     );
@@ -80,7 +129,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
     if (fresh == null || !_isJobActive(fresh)) {
       showAppSnackBar(
         context,
-        'This job card is closed; its work items can no longer be changed',
+        tr('This job card is closed; its work items can no longer be changed'),
         type: SnackBarType.info,
       );
       return;
@@ -138,11 +187,11 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
   /// The single forward action for the current status, or null when the
   /// job is closed.
   (String, JobStatus)? _nextStep(JobStatus status) => switch (status) {
-        JobStatus.received => ('Start inspection', JobStatus.inspection),
-        JobStatus.inspection => ('Start work', JobStatus.inProgress),
-        JobStatus.inProgress => ('Mark ready', JobStatus.readyForDelivery),
-        JobStatus.waitingParts => ('Parts arrived — resume work', JobStatus.inProgress),
-        JobStatus.readyForDelivery => ('Mark delivered', JobStatus.delivered),
+        JobStatus.received => (tr('Start inspection'), JobStatus.inspection),
+        JobStatus.inspection => (tr('Start work'), JobStatus.inProgress),
+        JobStatus.inProgress => (tr('Mark ready'), JobStatus.readyForDelivery),
+        JobStatus.waitingParts => (tr('Parts arrived — resume work'), JobStatus.inProgress),
+        JobStatus.readyForDelivery => (tr('Mark delivered'), JobStatus.delivered),
         JobStatus.delivered || JobStatus.cancelled => null,
       };
 
@@ -208,9 +257,13 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   ),
                 ),
               ),
-              TextButton(
-                onPressed: () => _pickStatus(jobCard),
-                child: const Text('Change status'),
+              // Write action — hidden from staff without jobcards.manage.
+              PermissionGate(
+                permission: Permissions.jobcardsManage,
+                child: TextButton(
+                  onPressed: () => _pickStatus(jobCard),
+                  child: Text(tr('Change status')),
+                ),
               ),
             ],
           ),
@@ -224,7 +277,9 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     child: Container(
                       height: 6,
                       decoration: BoxDecoration(
-                        color: i <= stageIndex ? palette.primary : palette.border,
+                        // Progress through the stages is informational —
+                        // near-black, not brand red (§2).
+                        color: i <= stageIndex ? palette.accent : palette.border,
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -247,12 +302,16 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
           ],
           if (next != null) ...[
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _changeStatus(jobCard, next.$2),
-                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: Text(next.$1),
+            // Write action — hidden from staff without jobcards.manage.
+            PermissionGate(
+              permission: Permissions.jobcardsManage,
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _changeStatus(jobCard, next.$2),
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  label: Text(next.$1),
+                ),
               ),
             ),
           ],
@@ -262,15 +321,18 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
   }
 
   Future<void> _generateInvoice(JobCard jobCard) async {
+    if (_isGeneratingInvoice) return;
+    if (!ensurePermission(context, Permissions.invoicesManage)) return;
     final provider = Provider.of<GarageProvider>(context, listen: false);
     if (jobCard.items.isEmpty) {
       showAppSnackBar(
         context,
-        'Add at least one work item before invoicing this job card',
+        tr('Add at least one work item before invoicing this job card'),
         type: SnackBarType.error,
       );
       return;
     }
+    setState(() => _isGeneratingInvoice = true);
     final existingInvoice = provider.invoices.where((inv) => inv.jobCardId == jobCard.id).firstOrNull;
     try {
       final invoice = existingInvoice ?? await provider.createInvoiceFromJobCard(jobCard);
@@ -290,6 +352,8 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
         errorMessage(e),
         type: SnackBarType.error,
       );
+    } finally {
+      if (mounted) setState(() => _isGeneratingInvoice = false);
     }
   }
 
@@ -300,8 +364,14 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
 
     if (jobCard == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Job Card Details')),
-        body: const Center(child: Text('Job card not found')),
+        appBar: AppBar(title: Text(tr('Job Card Details'))),
+        body: EmptyStateWidget(
+          icon: Icons.assignment_outlined,
+          title: tr('Job card not found'),
+          description: tr('This job card may have been removed.'),
+          buttonText: tr('Go back'),
+          onButtonPressed: () => Navigator.of(context).maybePop(),
+        ),
       );
     }
 
@@ -331,18 +401,68 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
         ),
         actions: [
           if (_isJobActive(jobCard))
-            IconButton(
-              tooltip: 'Edit job card',
-              // Same lock as the list-level item controls: once the job is
-              // billed, the editor must not be able to rewrite its items.
-              onPressed: () => _editJobCard(
-                jobCard,
-                itemsLocked: existingInvoice != null,
+            PermissionGate(
+              permission: Permissions.jobcardsManage,
+              child: IconButton(
+                tooltip: tr('Edit job card'),
+                // Same lock as the list-level item controls: once the job is
+                // billed, the editor must not be able to rewrite its items.
+                onPressed: () => _editJobCard(
+                  jobCard,
+                  itemsLocked: existingInvoice != null,
+                ),
+                icon: const Icon(Icons.edit_rounded),
               ),
-              icon: const Icon(Icons.edit_rounded),
             ),
           const SizedBox(width: 4),
         ],
+      ),
+      // The bill action stays pinned at the bottom so it's reachable without
+      // scrolling past the items and inspection.
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: existingInvoice != null
+              ? SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => InvoicePreviewScreen(invoiceId: existingInvoice.id),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.receipt_rounded),
+                  label: Text('View Bill #${existingInvoice.invoiceNumber}'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: palette.primary,
+                    foregroundColor: palette.onPrimary,
+                  ),
+                ),
+              )
+              : // Creating a bill is a write action — hidden from staff without
+              // invoices.manage (and re-checked in _generateInvoice).
+              PermissionGate(
+                permission: Permissions.invoicesManage,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed:
+                        _isGeneratingInvoice ? null : () => _generateInvoice(jobCard),
+                    icon: const Icon(Icons.receipt_long_rounded),
+                    label: Text(tr('Create Bill')),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: palette.primary,
+                      foregroundColor: palette.onPrimary,
+                    ),
+                  ),
+                ),
+              ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -373,7 +493,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          vehicle?.registrationNumber ?? 'Vehicle',
+                          vehicle?.registrationNumber ?? tr('Vehicle'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.poppins(
@@ -395,7 +515,8 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                           style: GoogleFonts.poppins(
                             fontSize: AppText.label,
                             fontWeight: FontWeight.w600,
-                            color: palette.primary,
+                            // Informational chip — muted, not brand red (§2).
+                            color: palette.textSecondary,
                           ),
                         ),
                       ),
@@ -412,11 +533,11 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Flexible(child: _buildInfoColumn('Odometer', '${jobCard.kmReading} KM')),
+                      Flexible(child: _buildInfoColumn(tr('Odometer'), '${groupDigits(jobCard.kmReading)} km')),
                       const SizedBox(width: 8),
-                      Flexible(child: _buildInfoColumn('Fuel Level', jobCard.fuelLevel)),
+                      Flexible(child: _buildInfoColumn(tr('Fuel Level'), jobCard.fuelLevel)),
                       const SizedBox(width: 8),
-                      Flexible(child: _buildInfoColumn('Mechanic', staff?.name ?? 'Unassigned')),
+                      Flexible(child: _buildInfoColumn(tr('Mechanic'), staff?.name ?? tr('Unassigned'))),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -441,7 +562,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            '${late ? 'Late — promised' : 'Promised'}: ${AppDateFormatter.formatDateTime(jobCard.promisedDeliveryDate)}',
+                            '${late ? tr('Late — promised') : tr('Promised')}: ${AppDateFormatter.formatDateTime(jobCard.promisedDeliveryDate)}',
                             style: GoogleFonts.poppins(
                               fontSize: AppText.caption,
                               fontWeight: FontWeight.w600,
@@ -514,7 +635,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Complaints',
+                    tr('Complaints'),
                     style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 10),
@@ -558,7 +679,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     collapsedBackgroundColor: palette.card,
                     tilePadding: const EdgeInsets.symmetric(horizontal: 16),
                     childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    title: Text('Inspection',
+                    title: Text(tr('Inspection'),
                         style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600)),
                     trailing: Text(
                       '${jobCard.inspectionChecklist.values.where((v) => v).length} of '
@@ -609,7 +730,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Notes',
+                      tr('Notes'),
                       style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
@@ -623,6 +744,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
             ],
 
             // Work Items & Spare Parts Table
+            const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -640,23 +762,26 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          'Parts & labour',
+                          tr('Parts & labour'),
                           style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
                         ),
                       ),
                       // A billed job locks its items so they can no longer
                       // diverge from the invoice; the disabled button carries
-                      // an explanatory tooltip.
-                      Tooltip(
-                        message: itemsLocked
-                            ? 'Locked — already billed'
-                            : 'Edit the work items on this job card',
-                        child: TextButton.icon(
-                          onPressed: itemsLocked || !_isJobActive(jobCard)
-                              ? null
-                              : () => _editWorkItems(jobCard),
-                          icon: const Icon(Icons.edit_note_rounded, size: 18),
-                          label: const Text('Edit items'),
+                      // an explanatory tooltip. Write action — gated.
+                      PermissionGate(
+                        permission: Permissions.jobcardsManage,
+                        child: Tooltip(
+                          message: itemsLocked
+                              ? tr('Locked — already billed')
+                              : tr('Edit the work items on this job card'),
+                          child: TextButton.icon(
+                            onPressed: itemsLocked || !_isJobActive(jobCard)
+                                ? null
+                                : () => _editWorkItems(jobCard),
+                            icon: const Icon(Icons.edit_note_rounded, size: 18),
+                            label: Text(tr('Edit items')),
+                          ),
                         ),
                       ),
                     ],
@@ -665,7 +790,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     const SizedBox(height: 12),
                     Center(
                       child: Text(
-                        'No parts or labour yet. Tap Edit items to add them.',
+                        tr('No parts or labour yet. Tap Edit items to add them.'),
                         style: GoogleFonts.poppins(color: palette.textMuted, fontSize: AppText.caption),
                         textAlign: TextAlign.center,
                       ),
@@ -674,7 +799,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                   ] else ...[
                     const Divider(),
                     ...jobCard.items.map((item) {
-                      return Padding(
+                      final row = Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Row(
                           children: [
@@ -705,29 +830,41 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                                 color: palette.textPrimary,
                               ),
                             ),
-                            if (_isJobActive(jobCard)) ...[
-                              const SizedBox(width: 4),
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                tooltip: itemsLocked ? 'Locked — already billed' : 'Remove item',
-                                onPressed: itemsLocked ? null : () => _removeItem(jobCard, item),
-                                icon: Icon(
-                                  Icons.delete_outline_rounded,
-                                  size: 20,
-                                  color: itemsLocked ? palette.textMuted : palette.pending,
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                       );
+                      // Swipe left to remove (with confirmation), instead of
+                      // a delete icon on every line. Billed jobs are locked.
+                      if (!_isJobActive(jobCard) || itemsLocked) return row;
+                      return Dismissible(
+                        key: ValueKey('item-${item.id}'),
+                        direction: DismissDirection.endToStart,
+                        confirmDismiss: (_) async {
+                          await _removeItem(jobCard, item);
+                          // The provider rebuilds the list once it's gone.
+                          return false;
+                        },
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 16),
+                          color: palette.absent,
+                          child: Icon(Icons.delete_outline_rounded, color: palette.onPrimary),
+                        ),
+                        child: row,
+                      );
                     }),
+                    if (_isJobActive(jobCard) && !itemsLocked)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(tr('Swipe an item left to remove it'),
+                            style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
+                      ),
                     const Divider(),
                     const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('Parts', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary))),
+                        Expanded(child: Text(tr('Parts'), style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary))),
                         const SizedBox(width: 8),
                         Text(CurrencyFormatter.format(jobCard.partsTotal), style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600)),
                       ],
@@ -736,7 +873,7 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('Labour', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary))),
+                        Expanded(child: Text(tr('Labour'), style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary))),
                         const SizedBox(width: 8),
                         Text(CurrencyFormatter.format(jobCard.labourTotal), style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600)),
                       ],
@@ -745,11 +882,11 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: Text('Total', style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700))),
+                        Expanded(child: Text(tr('Total'), style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700))),
                         const SizedBox(width: 8),
                         Text(
                           CurrencyFormatter.format(jobCard.grandTotal),
-                          style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.primary),
+                          style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.textPrimary),
                         ),
                       ],
                     ),
@@ -758,44 +895,6 @@ class _JobCardDetailScreenState extends State<JobCardDetailScreen> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Primary Action: View or Convert to Invoice
-            if (existingInvoice != null)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => InvoicePreviewScreen(invoiceId: existingInvoice.id),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.receipt_rounded),
-                  label: Text('View Bill #${existingInvoice.invoiceNumber}'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: palette.primary,
-                    foregroundColor: palette.onPrimary,
-                  ),
-                ),
-              )
-            else
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _generateInvoice(jobCard),
-                  icon: const Icon(Icons.receipt_long_rounded),
-                  label: const Text('Create Bill'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: palette.paid,
-                    foregroundColor: palette.onPrimary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 80),
             ],
           ),
         ),

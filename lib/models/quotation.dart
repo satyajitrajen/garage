@@ -1,4 +1,5 @@
 import 'maintenance_item.dart';
+import '../l10n/app_language.dart';
 
 enum QuotationStatus {
   draft,
@@ -12,15 +13,15 @@ extension QuotationStatusExtension on QuotationStatus {
   String get displayName {
     switch (this) {
       case QuotationStatus.draft:
-        return 'Draft';
+        return tr('Draft');
       case QuotationStatus.sent:
-        return 'Sent to Customer';
+        return tr('Sent to Customer');
       case QuotationStatus.approved:
-        return 'Customer Approved';
+        return tr('Customer Approved');
       case QuotationStatus.converted:
-        return 'Converted to Job';
+        return tr('Converted to Job');
       case QuotationStatus.rejected:
-        return 'Declined';
+        return tr('Declined');
     }
   }
 }

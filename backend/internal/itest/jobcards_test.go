@@ -253,3 +253,30 @@ func TestJobCardValidationAndTenancy(t *testing.T) {
 		t.Fatalf("B update A's job card: %d", status)
 	}
 }
+
+// Server-assigned numbers must skip numbers already stored explicitly, or
+// a garage with imported/client-numbered job cards can never create one.
+func TestJobCardServerNumberSkipsExisting(t *testing.T) {
+	truncate(t)
+	owner := registerOwner(t, "jcnum")
+	garageID := owner.Memberships[0].GarageID
+	_, _, customer := createCustomer(t, owner.AccessToken, garageID, customerBody("NumCustomer"))
+	vehicle := createVehicleFor(t, owner.AccessToken, garageID, customer.ID)
+
+	for _, n := range []string{"JC-1001", "JC-1002", "JC-1003"} {
+		if status, data, _ := createJobCard(t, owner.AccessToken, garageID, jobCardBody(n, customer.ID, vehicle.ID)); status != 201 {
+			t.Fatalf("create %s: status %d body %s", n, status, data)
+		}
+	}
+	status, data, jc := createJobCard(t, owner.AccessToken, garageID, jobCardBody("", customer.ID, vehicle.ID))
+	if status != 201 {
+		t.Fatalf("server-numbered create: status %d body %s", status, data)
+	}
+	if jc.JobCardNumber != "JC-1004" {
+		t.Fatalf("number = %s, want JC-1004", jc.JobCardNumber)
+	}
+	status, data, jc = createJobCard(t, owner.AccessToken, garageID, jobCardBody("", customer.ID, vehicle.ID))
+	if status != 201 || jc.JobCardNumber != "JC-1005" {
+		t.Fatalf("second: status %d number %s body %s", status, jc.JobCardNumber, data)
+	}
+}

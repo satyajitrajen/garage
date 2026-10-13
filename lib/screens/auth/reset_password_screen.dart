@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 
 import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_dimens.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/error_message.dart';
+import '../../l10n/app_language.dart';
 
 /// Logged-out reset step: exchange the emailed token for a new password.
 /// Resetting revokes all sessions server-side.
@@ -46,14 +48,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           .read<AuthProvider>()
           .reset(token: _token.text, password: _password.text);
       if (!mounted) return;
-      showAppSnackBar(context, 'Password updated. Please sign in.');
+      showAppSnackBar(context, tr('Password updated. Please sign in.'),
+          type: SnackBarType.success);
       Navigator.popUntil(context, (r) => r.isFirst);
     } on ApiException catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Reset failed. Please try again.',
+      showAppSnackBar(context, tr('Reset failed. Please try again.'),
           type: SnackBarType.error);
     }
   }
@@ -62,11 +65,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Set new password')),
+      appBar: AppBar(title: Text(tr('Set new password'))),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppDimens.paddingScreen, vertical: 16),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
@@ -74,15 +78,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Choose a new password',
+                    Text(tr('Choose a new password'),
                         style: GoogleFonts.poppins(
                             fontSize: AppText.title,
                             fontWeight: FontWeight.w700)),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _token,
-                      decoration: const InputDecoration(
-                        labelText: 'Reset token',
+                      decoration: InputDecoration(
+                        labelText: tr('Reset token'),
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.key_outlined),
                       ),
@@ -94,7 +98,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       controller: _password,
                       obscureText: _obscure,
                       decoration: InputDecoration(
-                        labelText: 'New password (min 8)',
+                        labelText: tr('New password (min 8)'),
                         border: const OutlineInputBorder(),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
@@ -106,13 +110,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                       ),
                       validator: (v) => (v ?? '').length < 8
-                          ? 'Minimum 8 characters'
+                          ? tr('Minimum 8 characters')
                           : null,
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: auth.isBusy ? null : _submit,
-                      child: const Text('Update password'),
+                      child: Text(tr('Update password')),
                     ),
                   ],
                 ),

@@ -17,6 +17,7 @@ import '../customers/customers_list_screen.dart';
 import '../vehicles/vehicle_selection_screen.dart';
 import 'invoice_preview_screen.dart';
 import '../../theme/app_text.dart';
+import '../../l10n/app_language.dart';
 
 class InvoicesListScreen extends StatefulWidget {
   const InvoicesListScreen({super.key});
@@ -72,12 +73,17 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
     final totalInvoiced = provider.invoices
         .where((inv) => inv.status != InvoiceStatus.cancelled)
         .fold(0.0, (sum, inv) => sum + inv.grandTotal);
-    final totalCollected = provider.invoices.fold(0.0, (sum, inv) => sum + inv.totalPaidAmount);
+    // Cancelled invoices are excluded here just like from the billed total —
+    // money collected on a voided bill must not count toward the KPI, or
+    // Collected could exceed Billed.
+    final totalCollected = provider.invoices
+        .where((inv) => inv.status != InvoiceStatus.cancelled)
+        .fold(0.0, (sum, inv) => sum + inv.totalPaidAmount);
     final totalPending = provider.totalPendingPayments;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bills', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(tr('Bills'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
       // Empty list: its empty state already has the Add button.
       floatingActionButton: provider.invoices.isEmpty ? null : PermissionGate(
@@ -85,7 +91,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
         child: GradientFloatingActionButton(
         onPressed: _createNewInvoice,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('New Bill'),
+        label: Text(tr('New Bill')),
       ),
       ),
       body: Column(
@@ -98,9 +104,9 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             color: palette.cardAlt,
             child: Row(
               children: [
-                _buildKpiItem('Billed', CurrencyFormatter.format(totalInvoiced), null),
-                _buildKpiItem('Collected', CurrencyFormatter.format(totalCollected), null),
-                _buildKpiItem('Due', CurrencyFormatter.format(totalPending),
+                _buildKpiItem(tr('Billed'), CurrencyFormatter.format(totalInvoiced), null),
+                _buildKpiItem(tr('Collected'), CurrencyFormatter.format(totalCollected), null),
+                _buildKpiItem(tr('Due'), CurrencyFormatter.format(totalPending),
                     totalPending > 0 ? palette.pending : null),
               ],
             ),
@@ -111,7 +117,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             padding: const EdgeInsets.all(16),
             child: CustomSearchBar(
               controller: _searchController,
-              hintText: 'Search by bill #, customer, plate...',
+              hintText: tr('Search by bill #, customer, plate...'),
               onChanged: (val) => setState(() => _searchQuery = val),
             ),
           ),
@@ -122,12 +128,12 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
-            tabs: const [
-              Tab(text: 'All Bills'),
-              Tab(text: 'Paid'),
-              Tab(text: 'Partial'),
-              Tab(text: 'Pending'),
-              Tab(text: 'Cancelled'),
+            tabs: [
+              Tab(text: tr('All Bills')),
+              Tab(text: tr('Paid')),
+              Tab(text: tr('Partial')),
+              Tab(text: tr('Pending')),
+              Tab(text: tr('Cancelled')),
             ],
           ),
 
@@ -191,14 +197,26 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
     }).toList();
 
     if (filtered.isEmpty) {
+      // Search miss shows the interpolated term and no create CTA; the
+      // create CTA is permission-gated like the FAB.
+      final searching = _searchQuery.trim().isNotEmpty;
       return EmptyStateWidget(
         icon: Icons.receipt_long_outlined,
-        title: 'No Bills Found',
-        description: filter != null
-            ? 'No bills with status "${filter.displayName}".'
-            : 'No bills yet. Create a bill for serviced vehicles.',
-        buttonText: 'Create Bill',
-        onButtonPressed: _createNewInvoice,
+        title: searching || filter != null ? tr('No matches') : tr('No bills yet'),
+        description: searching
+            ? 'Nothing matches "${_searchQuery.trim()}".'
+            : filter != null
+                ? 'No bills with status "${filter.displayName}".'
+                : tr('Bills appear here when you bill a job or create a quick bill.'),
+        buttonText: searching ? null : tr('Create Bill'),
+        onButtonPressed: searching
+            ? null
+            : () {
+                if (!ensurePermission(context, Permissions.invoicesManage)) {
+                  return;
+                }
+                _createNewInvoice();
+              },
       );
     }
 
@@ -214,7 +232,7 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
 
         return ListRow(
           overline: '${inv.invoiceNumber} · ${AppDateFormatter.formatDate(inv.invoiceDate)}',
-          title: customer?.name ?? 'Customer',
+          title: customer?.name ?? tr('Customer'),
           subtitle: [vehicle?.registrationNumber, vehicle?.displayName].whereType<String>().join(' · '),
           trailingTop: RowAmount(CurrencyFormatter.format(inv.grandTotal)),
           trailingBottom: open

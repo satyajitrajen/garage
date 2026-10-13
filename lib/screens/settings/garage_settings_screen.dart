@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/api/api_exception.dart';
 import '../../data/app_config.dart';
 import '../../data/garage_profile.dart';
 import '../../providers/garage_provider.dart';
+import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/error_message.dart';
+import '../../l10n/app_language.dart';
+import '../../utils/form_errors.dart';
 
 /// Edits the garage profile printed on every invoice / estimate (name,
 /// GSTIN, address, UPI) and the business defaults in [AppConfig].
@@ -72,7 +75,11 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
   }
 
   Future<void> _save() async {
-    if (_isSaving || !_formKey.currentState!.validate()) return;
+    if (_isSaving) return;
+    if (!_formKey.currentState!.validate()) {
+      scrollToFirstFormError(_formKey);
+      return;
+    }
     final provider = context.read<GarageProvider>();
     final old = provider.config;
     final profile = GarageProfile(
@@ -101,14 +108,14 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
     try {
       await provider.updateSettings(profile, config);
       if (!mounted) return;
-      showAppSnackBar(context, 'Garage settings saved',
+      showAppSnackBar(context, tr('Garage settings saved'),
           type: SnackBarType.success);
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       showAppSnackBar(
         context,
-        e is ApiException ? e.userMessage : 'Could not save settings.',
+        errorMessage(e),
         type: SnackBarType.error,
       );
     } finally {
@@ -146,8 +153,8 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
         child: Text(
           title,
           style: GoogleFonts.poppins(
-            fontSize: AppText.body,
-            fontWeight: FontWeight.w600,
+            fontSize: AppText.title,
+            fontWeight: FontWeight.w700,
             color: context.palette.textPrimary,
           ),
         ),
@@ -155,31 +162,49 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
 
   Future<void> _addTaxOption() async {
     final controller = TextEditingController();
+    // Inline validation: out-of-range or duplicate rates show an error under
+    // the field instead of silently doing nothing on Add.
     final value = await showDialog<double>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add GST rate'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(suffixText: '%'),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              final v = double.tryParse(controller.text.trim());
-              if (v != null && v >= 0 && v <= 100) Navigator.pop(ctx, v);
-            },
-            child: const Text('Add'),
-          ),
-        ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          String? error;
+          void validate() {
+            final v = double.tryParse(controller.text.trim());
+            if (v == null || v < 0 || v > 100) {
+              setDialogState(() => error = tr('Enter a rate between 0 and 100'));
+              return;
+            }
+            if (_taxOptions.contains(v)) {
+              setDialogState(() => error = tr('This rate is already in the list'));
+              return;
+            }
+            Navigator.pop(ctx, v);
+          }
+
+          return AlertDialog(
+            title: Text(tr('Add GST rate')),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(suffixText: '%', errorText: error),
+              onSubmitted: (_) => validate(),
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx), child: Text(tr('Cancel'))),
+              FilledButton(
+                onPressed: validate,
+                child: Text(tr('Add')),
+              ),
+            ],
+          );
+        },
       ),
     );
     controller.dispose();
-    if (value != null && !_taxOptions.contains(value)) {
+    if (value != null) {
       setState(() => _taxOptions = [..._taxOptions, value]..sort());
     }
   }
@@ -191,27 +216,27 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Garage Settings',
+        title: Text(tr('Garage Settings'),
             style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppDimens.paddingScreen),
           children: [
-            _section('Bill header'),
-            _field('name', 'Garage name *',
+            _section(tr('Bill header')),
+            _field('name', tr('Garage name *'),
                 icon: Icons.store_rounded,
                 caps: TextCapitalization.words,
                 validator: (v) => (v ?? '').trim().isEmpty
-                    ? 'Garage name is required'
+                    ? tr('Garage name is required')
                     : null),
-            _field('tagline', 'Tagline', icon: Icons.short_text_rounded),
-            _field('address', 'Address', icon: Icons.location_on_outlined),
-            _field('city', 'City / State', icon: Icons.location_city_rounded),
-            _field('phone', 'Phone',
+            _field('tagline', tr('Tagline'), icon: Icons.short_text_rounded),
+            _field('address', tr('Address'), icon: Icons.location_on_outlined),
+            _field('city', tr('City / State'), icon: Icons.location_city_rounded),
+            _field('phone', tr('Phone'),
                 icon: Icons.phone_rounded, keyboard: TextInputType.phone),
-            _field('email', 'Email',
+            _field('email', tr('Email'),
                 icon: Icons.email_outlined,
                 keyboard: TextInputType.emailAddress),
             _field('gstin', 'GSTIN',
@@ -219,15 +244,15 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
                 caps: TextCapitalization.characters, validator: (v) {
               final s = (v ?? '').trim().toUpperCase();
               if (s.isEmpty || _gstinPattern.hasMatch(s)) return null;
-              return 'Enter a valid 15-character GSTIN';
+              return tr('Enter a valid 15-character GSTIN');
             }),
-            _field('upi', 'UPI ID (for payment QR)',
+            _field('upi', tr('UPI ID (for payment QR)'),
                 icon: Icons.qr_code_rounded, validator: (v) {
               final s = (v ?? '').trim();
               if (s.isEmpty || s.contains('@')) return null;
-              return 'UPI ID looks like name@bank';
+              return tr('UPI ID looks like name@bank');
             }),
-            _section('GST rates'),
+            _section(tr('GST rates')),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -240,36 +265,36 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
                   ),
                 ActionChip(
                   avatar: const Icon(Icons.add, size: 16),
-                  label: const Text('Rate'),
+                  label: Text(tr('Rate')),
                   onPressed: _addTaxOption,
                 ),
               ],
             ),
             Padding(
               padding: const EdgeInsets.only(top: 6, bottom: 14),
-              child: Text('Selected rate is the default on new bills.',
+              child: Text(tr('Selected rate is the default on new bills.'),
                   style: GoogleFonts.poppins(
                       fontSize: AppText.label,
                       color: context.palette.textMuted)),
             ),
-            _section('Defaults'),
-            _field('dueDays', 'Bill due in (days)',
+            _section(tr('Defaults')),
+            _field('dueDays', tr('Bill due in (days)'),
                 keyboard: TextInputType.number,
                 validator: (v) => _intInRange(v, 0, 1000)),
-            _field('deliveryHours', 'Promised delivery (hours)',
+            _field('deliveryHours', tr('Promised delivery (hours)'),
                 keyboard: TextInputType.number,
                 validator: (v) => _intInRange(v, 0, 1000)),
-            _field('workingDays', 'Working days per month (payroll)',
+            _field('workingDays', tr('Working days per month (payroll)'),
                 keyboard: TextInputType.number,
                 validator: (v) => _intInRange(v, 1, 31)),
-            _field('receivedBy', 'Payments received by'),
-            _field('notes', 'Bill notes', maxLines: 2),
-            _field('terms', 'Terms & conditions', maxLines: 3),
+            _field('receivedBy', tr('Payments received by')),
+            _field('notes', tr('Bill notes'), maxLines: 2),
+            _field('terms', tr('Terms & conditions'), maxLines: 3),
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: _isSaving ? null : _save,
               icon: const Icon(Icons.check_rounded),
-              label: const Text('Save Settings'),
+              label: Text(tr('Save Settings')),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),

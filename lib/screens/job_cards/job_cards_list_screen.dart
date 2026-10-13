@@ -12,10 +12,10 @@ import '../../widgets/gradient_button.dart';
 import '../../widgets/search_bar_widget.dart';
 import '../../widgets/list_row.dart';
 import '../../widgets/status_badge.dart';
-import '../customers/customers_list_screen.dart';
-import '../vehicles/vehicle_selection_screen.dart';
 import 'job_card_detail_screen.dart';
 import '../../theme/app_text.dart';
+import 'start_job_screen.dart';
+import '../../l10n/app_language.dart';
 
 class JobCardsListScreen extends StatefulWidget {
   const JobCardsListScreen({super.key});
@@ -24,9 +24,9 @@ class JobCardsListScreen extends StatefulWidget {
   State<JobCardsListScreen> createState() => _JobCardsListScreenState();
 }
 
-class _JobCardsListScreenState extends State<JobCardsListScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _JobCardsListScreenState extends State<JobCardsListScreen> {
+  // Selected status filter (null = all), shown as chips with counts.
+  JobStatus? _filter;
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -40,14 +40,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: _tabFilters.length, vsync: this);
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -55,12 +48,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
   void _createNewJobCard() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const CustomersListScreen(
-          isSelectionMode: true,
-          targetAction: VehicleTargetAction.createJobCard,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => const StartJobScreen()),
     );
   }
 
@@ -70,7 +58,7 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Job Cards & Workshop', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(tr('Jobs'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
       // Empty list: its empty state already has the Add button.
       floatingActionButton: provider.jobCards.isEmpty ? null : PermissionGate(
@@ -78,48 +66,59 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
         child: GradientFloatingActionButton(
         onPressed: _createNewJobCard,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('New Job Card'),
+        label: Text(tr('New Job Card')),
       ),
       ),
-      body: Column(
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: CustomSearchBar(
-              controller: _searchController,
-              hintText: 'Search by JC#, vehicle plate, or customer...',
-              onChanged: (val) => setState(() => _searchQuery = val),
+      // No jobs yet: just the empty state, no search box or filters.
+      body: provider.jobCards.isEmpty
+          ? _buildJobCardList(provider, null)
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: CustomSearchBar(
+                    controller: _searchController,
+                    hintText: tr('Search by JC#, plate or customer'),
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                  ),
+                ),
+                // Status filters with counts, so the workload reads at a glance.
+                SizedBox(
+                  height: 48,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: [
+                      for (final status in _tabFilters) ...[
+                        _filterChip(provider, status),
+                        const SizedBox(width: 8),
+                      ],
+                    ],
+                  ),
+                ),
+                Expanded(child: _buildJobCardList(provider, _filter)),
+              ],
             ),
-          ),
+    );
+  }
 
-          // Status Filter Tabs
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
-            tabs: const [
-              Tab(text: 'All Jobs'),
-              Tab(text: 'In Progress'),
-              Tab(text: 'Inspection'),
-              Tab(text: 'Waiting Parts'),
-              Tab(text: 'Ready for Delivery'),
-              Tab(text: 'Delivered'),
-            ],
-          ),
-
-          // Job Cards List
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: _tabFilters.map((filterStatus) {
-                return _buildJobCardList(provider, filterStatus);
-              }).toList(),
-            ),
-          ),
-        ],
+  Widget _filterChip(GarageProvider provider, JobStatus? status) {
+    final palette = Theme.of(context);
+    final count = status == null
+        ? provider.jobCards.length
+        : provider.jobCards.where((jc) => jc.status == status).length;
+    final selected = _filter == status;
+    return ChoiceChip(
+      label: Text('${status == null ? tr('All') : status.shortName} $count'),
+      selected: selected,
+      showCheckmark: false,
+      labelStyle: GoogleFonts.poppins(
+        fontSize: AppText.caption,
+        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+        color: selected ? palette.colorScheme.onPrimary : palette.colorScheme.onSurface,
       ),
+      selectedColor: palette.colorScheme.onSurface,
+      onSelected: (_) => setState(() => _filter = status),
     );
   }
 
@@ -142,16 +141,27 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
     }).toList();
 
     if (filtered.isEmpty) {
-      return EmptyStateWidget(
-        icon: Icons.assignment_outlined,
-        title: 'No Job Cards Found',
-        description: _searchQuery.trim().isNotEmpty
-            ? 'No job cards match "${_searchQuery.trim()}".'
-            : filterStatus != null
-                ? 'No vehicles currently matching status "${filterStatus.displayName}".'
-                : 'No job cards yet.',
-        buttonText: 'Create New Job Card',
-        onButtonPressed: _createNewJobCard,
+      final String description = _searchQuery.trim().isNotEmpty
+          ? 'No job cards match "${_searchQuery.trim()}".'
+          : filterStatus != null
+              ? 'No vehicles currently matching status "${filterStatus.displayName}".'
+              : tr('When a car comes in, start a job with its registration number.');
+      // The create CTA is a write action — gated like the FAB; staff without
+      // jobcards.manage still see the informational empty state.
+      return PermissionGate(
+        permission: Permissions.jobcardsManage,
+        fallback: EmptyStateWidget(
+          icon: Icons.assignment_outlined,
+          title: _searchQuery.trim().isNotEmpty || filterStatus != null ? tr('No matches') : tr('No jobs yet'),
+          description: description,
+        ),
+        child: EmptyStateWidget(
+          icon: Icons.assignment_outlined,
+          title: _searchQuery.trim().isNotEmpty || filterStatus != null ? tr('No matches') : tr('No jobs yet'),
+          description: description,
+          buttonText: tr('Start a job'),
+          onButtonPressed: _createNewJobCard,
+        ),
       );
     }
 
@@ -165,16 +175,16 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
         final vehicle = provider.getVehicleById(jc.vehicleId);
         final staff = jc.assignedStaffId != null ? provider.getStaffById(jc.assignedStaffId!) : null;
         final open = jc.status != JobStatus.delivered && jc.status != JobStatus.cancelled;
-        final late = open && jc.promisedDeliveryDate.isBefore(DateTime.now());
+        final isLate = open && jc.promisedDeliveryDate.isBefore(DateTime.now());
 
         return ListRow(
           overline: jc.jobCardNumber,
-          title: vehicle?.registrationNumber ?? 'Unknown vehicle',
+          title: vehicle?.registrationNumber ?? tr('Unknown vehicle'),
           subtitle: [vehicle?.displayName, customer?.name].whereType<String>().join(' · '),
           detail: [
-            staff?.name ?? 'Unassigned',
+            staff?.name ?? tr('Unassigned'),
             if (open)
-              late
+              isLate
                   ? 'Late, promised ${AppDateFormatter.formatRelative(jc.promisedDeliveryDate)}'
                   : 'Promised ${AppDateFormatter.formatRelative(jc.promisedDeliveryDate)}',
           ].join(' · '),

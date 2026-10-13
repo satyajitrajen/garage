@@ -11,6 +11,10 @@ import '../../utils/app_snack_bar.dart';
 import '../../utils/contact_actions.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
+import '../../utils/error_message.dart';
+import '../../utils/permissions.dart';
+import '../../widgets/empty_state_widget.dart';
+import '../../widgets/permission_gate.dart';
 import '../../widgets/status_badge.dart';
 import 'add_customer_screen.dart';
 import '../vehicles/add_vehicle_dialog.dart';
@@ -18,6 +22,8 @@ import '../job_cards/job_card_detail_screen.dart';
 import '../job_cards/create_job_card_screen.dart';
 import '../invoices/invoice_preview_screen.dart';
 import '../../theme/app_text.dart';
+import '../../utils/grouped_number.dart';
+import '../../l10n/app_language.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   final Customer customer;
@@ -31,6 +37,9 @@ class CustomerDetailScreen extends StatefulWidget {
 class _CustomerDetailScreenState extends State<CustomerDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+
+  /// Guards the in-flight delete so a double-tap can't fire it twice.
+  bool _deleteInFlight = false;
 
   @override
   void initState() {
@@ -84,38 +93,51 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
       builder: (ctx) {
         final palette = ctx.palette;
         return AlertDialog(
-          title: const Text('Delete Customer?'),
+          title: Text(tr('Delete Customer?')),
           content: Text('Are you sure you want to delete ${customer.name}? This will also remove their registered fleet.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(tr('Cancel')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: palette.pending,
+                backgroundColor: palette.absent,
                 foregroundColor: palette.onPrimary,
               ),
               onPressed: () async {
+                if (_deleteInFlight) return;
+                _deleteInFlight = true;
                 Navigator.pop(ctx);
-                final deleted = await provider.deleteCustomer(customer.id);
-                if (!context.mounted) return;
-                if (!deleted) {
+                try {
+                  final deleted = await provider.deleteCustomer(customer.id);
+                  if (!context.mounted) return;
+                  if (!deleted) {
+                    showAppSnackBar(
+                      context,
+                      'Cannot delete ${customer.name} — customer still has outstanding dues',
+                      type: SnackBarType.error,
+                    );
+                    return;
+                  }
+                  Navigator.pop(context);
                   showAppSnackBar(
                     context,
-                    'Cannot delete ${customer.name} — customer still has outstanding dues',
+                    'Customer ${customer.name} deleted',
+                    type: SnackBarType.success,
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  showAppSnackBar(
+                    context,
+                    errorMessage(e),
                     type: SnackBarType.error,
                   );
-                  return;
+                } finally {
+                  _deleteInFlight = false;
                 }
-                Navigator.pop(context);
-                showAppSnackBar(
-                  context,
-                  'Customer ${customer.name} deleted',
-                  type: SnackBarType.error,
-                );
               },
-              child: const Text('Delete'),
+              child: Text(tr('Delete')),
             ),
           ],
         );
@@ -129,30 +151,42 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
       builder: (ctx) {
         final palette = ctx.palette;
         return AlertDialog(
-          title: const Text('Delete Vehicle?'),
-          content: Text('Are you sure you want to remove ${vehicle.registrationNumber} from fleet?'),
+          title: Text(tr('Delete Vehicle?')),
+          content: Text('Are you sure you want to remove ${vehicle.registrationNumber} from the fleet? This will also remove its job card and bill history.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(tr('Cancel')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: palette.pending,
+                backgroundColor: palette.absent,
                 foregroundColor: palette.onPrimary,
               ),
               onPressed: () async {
-                await provider.deleteVehicle(vehicle.id);
-                if (!ctx.mounted) return;
+                if (_deleteInFlight) return;
+                _deleteInFlight = true;
                 Navigator.pop(ctx);
-                if (!mounted) return;
-                showAppSnackBar(
-                  context,
-                  'Vehicle ${vehicle.registrationNumber} deleted',
-                  type: SnackBarType.error,
-                );
+                try {
+                  await provider.deleteVehicle(vehicle.id);
+                  if (!context.mounted) return;
+                  showAppSnackBar(
+                    context,
+                    'Vehicle ${vehicle.registrationNumber} deleted',
+                    type: SnackBarType.success,
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  showAppSnackBar(
+                    context,
+                    errorMessage(e),
+                    type: SnackBarType.error,
+                  );
+                } finally {
+                  _deleteInFlight = false;
+                }
               },
-              child: const Text('Delete'),
+              child: Text(tr('Delete')),
             ),
           ],
         );
@@ -173,31 +207,37 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Customer'),
+        title: Text(tr('Customer')),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit customer',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AddCustomerScreen(customerToEdit: customer),
-                ),
-              );
-            },
+          PermissionGate(
+            permission: Permissions.customersManage,
+            child: IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: tr('Edit customer'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AddCustomerScreen(customerToEdit: customer),
+                  ),
+                );
+              },
+            ),
           ),
-          PopupMenuButton<String>(
-            tooltip: 'More',
-            onSelected: (v) {
-              if (v == 'delete') _confirmDeleteCustomer(context, provider, customer);
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'delete',
-                child: Text('Delete customer', style: TextStyle(color: palette.absent)),
-              ),
-            ],
+          PermissionGate(
+            permission: Permissions.customersManage,
+            child: PopupMenuButton<String>(
+              tooltip: tr('More'),
+              onSelected: (v) {
+                if (v == 'delete') _confirmDeleteCustomer(context, provider, customer);
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Text(tr('Delete customer'), style: TextStyle(color: palette.absent)),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -232,7 +272,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                       child: OutlinedButton.icon(
                         onPressed: () => ContactActions.call(context, customer.phone),
                         icon: const Icon(Icons.phone_outlined, size: 18),
-                        label: const Text('Call'),
+                        label: Text(tr('Call')),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -249,7 +289,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                           );
                         },
                         icon: const Icon(Icons.chat_outlined, size: 18),
-                        label: const Text('WhatsApp'),
+                        label: Text(tr('WhatsApp')),
                       ),
                     ),
                   ],
@@ -277,7 +317,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: palette.primary.withValues(alpha: 0.12),
+                      color: palette.cardAlt,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -286,7 +326,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                         fontSize: AppText.label,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,
-                        color: palette.primary,
+                        color: palette.textSecondary,
                       ),
                     ),
                   ),
@@ -330,7 +370,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                             Icon(Icons.warning_amber_rounded, color: palette.pending, size: 20),
                             const SizedBox(width: 8),
                             Text(
-                              'Balance due',
+                              tr('Balance due'),
                               style: GoogleFonts.poppins(
                                 fontSize: AppText.body,
                                 fontWeight: FontWeight.w600,
@@ -400,22 +440,45 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
           children: [
             Expanded(
               child: Text(
-                'Vehicles',
+                tr('Vehicles'),
                 style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
               ),
             ),
-            ElevatedButton.icon(
-              onPressed: _addVehicle,
-              icon: const Icon(Icons.add_rounded, size: 16),
-              label: const Text('Add Vehicle'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            PermissionGate(
+              permission: Permissions.vehiclesManage,
+              child: ElevatedButton.icon(
+                onPressed: _addVehicle,
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: Text(tr('Add Vehicle')),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        ...vehicles.map((v) {
+        if (vehicles.isEmpty)
+          // Empty fleet: reuse the Add Vehicle action as the CTA, offered
+          // only to members who can manage vehicles.
+          PermissionGate(
+            permission: Permissions.vehiclesManage,
+            fallback: EmptyStateWidget(
+              icon: Icons.directions_car_filled_outlined,
+              title: tr('No vehicles yet'),
+              description: tr('This customer has no vehicles registered yet.'),
+            ),
+            child: EmptyStateWidget(
+              icon: Icons.directions_car_filled_outlined,
+              title: tr('No vehicles yet'),
+              description:
+                  "Add this customer's first vehicle to start job cards and bills.",
+              buttonText: tr('Add Vehicle'),
+              onButtonPressed: _addVehicle,
+            ),
+          )
+        else
+          ...vehicles.map((v) {
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
             child: Padding(
@@ -442,7 +505,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: palette.primary.withValues(alpha: 0.12),
+                          color: palette.cardAlt,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -450,7 +513,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                           style: GoogleFonts.poppins(
                             fontSize: AppText.label,
                             fontWeight: FontWeight.w600,
-                            color: palette.primary,
+                            color: palette.textSecondary,
                           ),
                         ),
                       ),
@@ -465,7 +528,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                   Wrap(
                     children: [
                       Text(
-                        '${v.currentKm} km',
+                        '${groupDigits(v.currentKm)} km',
                         style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary),
                       ),
                       if (v.year != null) ...[
@@ -481,35 +544,41 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => CreateJobCardScreen(
-                                  customer: customer,
-                                  vehicle: v,
+                        child: PermissionGate(
+                          permission: Permissions.jobcardsManage,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CreateJobCardScreen(
+                                    customer: customer,
+                                    vehicle: v,
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.add_rounded, size: 18),
-                          label: const Text('New job card'),
+                              );
+                            },
+                            icon: const Icon(Icons.add_rounded, size: 18),
+                            label: Text(tr('New job card')),
+                          ),
                         ),
                       ),
-                      PopupMenuButton<String>(
-                        tooltip: 'Vehicle options',
-                        onSelected: (choice) {
-                          if (choice == 'edit') _editVehicle(v);
-                          if (choice == 'delete') _confirmDeleteVehicle(context, provider, v);
-                        },
-                        itemBuilder: (_) => [
-                          const PopupMenuItem(value: 'edit', child: Text('Edit vehicle')),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Text('Delete vehicle', style: TextStyle(color: palette.absent)),
-                          ),
-                        ],
+                      PermissionGate(
+                        permission: Permissions.vehiclesManage,
+                        child: PopupMenuButton<String>(
+                          tooltip: tr('Vehicle options'),
+                          onSelected: (choice) {
+                            if (choice == 'edit') _editVehicle(v);
+                            if (choice == 'delete') _confirmDeleteVehicle(context, provider, v);
+                          },
+                          itemBuilder: (_) => [
+                            PopupMenuItem(value: 'edit', child: Text(tr('Edit vehicle'))),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text(tr('Delete vehicle'), style: TextStyle(color: palette.absent)),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -523,10 +592,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
   }
 
   Widget _buildJobCardsTab(List<JobCard> jobCards) {
-    final palette = context.palette;
     if (jobCards.isEmpty) {
-      return Center(
-        child: Text('No job cards recorded yet', style: GoogleFonts.poppins(color: palette.textMuted)),
+      return EmptyStateWidget(
+        icon: Icons.assignment_outlined,
+        title: tr('No job cards recorded yet'),
+        description: tr('Job cards for this customer will show up here.'),
       );
     }
     return ListView.builder(
@@ -561,8 +631,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
   Widget _buildInvoicesTab(List<Invoice> invoices) {
     final palette = context.palette;
     if (invoices.isEmpty) {
-      return Center(
-        child: Text('No bills yet', style: GoogleFonts.poppins(color: palette.textMuted)),
+      return EmptyStateWidget(
+        icon: Icons.receipt_long_outlined,
+        title: tr('No bills yet'),
+        description: tr('Bills for this customer will show up here.'),
       );
     }
     return ListView.builder(
@@ -600,7 +672,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'Overdue',
+                      tr('Overdue'),
                       style: GoogleFonts.poppins(
                         fontSize: AppText.micro,
                         fontWeight: FontWeight.w700,

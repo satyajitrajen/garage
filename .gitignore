@@ -43,3 +43,17 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Demo recordings
+demo-videos/**/*.mp4
+demo-videos/raw/
+demo-videos/shots/
+
+# Local tooling / scratch
+.mimosa/
+**/.mimosa/
+test-run/
+appicon.zip
+/logo.png
+/Red NT Garage Automotive Logo.png
+demo-videos/final/_work/

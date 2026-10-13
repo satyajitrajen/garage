@@ -42,6 +42,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.badgeBlueIcon,
     required this.paperBg,
     required this.paperHeaderBg,
+    required this.plateIndBand,
     required this.bannerGradient,
     required this.cardGradient,
     required this.brandGradient,
@@ -61,6 +62,10 @@ class AppPalette extends ThemeExtension<AppPalette> {
   final Color badgeGreenBg, badgeGreenIcon;
   final Color badgeBlueBg, badgeBlueIcon;
   final Color paperBg, paperHeaderBg;
+
+  /// Navy of the "IND" band on Indian licence plates — theme-invariant by
+  /// design (§9 known quirks), tokenised so screens don't hard-code it.
+  final Color plateIndBand;
   final List<Color> bannerGradient, cardGradient, brandGradient;
   final Map<ExpenseCategory, Color> categoryColors;
 
@@ -71,7 +76,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     cardAlt: Color(0xFFF8F8F8),
     textPrimary: Color(0xFF171717),
     textSecondary: Color(0xFF656565),
-    textMuted: Color(0xFF989898),
+    textMuted: Color(0xFF6E6E6E), // 4.6:1 on background (WCAG AA)
     border: Color(0xFFE8E8E8),
     divider: Color(0xFFEEEEEE),
     primary: Color(0xFFF01018),
@@ -86,11 +91,11 @@ class AppPalette extends ThemeExtension<AppPalette> {
     received: Color(0xFF656565),
     ready: Color(0xFF25A75B),
     delivered: Color(0xFF25A75B),
-    cancelled: Color(0xFF989898),
+    cancelled: Color(0xFF757575),
     present: Color(0xFF25A75B),
     halfDay: Color(0xFFF59E0B),
     absent: Color(0xFFDC2626),
-    leave: Color(0xFF989898),
+    leave: Color(0xFF757575),
     badgeRedBg: Color(0xFFF1F1F1),
     badgeRedIcon: Color(0xFF3F3F3F),
     badgeOrangeBg: Color(0xFFF1F1F1),
@@ -103,6 +108,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     badgeBlueIcon: Color(0xFF3F3F3F),
     paperBg: Color(0xFFFFFFFF),
     paperHeaderBg: Color(0xFFF8F8F8),
+    plateIndBand: Color(0xFF003399),
     bannerGradient: [Color(0xFF1A1A1A), Color(0xFF111111)],
     cardGradient: [Color(0xFFFFFFFF), Color(0xFFF8F8F8)],
     brandGradient: [Color(0xFFF01018), Color(0xFFF01018)],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'payment.dart';
+import '../l10n/app_language.dart';
 
 enum ExpenseCategory {
   rent,
@@ -17,23 +18,23 @@ extension ExpenseCategoryExtension on ExpenseCategory {
   String get displayName {
     switch (this) {
       case ExpenseCategory.rent:
-        return 'Workshop Rent';
+        return tr('Workshop Rent');
       case ExpenseCategory.electricityUtilities:
-        return 'Electricity & Water';
+        return tr('Electricity & Water');
       case ExpenseCategory.internetPhone:
-        return 'Internet & Bills';
+        return tr('Internet & Bills');
       case ExpenseCategory.toolsEquipment:
-        return 'Tools & Equipment';
+        return tr('Tools & Equipment');
       case ExpenseCategory.consumables:
-        return 'Consumables & Sprays';
+        return tr('Consumables & Sprays');
       case ExpenseCategory.partsStock:
-        return 'Parts Stock Purchase';
+        return tr('Parts Stock Purchase');
       case ExpenseCategory.staffFood:
-        return 'Staff Tea & Lunch';
+        return tr('Staff Tea & Lunch');
       case ExpenseCategory.fuelGenerator:
-        return 'Diesel / Generator';
+        return tr('Diesel / Generator');
       case ExpenseCategory.miscellaneous:
-        return 'Miscellaneous';
+        return tr('Miscellaneous');
     }
   }
 
@@ -84,6 +85,9 @@ class GarageExpense {
     this.receiptPath,
   }) : expenseDate = expenseDate ?? DateTime.now();
 
+  /// Pass [clearVendorName] / [clearNotes] to null those optional fields —
+  /// plain `null` arguments keep the current value (copyWith can't otherwise
+  /// express "clear", the same limitation clearReceipt works around).
   GarageExpense copyWith({
     String? id,
     String? title,
@@ -94,6 +98,8 @@ class GarageExpense {
     String? vendorName,
     String? notes,
     String? receiptPath,
+    bool clearVendorName = false,
+    bool clearNotes = false,
   }) {
     return GarageExpense(
       id: id ?? this.id,
@@ -102,8 +108,8 @@ class GarageExpense {
       amount: amount ?? this.amount,
       expenseDate: expenseDate ?? this.expenseDate,
       paymentMode: paymentMode ?? this.paymentMode,
-      vendorName: vendorName ?? this.vendorName,
-      notes: notes ?? this.notes,
+      vendorName: clearVendorName ? null : (vendorName ?? this.vendorName),
+      notes: clearNotes ? null : (notes ?? this.notes),
       receiptPath: receiptPath ?? this.receiptPath,
     );
   }

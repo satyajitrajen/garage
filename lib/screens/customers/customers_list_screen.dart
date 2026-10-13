@@ -15,6 +15,7 @@ import '../vehicles/vehicle_selection_screen.dart';
 import 'add_customer_screen.dart';
 import 'customer_detail_screen.dart';
 import '../../theme/app_text.dart';
+import '../../l10n/app_language.dart';
 
 class CustomersListScreen extends StatefulWidget {
   final bool isSelectionMode;
@@ -61,6 +62,27 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
     }
   }
 
+  /// Empty list / search miss. The "Add New Customer" CTA is only offered to
+  /// members with customers.manage (staff see the state without it).
+  EmptyStateWidget _emptyState({required bool withCta}) {
+    return EmptyStateWidget(
+      icon: Icons.people_outline_rounded,
+      title: _searchQuery.isEmpty ? tr('No customers yet') : tr('No matches'),
+      description: _searchQuery.isEmpty
+          ? tr('Customers are added when you start their first job, or add one now.')
+          : 'Nothing matches "$_searchQuery". Try a plate, phone number or name.',
+      buttonText: withCta && _searchQuery.isEmpty ? tr('Add customer') : null,
+      onButtonPressed: withCta
+          ? () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
+              );
+            }
+          : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
@@ -71,7 +93,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
       backgroundColor: palette.background,
       appBar: AppBar(
         title: Text(
-          widget.isSelectionMode ? 'Select Customer' : 'Customers',
+          widget.isSelectionMode ? tr('Select Customer') : tr('Customers'),
           style: GoogleFonts.poppins(
             fontSize: AppText.title,
             fontWeight: FontWeight.w700,
@@ -90,7 +112,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
           );
         },
         icon: const Icon(Icons.add_rounded),
-        label: const Text('New Customer'),
+        label: Text(tr('New Customer')),
       ),
       ),
       body: Column(
@@ -100,7 +122,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
             padding: const EdgeInsets.all(16),
             child: CustomSearchBar(
               controller: _searchController,
-              hintText: 'Search by name, phone, or vehicle plate...',
+              hintText: tr('Search by name, phone, or vehicle plate...'),
               onChanged: (val) => setState(() => _searchQuery = val),
             ),
           ),
@@ -114,10 +136,10 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                 widget.isSelectionMode
                     ? switch (widget.targetAction) {
                         VehicleTargetAction.createInvoice =>
-                          'Choose the customer for this bill',
+                          tr('Choose the customer for this bill'),
                         VehicleTargetAction.createQuotation =>
-                          'Choose the customer for this estimate',
-                        _ => 'Choose the customer for this job',
+                          tr('Choose the customer for this estimate'),
+                        _ => tr('Choose the customer for this job'),
                       }
                     : '${customers.length} customer${customers.length == 1 ? '' : 's'}',
                 style: GoogleFonts.poppins(
@@ -132,19 +154,10 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
           // Customer Cards List
           Expanded(
             child: customers.isEmpty
-                ? EmptyStateWidget(
-                    icon: Icons.people_outline_rounded,
-                    title: 'No Customers Found',
-                    description: _searchQuery.isEmpty
-                        ? 'Your customer database is empty. Add your first customer!'
-                        : 'No results found for "$_searchQuery". Try another search term.',
-                    buttonText: 'Add New Customer',
-                    onButtonPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
-                      );
-                    },
+                ? PermissionGate(
+                    permission: Permissions.customersManage,
+                    fallback: _emptyState(withCta: false),
+                    child: _emptyState(withCta: true),
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.only(top: 8, bottom: 120),
@@ -158,7 +171,7 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                         title: customer.name,
                         subtitle: customer.phone,
                         detail: vehicles.isEmpty
-                            ? 'No vehicle'
+                            ? tr('No vehicle')
                             : vehicles.map((v) => v.registrationNumber).join(', '),
                         trailingTop: due > 0
                             ? RowAmount('${CurrencyFormatter.format(due)} due',

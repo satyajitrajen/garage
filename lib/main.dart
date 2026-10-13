@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'data/api/api_client.dart';
+import 'l10n/app_language.dart';
 import 'data/api/api_config.dart';
 import 'data/api/api_garage_repository.dart';
 import 'data/garage_repository.dart';
@@ -13,8 +14,9 @@ import 'screens/auth/login_screen.dart';
 import 'theme/app_theme.dart';
 import 'screens/main_navigation_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppLanguage.load();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -45,18 +47,22 @@ class NTGarageApp extends StatelessWidget {
     if (repo != null) {
       return MultiProvider(
         providers: [
-          ChangeNotifierProvider<AuthProvider>(
-            create: (_) => AuthProvider(),
-          ),
+          ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider()),
           ChangeNotifierProvider<GarageProvider>(
             create: (_) => GarageProvider(repo)..load(),
           ),
         ],
-        child: MaterialApp(
-          title: 'NT Garage',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          home: const MainNavigationScreen(),
+        // Rebuilt under a new key when the language changes, so every
+        // screen re-reads its strings.
+        child: ListenableBuilder(
+          listenable: AppLanguage.instance,
+          builder: (_, _) => MaterialApp(
+            key: ValueKey(AppLanguage.code),
+            title: 'NT Garage',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            home: const MainNavigationScreen(),
+          ),
         ),
       );
     }
@@ -76,11 +82,17 @@ class NTGarageApp extends StatelessWidget {
           },
         ),
       ],
-      child: MaterialApp(
-        title: 'NT Garage',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const AppGate(),
+      // Rebuilt under a new key when the language changes, so every
+      // screen re-reads its strings.
+      child: ListenableBuilder(
+        listenable: AppLanguage.instance,
+        builder: (_, _) => MaterialApp(
+          key: ValueKey(AppLanguage.code),
+          title: 'NT Garage',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          home: const AppGate(),
+        ),
       ),
     );
   }
@@ -103,9 +115,7 @@ class _AppGateState extends State<AppGate> {
     final auth = context.watch<AuthProvider>();
 
     if (auth.isInitializing) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (!auth.isAuthenticated) {
       _loadedGarage = null;
@@ -126,7 +136,7 @@ class _AppGateState extends State<AppGate> {
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: auth.logout,
-                  child: const Text('Sign out'),
+                  child: Text(tr('Sign out')),
                 ),
               ],
             ),

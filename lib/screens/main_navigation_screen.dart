@@ -10,6 +10,7 @@ import 'customers/customers_list_screen.dart';
 import 'invoices/invoices_list_screen.dart';
 import 'more/more_menu_screen.dart';
 import '../../theme/app_text.dart';
+import '../l10n/app_language.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int initialIndex;
@@ -54,11 +55,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 40),
+              Icon(Icons.error_outline, size: 40, color: palette.absent),
               const SizedBox(height: 12),
-              const Text('Failed to load garage data'),
+              Text(
+                tr('Failed to load garage data'),
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.title,
+                  fontWeight: FontWeight.w700,
+                  color: palette.textPrimary,
+                ),
+              ),
               const SizedBox(height: 16),
-              FilledButton(onPressed: provider.load, child: const Text('Retry')),
+              FilledButton(onPressed: provider.load, child: Text(tr('Retry'))),
             ],
           ),
         ),
@@ -79,7 +87,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             height: 64,
             decoration: BoxDecoration(
               color: palette.surface,
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(AppDimens.radiusSheet),
               border: Border.all(color: palette.border, width: 1),
               boxShadow: AppDimens.cardShadow(palette.textPrimary),
             ),
@@ -90,33 +98,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   index: 0,
                   icon: Icons.home_outlined,
                   selectedIcon: Icons.home_rounded,
-                  label: 'Home',
+                  label: tr('Home'),
                 ),
                 _buildNavItem(
                   index: 1,
                   icon: Icons.car_repair_outlined,
                   selectedIcon: Icons.car_repair_rounded,
-                  label: 'Jobs',
+                  label: tr('Jobs'),
                   badgeCount: activeVehiclesCount,
                 ),
                 _buildNavItem(
                   index: 2,
                   icon: Icons.people_alt_outlined,
                   selectedIcon: Icons.people_alt_rounded,
-                  label: 'Clients',
+                  label: tr('Customers'),
                 ),
                 _buildNavItem(
                   index: 3,
                   icon: Icons.receipt_long_outlined,
                   selectedIcon: Icons.receipt_long_rounded,
-                  label: 'Bills',
+                  label: tr('Bills'),
                   badgeCount: pendingInvoicesCount,
                 ),
                 _buildNavItem(
                   index: 4,
                   icon: Icons.menu_rounded,
                   selectedIcon: Icons.density_medium_rounded,
-                  label: 'More',
+                  label: tr('More'),
                 ),
               ],
             ),
@@ -140,34 +148,32 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => setState(() => _currentIndex = index),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppDimens.radiusSheet),
           child: SizedBox(
             height: 56,
             // Scale the icon + label down to fit with large system text.
             child: FittedBox(
               fit: BoxFit.scaleDown,
+              // The selected tab is one black pill around icon and label.
+              child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? context.palette.accent : Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+              ),
               child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSelected ? 12 : 0,
-                    vertical: isSelected ? 4 : 0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected ? context.palette.textPrimary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Stack(
+                Stack(
                     clipBehavior: Clip.none,
                     children: [
                       Icon(
                         isSelected ? selectedIcon : icon,
                         size: 20,
                         color: isSelected
-                            ? Colors.white
+                            ? context.palette.onPrimary
                             : context.palette.textSecondary,
                       ),
                       if (badgeCount > 0)
@@ -192,14 +198,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                                 fontSize: AppText.micro,
                                 height: 1,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: context.palette.onPrimary,
                               ),
                             ),
                           ),
                         ),
                     ],
                   ),
-                ),
                 const SizedBox(height: 3),
                 Text(
                   label,
@@ -207,11 +212,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     fontSize: AppText.micro,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected
-                        ? context.palette.textPrimary
+                        ? context.palette.onPrimary
                         : context.palette.textSecondary,
                   ),
                 ),
               ],
+            ),
             ),
             ),
           ),

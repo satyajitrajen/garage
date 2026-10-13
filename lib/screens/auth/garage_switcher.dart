@@ -4,8 +4,12 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/garage_provider.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
+import '../../utils/error_message.dart';
+import '../../l10n/app_language.dart';
 
 /// Garage switcher for multi-garage accounts. Switching reloads all data.
 class GarageSwitcherSheet extends StatelessWidget {
@@ -15,7 +19,8 @@ class GarageSwitcherSheet extends StatelessWidget {
     return showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppDimens.radiusSheet)),
       ),
       builder: (_) => const GarageSwitcherSheet(),
     );
@@ -31,14 +36,17 @@ class GarageSwitcherSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Switch garage',
+            Text(tr('Switch garage'),
                 style: GoogleFonts.poppins(
                     fontSize: AppText.title, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             Text(
               'Signed in as ${auth.user?.name ?? ''} (${auth.user?.email ?? ''})',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.poppins(
-                  fontSize: AppText.caption, color: Theme.of(context).hintColor),
+                  fontSize: AppText.caption,
+                  color: context.palette.textSecondary),
             ),
             const SizedBox(height: 12),
             Flexible(
@@ -67,15 +75,24 @@ class GarageSwitcherSheet extends StatelessWidget {
                         Navigator.pop(context);
                         return;
                       }
-                      Navigator.pop(context);
-                      await auth.selectGarage(m.garageId);
+                      try {
+                        await auth.selectGarage(m.garageId);
+                      } catch (e) {
+                        // Sheet is still open, so its context is valid for
+                        // the error snackbar; leave it open to retry.
+                        if (!context.mounted) return;
+                        showAppSnackBar(context, errorMessage(e),
+                            type: SnackBarType.error);
+                        return;
+                      }
                       if (!context.mounted) return;
+                      Navigator.pop(context);
                       try {
                         await context.read<GarageProvider>().load();
                       } catch (_) {
                         if (!context.mounted) return;
                         showAppSnackBar(
-                            context, 'Switched garage but reload failed.',
+                            context, tr('Switched garage but reload failed.'),
                             type: SnackBarType.error);
                       }
                     },
@@ -86,10 +103,20 @@ class GarageSwitcherSheet extends StatelessWidget {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout_rounded),
-              title: const Text('Sign out'),
+              title: Text(tr('Sign out')),
               onTap: () async {
+                try {
+                  await context.read<AuthProvider>().logout();
+                } catch (e) {
+                  // Sheet is still open, so its context is valid for the
+                  // error snackbar; leave it open to retry.
+                  if (!context.mounted) return;
+                  showAppSnackBar(context, errorMessage(e),
+                      type: SnackBarType.error);
+                  return;
+                }
+                if (!context.mounted) return;
                 Navigator.pop(context);
-                await context.read<AuthProvider>().logout();
               },
             ),
           ],

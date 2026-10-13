@@ -9,12 +9,15 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/error_message.dart';
 import '../../utils/permissions.dart';
 import '../../utils/quantity_formatter.dart';
 import '../../widgets/permission_gate.dart';
+import '../../widgets/empty_state_widget.dart';
 import '../../widgets/edit_item_dialog.dart';
 import '../../widgets/search_bar_widget.dart';
 import '../../theme/app_text.dart';
+import '../../l10n/app_language.dart';
 
 class AddMaintenanceScreen extends StatefulWidget {
   final List<MaintenanceItem> initialItems;
@@ -90,7 +93,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
 
   void _addCustomItem() {
     if (_customNameController.text.trim().isEmpty || _customPriceController.text.trim().isEmpty) {
-      showAppSnackBar(context, 'Please enter item name and price', type: SnackBarType.info);
+      showAppSnackBar(context, tr('Please enter item name and price'), type: SnackBarType.info);
       return;
     }
 
@@ -100,15 +103,15 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
 
     // Validate inputs so bad line items can't corrupt invoice totals.
     if (price <= 0) {
-      showAppSnackBar(context, 'Price must be greater than zero', type: SnackBarType.info);
+      showAppSnackBar(context, tr('Price must be greater than zero'), type: SnackBarType.info);
       return;
     }
     if (qty <= 0) {
-      showAppSnackBar(context, 'Quantity must be greater than zero', type: SnackBarType.info);
+      showAppSnackBar(context, tr('Quantity must be greater than zero'), type: SnackBarType.info);
       return;
     }
     if (discount < 0 || discount > 100) {
-      showAppSnackBar(context, 'Discount must be between 0 and 100 percent', type: SnackBarType.error);
+      showAppSnackBar(context, tr('Discount must be between 0 and 100 percent'), type: SnackBarType.error);
       return;
     }
 
@@ -136,14 +139,13 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
     _customDiscountController.text = '0';
 
     Navigator.pop(context); // Close bottom sheet
-    showAppSnackBar(context, 'Custom item added!', type: SnackBarType.success);
+    showAppSnackBar(context, tr('Custom item added!'), type: SnackBarType.success);
   }
 
   /// Stores a custom line in the garage price list so it can be picked next
   /// time. Runs in the background: the bill line is already added.
   Future<void> _saveToCatalog(MaintenanceItem item) async {
     final provider = context.read<GarageProvider>();
-    final messenger = ScaffoldMessenger.of(context);
     try {
       await provider.addCatalogItem(MaintenanceItem(
         id: const Uuid().v4(),
@@ -155,12 +157,14 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
         isLabour: item.isLabour,
       ));
     } catch (e) {
-      messenger.showSnackBar(SnackBar(
-        content: Text(e is ApiException
-            ? 'Not saved to price list: ${e.userMessage}'
-            : 'Could not save item to price list'),
-        behavior: SnackBarBehavior.floating,
-      ));
+      // Failure must surface through the themed error snackbar (§5), not a
+      // raw ScaffoldMessenger dump.
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        'Not saved to price list: ${errorMessage(e)}',
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -168,19 +172,28 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
     if (!ensurePermission(context, Permissions.jobcardsManage)) return;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Remove from price list?'),
-        content: Text('"${item.name}" will no longer appear in the catalog. '
-            'Existing bills are not affected.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Keep')),
-          FilledButton(
+      builder: (ctx) {
+        final palette = ctx.palette;
+        return AlertDialog(
+          title: Text(tr('Remove from price list?')),
+          content: Text('"${item.name}" will no longer appear in the catalog. '
+              'Existing bills are not affected.'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(tr('Keep'))),
+            // Destructive confirm is amber, not theme red (§5).
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: palette.absent,
+                foregroundColor: palette.onPrimary,
+              ),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Remove')),
-        ],
-      ),
+              child: Text(tr('Remove')),
+            ),
+          ],
+        );
+      },
     );
     if (ok != true || !mounted) return;
     try {
@@ -189,7 +202,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
       if (!mounted) return;
       showAppSnackBar(
         context,
-        e is ApiException ? e.userMessage : 'Could not remove item',
+        e is ApiException ? e.userMessage : tr('Could not remove item'),
         type: SnackBarType.error,
       );
     }
@@ -228,7 +241,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       children: [
                         Expanded(
                           child: Text(
-                            'Add Custom Item / Service',
+                            tr('Add Custom Item / Service'),
                             style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
                           ),
                         ),
@@ -241,8 +254,8 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     const SizedBox(height: 16),
                     TextField(
                       controller: _customNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Item / Job Description *',
+                      decoration: InputDecoration(
+                        labelText: tr('Item / Job Description *'),
                         hintText: 'e.g. Steering Rack Bushing / Lathe Job',
                       ),
                     ),
@@ -252,9 +265,10 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         Expanded(
                           child: TextField(
                             controller: _customPriceController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Unit Rate (₹) *',
+                            // Rates round-trip 2 decimals (§10).
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              labelText: tr('Unit Rate (₹) *'),
                               hintText: 'e.g. 1500',
                             ),
                           ),
@@ -263,9 +277,10 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         Expanded(
                           child: TextField(
                             controller: _customQtyController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Quantity',
+                            // Fractional quantities are valid (oil 2.5 L).
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              labelText: tr('Quantity'),
                               hintText: 'e.g. 1',
                             ),
                           ),
@@ -278,9 +293,9 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         Expanded(
                           child: TextField(
                             controller: _customUnitController,
-                            decoration: const InputDecoration(
-                              labelText: 'Unit',
-                              hintText: 'Pcs / Ltr / Job / Set',
+                            decoration: InputDecoration(
+                              labelText: tr('Unit'),
+                              hintText: tr('Pcs / Ltr / Job / Set'),
                             ),
                           ),
                         ),
@@ -288,9 +303,9 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         Expanded(
                           child: TextField(
                             controller: _customDiscountController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Discount %',
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              labelText: tr('Discount %'),
                               hintText: '0',
                             ),
                           ),
@@ -299,7 +314,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'Category',
+                      tr('Category'),
                       style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 6),
@@ -310,17 +325,23 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         return ChoiceChip(
                           label: Text(cat.displayName),
                           selected: isSelected,
-                          selectedColor: palette.primary.withValues(alpha: 0.15),
+                          // Selection is a state, not an action — near-black
+                          // (§2: brand red is reserved for buttons).
+                          selectedColor: palette.accent.withValues(alpha: 0.15),
                           labelStyle: TextStyle(
-                            color: isSelected ? palette.primary : palette.textPrimary,
+                            color: isSelected ? palette.accent : palette.textPrimary,
                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                           ),
-                          checkmarkColor: palette.primary,
+                          checkmarkColor: palette.accent,
                           onSelected: (selected) {
                             if (selected) {
                               setSheetState(() {
                                 _customCategory = cat;
                                 _customIsLabour = cat == ItemCategory.labour;
+                                final unit = _customUnitController.text.trim();
+                                if (unit.isEmpty || unit == 'Pcs' || unit == 'Job') {
+                                  _customUnitController.text = _customIsLabour ? 'Job' : 'Pcs';
+                                }
                               });
                             }
                           },
@@ -329,7 +350,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'GST rate',
+                      tr('GST rate'),
                       style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 6),
@@ -346,12 +367,12 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                           return ChoiceChip(
                             label: Text('${rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 1)}%'),
                             selected: isSelected,
-                            selectedColor: palette.primary.withValues(alpha: 0.15),
+                            selectedColor: palette.accent.withValues(alpha: 0.15),
                             labelStyle: TextStyle(
-                              color: isSelected ? palette.primary : palette.textPrimary,
+                              color: isSelected ? palette.accent : palette.textPrimary,
                               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                             ),
-                            checkmarkColor: palette.primary,
+                            checkmarkColor: palette.accent,
                             onSelected: (selected) {
                               if (selected) setSheetState(() => _customTaxPercent = rate);
                             },
@@ -363,9 +384,10 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     CheckboxListTile(
                       value: _customIsLabour,
                       contentPadding: EdgeInsets.zero,
-                      activeColor: palette.primary,
+                      // Success green — the ticked state, not brand red (§2).
+                      activeColor: palette.paid,
                       title: Text(
-                        'Count as Labour / Service Charge',
+                        tr('Count as Labour / Service Charge'),
                         style: GoogleFonts.poppins(fontSize: AppText.body),
                       ),
                       onChanged: (val) {
@@ -377,9 +399,9 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       child: CheckboxListTile(
                         value: _customSaveToCatalog,
                         contentPadding: EdgeInsets.zero,
-                        activeColor: palette.primary,
+                        activeColor: palette.paid,
                         title: Text(
-                          'Save to price list for next time',
+                          tr('Save to price list for next time'),
                           style: GoogleFonts.poppins(fontSize: AppText.body),
                         ),
                         onChanged: (val) {
@@ -394,7 +416,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       child: ElevatedButton(
                         onPressed: _addCustomItem,
                         style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                        child: const Text('Add to Bill Items'),
+                        child: Text(tr('Add to Bill Items')),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -426,6 +448,38 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
     }
   }
 
+  /// Wipes the picked list — destructive, so it confirms first (§5): the
+  /// amber "Clear All" commit, plain "Keep" to stay.
+  Future<void> _clearAll() async {
+    if (_currentItems.isEmpty) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final palette = ctx.palette;
+        return AlertDialog(
+          title: Text(tr('Clear all items?')),
+          content: Text(
+              'All ${_currentItems.length} selected work item(s) will be removed from this list.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(tr('Keep')),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: palette.absent,
+                foregroundColor: palette.onPrimary,
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(tr('Clear All')),
+            ),
+          ],
+        );
+      },
+    );
+    if (ok == true && mounted) setState(() => _currentItems.clear());
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
@@ -441,13 +495,13 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(tr(widget.title), style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         actions: [
           TextButton.icon(
             onPressed: _showAddCustomItemSheet,
             icon: Icon(Icons.add_circle_outline_rounded, color: palette.primary),
             label: Text(
-              'Custom Item',
+              tr('Custom Item'),
               style: GoogleFonts.poppins(
                 color: palette.primary,
                 fontWeight: FontWeight.w600,
@@ -487,17 +541,17 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     ),
                     if (_currentItems.isNotEmpty)
                       TextButton(
-                        onPressed: () => setState(() => _currentItems.clear()),
+                        onPressed: _clearAll,
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         child: Text(
-                          'Clear All',
+                          tr('Clear All'),
                           style: GoogleFonts.poppins(
                             fontSize: AppText.caption,
-                            color: palette.pending,
+                            color: palette.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -576,7 +630,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                     style: GoogleFonts.poppins(
                                       fontSize: AppText.body,
                                       fontWeight: FontWeight.w700,
-                                      color: palette.primary,
+                                      color: palette.textPrimary,
                                     ),
                                   ),
                                     ],
@@ -586,7 +640,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                   Row(
                                     children: [
                                       _TapTarget(
-                                        tooltip: 'Decrease quantity',
+                                        tooltip: tr('Decrease quantity'),
                                         onTap: () => _updateItemQuantity(index, -1),
                                         child: Container(
                                           padding: const EdgeInsets.all(4),
@@ -605,7 +659,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                                         ),
                                       ),
                                       _TapTarget(
-                                        tooltip: 'Increase quantity',
+                                        tooltip: tr('Increase quantity'),
                                         onTap: () => _updateItemQuantity(index, 1),
                                         child: Container(
                                           padding: const EdgeInsets.all(4),
@@ -629,7 +683,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Tap an item to edit its price',
+                    tr('Tap an item to edit its price'),
                     style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
                   ),
                 ],
@@ -643,7 +697,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
             padding: const EdgeInsets.all(12),
             child: CustomSearchBar(
               controller: _searchController,
-              hintText: 'Search parts, oils, labour...',
+              hintText: tr('Search parts, oils, labour...'),
               onChanged: (val) => setState(() => _searchQuery = val),
             ),
           ),
@@ -655,7 +709,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
             tabAlignment: TabAlignment.start,
             labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
             tabs: [
-              const Tab(text: 'All Items'),
+              Tab(text: tr('All Items')),
               Tab(text: ItemCategory.sparePart.displayName),
               Tab(text: ItemCategory.labour.displayName),
               Tab(text: ItemCategory.fluids.displayName),
@@ -721,7 +775,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                           style: GoogleFonts.poppins(
                             fontSize: AppText.headline,
                             fontWeight: FontWeight.w700,
-                            color: palette.primary,
+                            color: palette.textPrimary,
                           ),
                         ),
                       ],
@@ -762,18 +816,16 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
     }).toList();
 
     if (filtered.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            allCatalog.isEmpty
-                ? 'Your price list is empty.\nAdd a custom item and tick '
-                    '"Save to price list" to reuse it.'
-                : 'No items found in this category',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(color: context.palette.textMuted),
-          ),
-        ),
+      // Actionable empty state (§5): the CTA opens the custom-item sheet, the
+      // only way out of an empty price list.
+      return EmptyStateWidget(
+        icon: Icons.inventory_2_outlined,
+        title: allCatalog.isEmpty ? tr('Your price list is empty') : tr('No items found'),
+        description: allCatalog.isEmpty
+            ? tr('Add a custom item and tick "Save to price list" to reuse it.')
+            : tr('No items found in this category'),
+        buttonText: tr('Add Custom Item'),
+        onButtonPressed: _showAddCustomItemSheet,
       );
     }
 
@@ -835,7 +887,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                               style: GoogleFonts.poppins(
                                 fontSize: AppText.subtitle,
                                 fontWeight: FontWeight.w700,
-                                color: palette.primary,
+                                color: palette.textPrimary,
                               ),
                             ),
                             TextSpan(
@@ -850,7 +902,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     ),
                   ),
                   IconButton.filledTonal(
-                    tooltip: 'Add',
+                    tooltip: tr('Add'),
                     onPressed: () => _addCatalogueItem(item),
                     icon: const Icon(Icons.add_rounded, size: 20),
                   ),

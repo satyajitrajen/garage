@@ -3,15 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../data/api/api_exception.dart';
 import '../../models/maintenance_item.dart';
 import '../../providers/garage_provider.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/error_message.dart';
+import '../../utils/permissions.dart';
 import '../../widgets/empty_state_widget.dart';
+import '../../widgets/permission_gate.dart';
 import '../../widgets/search_bar_widget.dart';
+import '../../l10n/app_language.dart';
 
 /// Spare parts & labour price list: the catalog the job card item picker
 /// offers. Add, edit or remove items here ahead of time.
@@ -34,6 +37,9 @@ class _PriceListScreenState extends State<PriceListScreen> {
   }
 
   Future<void> _openForm([MaintenanceItem? existing]) async {
+    // Catalog writes ride on jobcards.manage (backend POST/PUT/DELETE
+    // /api/catalog); the More menu gates the screen itself with the same key.
+    if (!ensurePermission(context, Permissions.jobcardsManage)) return;
     final result = await showModalBottomSheet<MaintenanceItem>(
       context: context,
       isScrollControlled: true,
@@ -49,42 +55,61 @@ class _PriceListScreenState extends State<PriceListScreen> {
         await provider.updateCatalogItem(result);
       }
       if (!mounted) return;
-      showAppSnackBar(context, existing == null ? 'Item added' : 'Item updated',
+      showAppSnackBar(context, existing == null ? tr('Item added') : tr('Item updated'),
           type: SnackBarType.success);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context,
-          e is ApiException ? e.userMessage : 'Could not save item',
-          type: SnackBarType.error);
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     }
   }
 
   Future<void> _delete(MaintenanceItem item) async {
+    if (!ensurePermission(context, Permissions.jobcardsManage)) return;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Remove from price list?'),
-        content: Text('"${item.name}" will no longer appear when adding items. '
-            'Existing job cards and bills are not affected.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Keep')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Remove')),
-        ],
-      ),
+      builder: (ctx) {
+        final palette = ctx.palette;
+        return AlertDialog(
+          title: Text(tr('Remove from price list?')),
+          content: Text('"${item.name}" will no longer appear when adding items. '
+              'Existing job cards and bills are not affected.'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(tr('Keep'), style: TextStyle(color: palette.textSecondary))),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: palette.absent,
+                  foregroundColor: palette.onPrimary,
+                ),
+                child: Text(tr('Remove'))),
+          ],
+        );
+      },
     );
     if (ok != true || !mounted) return;
     try {
       await context.read<GarageProvider>().deleteCatalogItem(item.id);
+      if (!mounted) return;
+      showAppSnackBar(context, '"${item.name}" removed from price list',
+          type: SnackBarType.success);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context,
-          e is ApiException ? e.userMessage : 'Could not remove item',
-          type: SnackBarType.error);
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     }
+  }
+
+  /// Truly-empty catalog state; the Add CTA is shown only when permitted.
+  Widget _catalogEmptyState({required bool withCta}) {
+    return EmptyStateWidget(
+      icon: Icons.inventory_2_outlined,
+      title: tr('No items yet'),
+      description:
+          tr('Add spare parts and labour with their prices to pick them quickly on job cards.'),
+      buttonText: withCta ? tr('Add item') : null,
+      onButtonPressed: withCta ? () => _openForm() : null,
+    );
   }
 
   @override
@@ -103,11 +128,15 @@ class _PriceListScreenState extends State<PriceListScreen> {
 
     return Scaffold(
       backgroundColor: palette.background,
-      appBar: AppBar(title: const Text('Spare parts & price list')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openForm(),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add item'),
+      appBar: AppBar(title: Text(tr('Spare parts & price list'))),
+      // Gated: staff without jobcards.manage never see the add affordance.
+      floatingActionButton: PermissionGate(
+        permission: Permissions.jobcardsManage,
+        child: FloatingActionButton.extended(
+          onPressed: () => _openForm(),
+          icon: const Icon(Icons.add_rounded),
+          label: Text(tr('Add item')),
+        ),
       ),
       body: Column(
         children: [
@@ -119,7 +148,7 @@ class _PriceListScreenState extends State<PriceListScreen> {
                 _searchController.clear();
                 _query = '';
               }),
-              hintText: 'Search parts, labour…',
+              hintText: tr('Search parts, labour…'),
               onChanged: (v) => setState(() => _query = v),
             ),
           ),
@@ -133,7 +162,7 @@ class _PriceListScreenState extends State<PriceListScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: ChoiceChip(
-                      label: Text(cat?.displayName ?? 'All'),
+                      label: Text(cat?.displayName ?? tr('All')),
                       selected: _filter == cat,
                       onSelected: (_) => setState(() => _filter = cat),
                     ),
@@ -143,13 +172,20 @@ class _PriceListScreenState extends State<PriceListScreen> {
           ),
           Expanded(
             child: items.isEmpty
-                ? EmptyStateWidget(
-                    icon: Icons.inventory_2_outlined,
-                    title: catalog.isEmpty ? 'No items yet' : 'No matches',
-                    description: catalog.isEmpty
-                        ? 'Add spare parts and labour with their prices to pick them quickly on job cards.'
-                        : 'Try a different search or category.',
-                  )
+                ? (catalog.isEmpty
+                    // Truly empty: offer the add action, permission-gated.
+                    ? PermissionGate(
+                        permission: Permissions.jobcardsManage,
+                        fallback: _catalogEmptyState(withCta: false),
+                        child: _catalogEmptyState(withCta: true),
+                      )
+                    : EmptyStateWidget(
+                        icon: Icons.inventory_2_outlined,
+                        title: tr('No matches'),
+                        description: _query.trim().isNotEmpty
+                            ? 'No results found for "${_query.trim()}".'
+                            : tr('Try a different search or category.'),
+                      ))
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
                     itemCount: items.length,
@@ -180,10 +216,10 @@ class _PriceListScreenState extends State<PriceListScreen> {
                                 '${CurrencyFormatter.format(item.unitPrice)}/${item.unit}',
                                 style: GoogleFonts.poppins(
                                     fontWeight: FontWeight.w700,
-                                    color: palette.primary),
+                                    color: palette.textPrimary),
                               ),
                               IconButton(
-                                tooltip: 'Remove',
+                                tooltip: tr('Remove'),
                                 icon: Icon(Icons.delete_outline_rounded,
                                     color: palette.textMuted),
                                 onPressed: () => _delete(item),
@@ -266,7 +302,7 @@ class _ItemFormState extends State<_ItemForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(widget.existing == null ? 'Add item' : 'Edit item',
+              Text(widget.existing == null ? tr('Add item') : tr('Edit item'),
                   style: GoogleFonts.poppins(
                       fontSize: AppText.title, fontWeight: FontWeight.w700)),
               const SizedBox(height: 16),
@@ -274,20 +310,28 @@ class _ItemFormState extends State<_ItemForm> {
                 controller: _name,
                 autofocus: widget.existing == null,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                    labelText: 'Name', hintText: 'e.g. Brake pad set'),
+                decoration: InputDecoration(
+                    labelText: tr('Name'), hintText: 'e.g. Brake pad set'),
                 validator: (v) =>
                     (v ?? '').trim().isEmpty ? 'Enter a name' : null,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<ItemCategory>(
                 value: _category,
-                decoration: const InputDecoration(labelText: 'Category'),
+                decoration: InputDecoration(labelText: tr('Category')),
                 items: [
                   for (final c in ItemCategory.values)
                     DropdownMenuItem(value: c, child: Text(c.displayName)),
                 ],
-                onChanged: (c) => setState(() => _category = c ?? _category),
+                onChanged: (c) => setState(() {
+                  _category = c ?? _category;
+                  // Labour is sold per job; keep the unit in step unless
+                  // the user typed their own.
+                  final unit = _unit.text.trim();
+                  if (unit.isEmpty || unit == 'Pcs' || unit == 'Job') {
+                    _unit.text = _category == ItemCategory.labour ? 'Job' : 'Pcs';
+                  }
+                }),
               ),
               const SizedBox(height: 12),
               Row(
@@ -298,12 +342,12 @@ class _ItemFormState extends State<_ItemForm> {
                       controller: _price,
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
-                      decoration: const InputDecoration(
-                          labelText: 'Price', prefixText: '₹ '),
+                      decoration: InputDecoration(
+                          labelText: tr('Price'), prefixText: '₹ '),
                       validator: (v) {
                         final n = double.tryParse(v?.trim() ?? '');
                         return n == null || n <= 0
-                            ? 'Enter a price above 0'
+                            ? tr('Enter a price above 0')
                             : null;
                       },
                     ),
@@ -312,7 +356,7 @@ class _ItemFormState extends State<_ItemForm> {
                   Expanded(
                     child: TextFormField(
                       controller: _unit,
-                      decoration: const InputDecoration(labelText: 'Unit'),
+                      decoration: InputDecoration(labelText: tr('Unit')),
                     ),
                   ),
                 ],
@@ -320,7 +364,7 @@ class _ItemFormState extends State<_ItemForm> {
               const SizedBox(height: 12),
               DropdownButtonFormField<double>(
                 value: _tax,
-                decoration: const InputDecoration(labelText: 'GST %'),
+                decoration: InputDecoration(labelText: tr('GST %')),
                 items: [
                   for (final t in {
                     ...context.read<GarageProvider>().config.taxPercentOptions,
@@ -333,15 +377,15 @@ class _ItemFormState extends State<_ItemForm> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _partNo,
-                decoration: const InputDecoration(
-                    labelText: 'Part number (optional)'),
+                decoration: InputDecoration(
+                    labelText: tr('Part number (optional)')),
               ),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: _submit,
                 style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14)),
-                child: Text(widget.existing == null ? 'Add to price list' : 'Save'),
+                child: Text(widget.existing == null ? tr('Add to price list') : tr('Save')),
               ),
             ],
           ),

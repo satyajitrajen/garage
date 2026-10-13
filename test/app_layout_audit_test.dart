@@ -27,6 +27,7 @@ import 'package:garage_manager/screens/billing/billing_screen.dart';
 import 'package:garage_manager/screens/customers/add_customer_screen.dart';
 import 'package:garage_manager/screens/customers/customer_detail_screen.dart';
 import 'package:garage_manager/screens/customers/customers_list_screen.dart';
+import 'package:garage_manager/screens/job_cards/start_job_screen.dart';
 import 'package:garage_manager/screens/dashboard/dashboard_screen.dart';
 import 'package:garage_manager/screens/expenses/add_expense_screen.dart';
 import 'package:garage_manager/screens/expenses/expenses_list_screen.dart';
@@ -364,7 +365,7 @@ final _scenarios = <_Scenario>[
   _Scenario('Dashboard', (_) => const DashboardScreen()),
   _Scenario('Main navigation', (_) => const MainNavigationScreen(),
     exercise: (tester, _) async {
-      for (final label in ['Jobs', 'Clients', 'Bills', 'More', 'Home']) {
+      for (final label in ['Jobs', 'Customers', 'Bills', 'More', 'Home']) {
         await _tap(tester, find.text(label));
         await _sweepVerticalContent(tester);
       }
@@ -444,12 +445,13 @@ final _scenarios = <_Scenario>[
   _Scenario('Salary advance dialog', (f) => StaffSalaryScreen(staff: f.garage.staff.first),
     open: (tester, _) => _tap(tester, find.byTooltip('Record Advance')),
     keyboardField: () => _input('Advance Amount (₹) *')),
-  _Scenario('Payroll staff picker sheet', (_) => const MoreMenuScreen(),
+  _Scenario('Staff & payroll from More', (_) => const MoreMenuScreen(),
     open: (tester, _) async {
-      final tile = find.text('Attendance & payroll');
+      final tile = find.text('Staff & payroll');
       await tester.scrollUntilVisible(tile, 200,
           scrollable: find.byType(Scrollable).first);
       await _tap(tester, tile);
+      expect(find.byType(StaffListScreen), findsOneWidget);
     }),
   _Scenario('Quick service customer step', (_) => const QuickServiceWizard()),
   _Scenario('Quick service vehicle step', (f) => QuickServiceWizard(initialCustomer: f.customer)),
@@ -491,10 +493,10 @@ final _scenarios = <_Scenario>[
       await tester.enterText(find.byType(TextField).first, 'MH');
       await tester.pumpAndSettle();
     }),
-  _Scenario('Home new job card picks a customer', (_) => const DashboardScreen(),
+  _Scenario('Home new job card opens plate lookup', (_) => const DashboardScreen(),
     open: (tester, f) async {
       await _tap(tester, find.text('New job card'));
-      expect(find.byType(CustomersListScreen), findsOneWidget);
+      expect(find.byType(StartJobScreen), findsOneWidget);
     }),
 ];
 

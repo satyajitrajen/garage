@@ -4,12 +4,15 @@ import 'package:provider/provider.dart';
 
 import '../../data/api/api_exception.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/date_formatter.dart';
 import '../../utils/error_message.dart';
 import '../../utils/permissions.dart';
+import '../../widgets/empty_state_widget.dart';
 import '../../widgets/permission_gate.dart';
+import '../../l10n/app_language.dart';
 
 /// SaaS team management: login identities for this garage (distinct from the
 /// workshop staff roster). Owners / staff.manage can invite by email; invites
@@ -61,7 +64,7 @@ class _MembersScreenState extends State<MembersScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Could not load team.';
+        _error = tr('Could not load team.');
         _loading = false;
       });
     }
@@ -82,9 +85,13 @@ class _MembersScreenState extends State<MembersScreen> {
             permissions: request.role == 'owner' ? null : request.permissions,
           );
       if (!mounted) return;
-      showAppSnackBar(context, 'Invite sent to ${request.email}.');
+      showAppSnackBar(context, 'Invite sent to ${request.email}.',
+          type: SnackBarType.success);
       await _load();
     } on ApiException catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
+    } catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     }
@@ -94,26 +101,37 @@ class _MembersScreenState extends State<MembersScreen> {
     final email = (invite['email'] as String?) ?? 'this person';
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Revoke invite?'),
-        content: Text('The invite link sent to $email will stop working.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Keep')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Revoke')),
-        ],
-      ),
+      builder: (ctx) {
+        final palette = ctx.palette;
+        return AlertDialog(
+          title: Text(tr('Revoke invite?')),
+          content: Text('The invite link sent to $email will stop working.'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(tr('Keep'), style: TextStyle(color: palette.textSecondary))),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: palette.partial,
+                  foregroundColor: palette.onPrimary,
+                ),
+                child: Text(tr('Revoke'))),
+          ],
+        );
+      },
     );
     if (ok != true || !mounted) return;
     try {
       await context.read<AuthProvider>().revokeInvite(invite['id'] as String);
       if (!mounted) return;
-      showAppSnackBar(context, 'Invite revoked.');
+      showAppSnackBar(context, tr('Invite revoked.'),
+          type: SnackBarType.success);
       await _load();
     } on ApiException catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
+    } catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     }
@@ -127,6 +145,7 @@ class _MembersScreenState extends State<MembersScreen> {
       );
 
   Widget _memberTile(Map<String, dynamic> m) {
+    final palette = context.palette;
     final role = (m['role'] as String?) ?? 'staff';
     final active = (m['is_active'] as bool?) ?? true;
     final perms = (m['permissions'] as List?)?.length ?? 0;
@@ -136,14 +155,14 @@ class _MembersScreenState extends State<MembersScreen> {
         leading: CircleAvatar(
           child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?'),
         ),
-        title: Text(name.isNotEmpty ? name : 'Member',
+        title: Text(name.isNotEmpty ? name : tr('Member'),
             style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600, fontSize: AppText.body)),
         subtitle: Text('${m['email'] ?? ''} • $role • '
             '$perms permission${perms == 1 ? '' : 's'}'
             '${active ? '' : ' • deactivated'}'),
         trailing: role == 'owner'
-            ? const Icon(Icons.star_rounded, color: Colors.amber)
+            ? Icon(Icons.star_rounded, color: palette.partial)
             : null,
       ),
     );
@@ -162,7 +181,7 @@ class _MembersScreenState extends State<MembersScreen> {
         subtitle: Text('$role • pending'
             '${expires == null ? '' : ' • expires ${AppDateFormatter.formatDate(expires)}'}'),
         trailing: IconButton(
-          tooltip: 'Revoke invite',
+          tooltip: tr('Revoke invite'),
           icon: const Icon(Icons.close_rounded),
           onPressed: () => _revoke(invite),
         ),
@@ -170,14 +189,32 @@ class _MembersScreenState extends State<MembersScreen> {
     );
   }
 
+  /// Empty roster state; the invite CTA is shown only with staff.manage.
+  Widget _emptyMembersState({required bool withCta}) {
+    return EmptyStateWidget(
+      icon: Icons.group_outlined,
+      title: tr('No team members yet.'),
+      description:
+          tr('Invite your team so they can sign in and use this garage.'),
+      buttonText: withCta ? tr('Invite') : null,
+      onButtonPressed: withCta ? _invite : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Scaffold(
-      appBar: AppBar(title: const Text('Team logins')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _invite,
-        icon: const Icon(Icons.person_add_outlined),
-        label: const Text('Invite'),
+      appBar: AppBar(title: Text(tr('Team logins'))),
+      // Gated: staff without staff.manage can view the roster but never see
+      // the invite affordance (the handler re-checks via ensurePermission).
+      floatingActionButton: PermissionGate(
+        permission: Permissions.staffManage,
+        child: FloatingActionButton.extended(
+          onPressed: _invite,
+          icon: const Icon(Icons.person_add_outlined),
+          label: Text(tr('Invite')),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -186,31 +223,47 @@ class _MembersScreenState extends State<MembersScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(_error!),
+                      Icon(Icons.cloud_off_rounded,
+                          size: 40, color: palette.textMuted),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                              fontSize: AppText.body,
+                              color: palette.textSecondary),
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       FilledButton(
-                          onPressed: _load, child: const Text('Retry')),
+                          onPressed: _load, child: Text(tr('Retry'))),
                     ],
                   ),
                 )
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _members.isEmpty && _invites.isEmpty
-                      ? ListView(children: const [
-                          SizedBox(height: 80),
-                          Center(child: Text('No team members yet.')),
+                      ? ListView(children: [
+                          const SizedBox(height: 80),
+                          PermissionGate(
+                            permission: Permissions.staffManage,
+                            fallback: _emptyMembersState(withCta: false),
+                            child: _emptyMembersState(withCta: true),
+                          ),
                         ])
                       : ListView(
                           // Bottom padding keeps the last card clear of the FAB.
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                           children: [
                             if (_invites.isNotEmpty) ...[
-                              _sectionLabel('Pending invites'),
+                              _sectionLabel(tr('Pending invites')),
                               for (final invite in _invites) ...[
                                 _inviteTile(invite),
                                 const SizedBox(height: 8),
                               ],
-                              _sectionLabel('Members'),
+                              _sectionLabel(tr('Members')),
                             ],
                             for (final member in _members) ...[
                               _memberTile(member),
@@ -257,11 +310,11 @@ class _InviteDialogState extends State<_InviteDialog> {
   void _submit() {
     final email = _email.text.trim();
     if (!_emailPattern.hasMatch(email)) {
-      setState(() => _emailError = 'Enter a valid email');
+      setState(() => _emailError = tr('Enter a valid email'));
       return;
     }
     if (_role == 'staff' && _permissions.isEmpty) {
-      showAppSnackBar(context, 'Pick at least one permission',
+      showAppSnackBar(context, tr('Pick at least one permission'),
           type: SnackBarType.error);
       return;
     }
@@ -277,7 +330,7 @@ class _InviteDialogState extends State<_InviteDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Invite member'),
+      title: Text(tr('Invite member')),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -290,7 +343,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                 if (_emailError != null) setState(() => _emailError = null);
               },
               decoration: InputDecoration(
-                labelText: 'Email',
+                labelText: tr('Email'),
                 border: const OutlineInputBorder(),
                 errorText: _emailError,
               ),
@@ -298,9 +351,9 @@ class _InviteDialogState extends State<_InviteDialog> {
             if (widget.canInviteOwner) ...[
               const SizedBox(height: 12),
               SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'staff', label: Text('Staff')),
-                  ButtonSegment(value: 'owner', label: Text('Owner')),
+                segments: [
+                  ButtonSegment(value: 'staff', label: Text(tr('Staff'))),
+                  ButtonSegment(value: 'owner', label: Text(tr('Owner'))),
                 ],
                 selected: {_role},
                 onSelectionChanged: (s) => setState(() => _role = s.first),
@@ -308,10 +361,10 @@ class _InviteDialogState extends State<_InviteDialog> {
             ],
             const SizedBox(height: 8),
             if (_role == 'owner')
-              Text('Owners get full access, including billing and the team.',
+              Text(tr('Owners get full access, including billing and the team.'),
                   style: GoogleFonts.poppins(fontSize: AppText.caption))
             else ...[
-              Text('Can manage',
+              Text(tr('Can manage'),
                   style: GoogleFonts.poppins(
                       fontSize: AppText.caption, fontWeight: FontWeight.w600)),
               for (final p in Permissions.all)
@@ -331,8 +384,8 @@ class _InviteDialogState extends State<_InviteDialog> {
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
-        FilledButton(onPressed: _submit, child: const Text('Send invite')),
+            child: Text(tr('Cancel'))),
+        FilledButton(onPressed: _submit, child: Text(tr('Send invite'))),
       ],
     );
   }

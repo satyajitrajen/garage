@@ -7,8 +7,13 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/date_formatter.dart';
+import '../../utils/error_message.dart';
+import '../../utils/permissions.dart';
+import '../../widgets/permission_gate.dart';
+import '../../widgets/status_badge.dart';
 import 'staff_salary_screen.dart';
 import '../../theme/app_text.dart';
+import '../../l10n/app_language.dart';
 
 class StaffAttendanceScreen extends StatefulWidget {
   final Staff staff;
@@ -22,6 +27,10 @@ class StaffAttendanceScreen extends StatefulWidget {
 class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
   late DateTime _currentMonth;
   DateTime _selectedDate = DateTime.now();
+
+  /// In-flight latch: a rapid double-tap must not fire two concurrent
+  /// upserts for the same (staff, day) pair.
+  bool _isMarking = false;
 
   @override
   void initState() {
@@ -37,31 +46,47 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
     // Never navigate into the future — attendance for days that haven't
     // happened yet would corrupt salary summaries.
     if (target.isAfter(currentMonthStart)) return;
-    setState(() => _currentMonth = target);
+    setState(() {
+      _currentMonth = target;
+      // Keep the highlighted day inside the visible month: today for the
+      // current month, the 1st otherwise (future months are unreachable).
+      _selectedDate = target.year == now.year && target.month == now.month
+          ? DateTime(now.year, now.month, now.day)
+          : target;
+    });
   }
 
   Future<void> _markAttendance(AttendanceStatus status) async {
+    if (_isMarking) return;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final day = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
     if (day.isAfter(today)) {
-      showAppSnackBar(context, 'Attendance cannot be marked for a future date', type: SnackBarType.error);
+      showAppSnackBar(context, tr('Attendance cannot be marked for a future date'), type: SnackBarType.error);
       return;
     }
 
     final provider = Provider.of<GarageProvider>(context, listen: false);
-    await provider.markAttendance(
-      staffId: widget.staff.id,
-      date: _selectedDate,
-      status: status,
-    );
-    if (!mounted) return;
+    setState(() => _isMarking = true);
+    try {
+      await provider.markAttendance(
+        staffId: widget.staff.id,
+        date: _selectedDate,
+        status: status,
+      );
+      if (!mounted) return;
 
-    showAppSnackBar(
-      context,
-      'Marked ${status.displayName} on ${AppDateFormatter.formatDayDate(_selectedDate)}',
-      type: SnackBarType.success,
-    );
+      showAppSnackBar(
+        context,
+        'Marked ${status.displayName} on ${AppDateFormatter.formatDayDate(_selectedDate)}',
+        type: SnackBarType.success,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
+    } finally {
+      if (mounted) setState(() => _isMarking = false);
+    }
   }
 
   @override
@@ -79,6 +104,10 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
     final firstWeekday = DateTime(_currentMonth.year, _currentMonth.month, 1).weekday;
 
     final selectedRecord = provider.getAttendanceForStaffOnDate(widget.staff.id, _selectedDate);
+    // Future days can't be marked: disable the pad instead of erroring on tap.
+    final now = DateTime.now();
+    final isFuture = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day)
+        .isAfter(DateTime(now.year, now.month, now.day));
 
     return Scaffold(
       appBar: AppBar(
@@ -86,7 +115,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.receipt_rounded),
-            tooltip: 'View Salary Slip',
+            tooltip: tr('View Salary Slip'),
             onPressed: () {
               Navigator.push(
                 context,
@@ -141,13 +170,13 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
             // Monthly Summary KPI Grid
             Row(
               children: [
-                _buildSummaryBadge('Present', '${salarySummary["presentDays"] ?? 0}', palette.present),
+                _buildSummaryBadge(tr('Present'), '${salarySummary["presentDays"] ?? 0}', palette.present),
                 const SizedBox(width: 8),
-                _buildSummaryBadge('Half Day', '${salarySummary["halfDays"] ?? 0}', palette.halfDay),
+                _buildSummaryBadge(tr('Half Day'), '${salarySummary["halfDays"] ?? 0}', palette.halfDay),
                 const SizedBox(width: 8),
-                _buildSummaryBadge('Absent', '${salarySummary["absentDays"] ?? 0}', palette.absent),
+                _buildSummaryBadge(tr('Absent'), '${salarySummary["absentDays"] ?? 0}', palette.absent),
                 const SizedBox(width: 8),
-                _buildSummaryBadge('Leaves', '${salarySummary["leaveDays"] ?? 0}', palette.leave),
+                _buildSummaryBadge(tr('Leaves'), '${salarySummary["leaveDays"] ?? 0}', palette.leave),
               ],
             ),
             const SizedBox(height: 16),
@@ -166,7 +195,6 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) {
-                      final isSunday = day == 'S';
                       return SizedBox(
                         width: 36,
                         child: Text(
@@ -175,7 +203,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w700,
                             fontSize: AppText.caption,
-                            color: isSunday ? palette.pending : palette.textMuted,
+                            color: palette.textMuted,
                           ),
                         ),
                       );
@@ -229,13 +257,13 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                         onTap: () {
                           setState(() => _selectedDate = date);
                         },
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                         child: Container(
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? palette.primary.withOpacity(0.2)
+                                ? palette.primary.withValues(alpha: 0.2)
                                 : (isSunday ? palette.cardAlt : Colors.transparent),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(AppDimens.radiusTile),
                             border: Border.all(
                               color: isSelected ? palette.primary : palette.border,
                               width: isSelected ? 2 : 1,
@@ -254,7 +282,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                                 style: GoogleFonts.poppins(
                                   fontSize: AppText.caption,
                                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                                  color: isSunday ? palette.pending : palette.textPrimary,
+                                  color: isSunday ? palette.textMuted : palette.textPrimary,
                                 ),
                               ),
                               if (dotColor != null) ...[
@@ -280,95 +308,91 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Attendance Action Pad for Selected Date
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: palette.card,
-                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
-                border: Border.all(color: palette.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        AppDateFormatter.formatDayDate(_selectedDate),
-                        style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+            // Attendance Action Pad for Selected Date — marking attendance is
+            // an attendance.manage write, so the pad is hidden without it.
+            PermissionGate(
+              permission: Permissions.attendanceManage,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: palette.card,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                  border: Border.all(color: palette.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          AppDateFormatter.formatDayDate(_selectedDate),
+                          style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                        ),
+                        if (selectedRecord != null)
+                          StatusBadge.fromAttendanceStatus(selectedRecord.status),
+                      ],
+                    ),
+                    if (isFuture)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(tr('Attendance cannot be marked for a future date'),
+                            style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary)),
                       ),
-                      if (selectedRecord != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: palette.primary.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'Status: ${selectedRecord.status.displayName}',
-                            style: GoogleFonts.poppins(
-                              fontSize: AppText.label,
-                              fontWeight: FontWeight.w700,
-                              color: palette.primary,
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isFuture ? null : () => _markAttendance(AttendanceStatus.present),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: palette.present,
+                              foregroundColor: palette.onPrimary,
                             ),
+                            child: Text(tr('Present')),
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _markAttendance(AttendanceStatus.present),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: palette.present,
-                            foregroundColor: palette.onPrimary,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isFuture ? null : () => _markAttendance(AttendanceStatus.halfDay),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: palette.halfDay,
+                              foregroundColor: palette.onPrimary,
+                            ),
+                            child: Text(tr('Half Day')),
                           ),
-                          child: const Text('Present'),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _markAttendance(AttendanceStatus.halfDay),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: palette.halfDay,
-                            foregroundColor: palette.onPrimary,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isFuture ? null : () => _markAttendance(AttendanceStatus.absent),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: palette.absent,
+                              foregroundColor: palette.onPrimary,
+                            ),
+                            child: Text(tr('Absent')),
                           ),
-                          child: const Text('Half Day'),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _markAttendance(AttendanceStatus.absent),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: palette.absent,
-                            foregroundColor: palette.onPrimary,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isFuture ? null : () => _markAttendance(AttendanceStatus.leave),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: palette.leave,
+                              foregroundColor: palette.onPrimary,
+                            ),
+                            child: Text(tr('Paid Leave')),
                           ),
-                          child: const Text('Absent'),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _markAttendance(AttendanceStatus.leave),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: palette.leave,
-                            foregroundColor: palette.onPrimary,
-                          ),
-                          child: const Text('Paid Leave'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 80),

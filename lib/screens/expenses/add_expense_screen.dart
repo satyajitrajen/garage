@@ -16,6 +16,8 @@ import '../../utils/currency_formatter.dart';
 import '../../utils/date_formatter.dart';
 import '../../theme/app_text.dart';
 import '../../utils/error_message.dart';
+import '../../l10n/app_language.dart';
+import '../../utils/form_errors.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   /// Non-null puts the screen in edit mode: fields are prefilled from this
@@ -88,7 +90,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       final bytes = await file.readAsBytes();
       if (bytes.length > 5 * 1024 * 1024) {
         if (!mounted) return;
-        showAppSnackBar(context, 'Photo is too large (max 5 MB)',
+        showAppSnackBar(context, tr('Photo is too large (max 5 MB)'),
             type: SnackBarType.error);
         return;
       }
@@ -99,7 +101,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Could not open the camera or gallery',
+      showAppSnackBar(context, tr('Could not open the camera or gallery'),
           type: SnackBarType.error);
     }
   }
@@ -126,7 +128,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           context,
           e is ApiException
               ? 'Expense saved, but receipt failed: ${e.userMessage}'
-              : 'Expense saved, but the receipt could not be uploaded',
+              : tr('Expense saved, but the receipt could not be uploaded'),
           type: SnackBarType.error,
         );
       }
@@ -139,7 +141,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Receipt photo',
+        Text(tr('Receipt photo'),
             style: GoogleFonts.poppins(
                 fontSize: AppText.body, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
@@ -155,9 +157,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   builder: (_) => Dialog(
                     child: InteractiveViewer(
                         child: Image.memory(_receiptBytes!,
-                            errorBuilder: (_, _, _) => const Padding(
+                            errorBuilder: (_, _, _) => Padding(
                                 padding: EdgeInsets.all(24),
-                                child: Text('Preview not available'))))),
+                                child: Text(tr('Preview not available')))))),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
@@ -169,14 +171,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           height: 80,
                           alignment: Alignment.center,
                           color: palette.cardAlt,
-                          child: const Text('Receipt attached'))),
+                          child: Text(tr('Receipt attached')))),
                 ),
               ),
               Positioned(
                 top: 6,
                 right: 6,
                 child: IconButton.filledTonal(
-                  tooltip: 'Remove receipt',
+                  tooltip: tr('Remove receipt'),
                   icon: const Icon(Icons.close_rounded),
                   onPressed: _removeReceipt,
                 ),
@@ -190,7 +192,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _pickReceipt(ImageSource.camera),
                 icon: const Icon(Icons.photo_camera_outlined),
-                label: Text(_receiptBytes == null ? 'Take photo' : 'Retake',
+                label: Text(_receiptBytes == null ? tr('Take photo') : tr('Retake'),
                     maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ),
@@ -199,7 +201,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _pickReceipt(ImageSource.gallery),
                 icon: const Icon(Icons.photo_library_outlined),
-                label: const Text('Gallery',
+                label: Text(tr('Gallery'),
                     maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ),
@@ -219,11 +221,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void _pickDate() async {
+    final firstDate = DateTime(2020);
+    final lastDate = DateTime.now();
+    // An expense predating the range (or a clock skew after lastDate) would
+    // assert inside showDatePicker — clamp the initial date into range.
+    final initialDate = _expenseDate.isBefore(firstDate)
+        ? firstDate
+        : (_expenseDate.isAfter(lastDate) ? lastDate : _expenseDate);
     final date = await showDatePicker(
       context: context,
-      initialDate: _expenseDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
     );
     // The picker can outlive this State (theme flip pops the route).
     if (!mounted) return;
@@ -235,7 +244,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Future<void> _saveExpense() async {
     // Latch: a fast double-tap on Save must not create two expenses.
     if (_isSaving) return;
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      scrollToFirstFormError(_formKey);
+      return;
+    }
 
     final amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
     final provider = Provider.of<GarageProvider>(context, listen: false);
@@ -250,7 +262,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     try {
       if (_isEditing) {
         // Edit mode: copyWith keeps the expense id so the repository updates
-        // the existing record in place instead of minting a new one.
+        // the existing record in place instead of minting a new one. The
+        // clear flags let emptied vendor/notes persist as null instead of
+        // silently reverting to the saved values.
         final edited = widget.existing!.copyWith(
           title: title,
           category: _category,
@@ -259,17 +273,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           paymentMode: _paymentMode,
           vendorName: vendor,
           notes: notes,
+          clearVendorName: vendor == null,
+          clearNotes: notes == null,
         );
 
         await provider.updateExpense(edited);
-        await _syncReceipt(provider, edited.id);
+        final receiptSynced = await _syncReceipt(provider, edited.id);
         if (!mounted) return;
 
-        showAppSnackBar(
-          context,
-          'Expense "${edited.title}" updated!',
-          type: SnackBarType.success,
-        );
+        if (receiptSynced) {
+          showAppSnackBar(
+            context,
+            'Expense "${edited.title}" updated!',
+            type: SnackBarType.success,
+          );
+        }
 
         Navigator.pop(context, edited);
       } else {
@@ -285,14 +303,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         );
 
         final created = await provider.addExpense(expense);
-        await _syncReceipt(provider, created.id);
+        final receiptSynced = await _syncReceipt(provider, created.id);
         if (!mounted) return;
 
-        showAppSnackBar(
-          context,
-          'Expense of ${CurrencyFormatter.format(amount)} recorded!',
-          type: SnackBarType.success,
-        );
+        if (receiptSynced) {
+          showAppSnackBar(
+            context,
+            'Expense of ${CurrencyFormatter.format(amount)} recorded!',
+            type: SnackBarType.success,
+          );
+        }
 
         Navigator.pop(context, expense);
       }
@@ -314,18 +334,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Garage Expense' : 'Add Garage Expense', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(_isEditing ? tr('Edit Garage Expense') : tr('Add Garage Expense'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppDimens.paddingScreen),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Expense Category Picker
               Text(
-                'Expense Category *',
+                tr('Expense Category *'),
                 style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
@@ -335,7 +355,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 children: ExpenseCategory.values.map((cat) {
                   final isSelected = _category == cat;
                   return ChoiceChip(
-                    avatar: Icon(cat.icon, size: 16, color: isSelected ? palette.onPrimary : palette.primary),
+                    avatar: Icon(cat.icon,
+                        size: 16,
+                        color: isSelected ? palette.onPrimary : palette.textSecondary),
                     label: Text(cat.displayName),
                     selected: isSelected,
                     selectedColor: palette.primary,
@@ -363,27 +385,27 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(
-                  labelText: 'Expense Title / Description *',
+                  labelText: tr('Expense Title / Description *'),
                   hintText: 'e.g. Brake cleaner sprays / Monthly electricity',
-                  prefixIcon: Icon(Icons.edit_note_rounded, color: palette.primary),
+                  prefixIcon: Icon(Icons.edit_note_rounded, color: palette.textSecondary),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Enter description' : null,
+                validator: (val) => val == null || val.trim().isEmpty ? tr('Enter description') : null,
               ),
               const SizedBox(height: 14),
 
               // Amount
               TextFormField(
                 controller: _amountController,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700),
                 decoration: InputDecoration(
-                  labelText: 'Amount Spent (₹) *',
-                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.primary),
+                  labelText: tr('Amount Spent (₹) *'),
+                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.textSecondary),
                 ),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Enter amount';
+                  if (val == null || val.trim().isEmpty) return tr('Enter amount');
                   final num = double.tryParse(val.trim());
-                  if (num == null || num <= 0) return 'Invalid amount';
+                  if (num == null || num <= 0) return tr('Invalid amount');
                   return null;
                 },
               ),
@@ -406,14 +428,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       Expanded(
                         child: Row(
                         children: [
-                          Icon(Icons.calendar_month_rounded, color: palette.primary, size: 20),
+                          Icon(Icons.calendar_month_rounded, color: palette.textSecondary, size: 20),
                           const SizedBox(width: 10),
                           Flexible(
                             child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Expense Date',
+                                tr('Expense Date'),
                                 style: GoogleFonts.poppins(
                                   fontSize: AppText.label,
                                   color: palette.textMuted,
@@ -429,7 +451,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ],
                       ),
                       ),
-                      Icon(Icons.edit_calendar_rounded, size: 18, color: palette.primary),
+                      Icon(Icons.edit_calendar_rounded, size: 18, color: palette.textSecondary),
                     ],
                   ),
                 ),
@@ -438,7 +460,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
               // Paid Via (Payment Mode)
               Text(
-                'Paid Via Mode',
+                tr('Paid Via Mode'),
                 style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
@@ -466,8 +488,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // Vendor / Supplier Name
               TextFormField(
                 controller: _vendorController,
-                decoration: const InputDecoration(
-                  labelText: 'Vendor / Paid To (Optional)',
+                decoration: InputDecoration(
+                  labelText: tr('Vendor / Paid To (Optional)'),
                   hintText: 'e.g. National Spares / Electricity Board',
                   prefixIcon: Icon(Icons.storefront_rounded),
                 ),
@@ -478,8 +500,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               TextFormField(
                 controller: _notesController,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Notes / Receipt Details',
+                decoration: InputDecoration(
+                  labelText: tr('Notes / Receipt Details'),
                   hintText: 'e.g. Bill #8891, paid for 10 cans',
                   prefixIcon: Icon(Icons.note_alt_outlined),
                 ),
@@ -494,7 +516,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _isSaving ? null : _saveExpense,
                   icon: const Icon(Icons.check_rounded),
-                  label: Text(_isEditing ? 'Save Changes' : 'Save Expense'),
+                  label: Text(_isEditing ? tr('Save Changes') : tr('Save Expense')),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),

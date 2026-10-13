@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/maintenance_item.dart';
+import '../l10n/app_language.dart';
 
 /// Lets the user change the price, quantity and discount of a line that is
 /// already selected (e.g. a catalog part whose price differs for this job).
@@ -17,7 +18,7 @@ Future<MaintenanceItem?> showEditItemDialog(
 
   String? positive(String? v) {
     final n = double.tryParse(v?.trim() ?? '');
-    if (n == null || n <= 0) return 'Must be greater than zero';
+    if (n == null || n <= 0) return tr('Must be greater than zero');
     return null;
   }
 
@@ -35,8 +36,8 @@ Future<MaintenanceItem?> showEditItemDialog(
               autofocus: true,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                  labelText: 'Unit price', prefixText: '₹ '),
+              decoration: InputDecoration(
+                  labelText: tr('Unit price'), prefixText: '₹ '),
               validator: positive,
             ),
             const SizedBox(height: 12),
@@ -53,11 +54,11 @@ Future<MaintenanceItem?> showEditItemDialog(
               controller: discountController,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Discount %'),
+              decoration: InputDecoration(labelText: tr('Discount %')),
               validator: (v) {
                 final n = double.tryParse(v?.trim() ?? '');
                 if (n == null || n < 0 || n > 100) {
-                  return 'Between 0 and 100';
+                  return tr('Between 0 and 100');
                 }
                 return null;
               },
@@ -67,7 +68,7 @@ Future<MaintenanceItem?> showEditItemDialog(
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx), child: Text(tr('Cancel'))),
         FilledButton(
           onPressed: () {
             if (!formKey.currentState!.validate()) return;
@@ -81,7 +82,7 @@ Future<MaintenanceItem?> showEditItemDialog(
               ),
             );
           },
-          child: const Text('Update'),
+          child: Text(tr('Update')),
         ),
       ],
     ),

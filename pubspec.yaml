@@ -49,6 +49,9 @@ dependencies:
   # tokens are short-lived (15 min) and refresh tokens rotate on every use.
   shared_preferences: ^2.5.5
   image_picker: ^1.2.3
+  pdf: ^3.12.0
+  # Pinned: image 4.6+ needs archive >=4.1, but pdf 3.12 caps archive <4.1.
+  image: ">=4.2.0 <4.6.0"
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +77,9 @@ flutter:
 
   assets:
     - assets/images/logo.png
+    # Bundled for PDF bills: has the ₹ glyph, no network fetch at share time.
+    - assets/fonts/Poppins-Regular.ttf
+    - assets/fonts/Poppins-SemiBold.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

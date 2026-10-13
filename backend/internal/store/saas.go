@@ -22,11 +22,28 @@ func (s *Store) NextDocNumber(ctx context.Context, garageID, kind string) (strin
 	}
 	defer tx.Rollback(context.WithoutCancel(ctx))
 
+	// The counter never hands out a number at or below one already stored:
+	// documents can arrive with explicit numbers (imports, older clients),
+	// and those would otherwise collide with the sequence.
+	target := map[string][2]string{
+		"jobcard":   {"job_cards", "job_card_number"},
+		"quotation": {"quotations", "quotation_number"},
+		"invoice":   {"invoices", "invoice_number"},
+	}[kind]
+	table, column := target[0], target[1]
+	var used int64
+	err = tx.QueryRow(ctx,
+		`SELECT COALESCE(MAX((regexp_match(`+column+`, '(\d+)$'))[1]::bigint), 0)
+		   FROM `+table+` WHERE garage_id = $1`, garageID).Scan(&used)
+	if err != nil {
+		return "", err
+	}
 	var n int64
 	err = tx.QueryRow(ctx,
-		`INSERT INTO doc_sequences (garage_id, kind, last_n) VALUES ($1, $2, 1001)
-		 ON CONFLICT (garage_id, kind) DO UPDATE SET last_n = doc_sequences.last_n + 1
-		 RETURNING last_n`, garageID, kind).Scan(&n)
+		`INSERT INTO doc_sequences (garage_id, kind, last_n) VALUES ($1, $2, GREATEST(1001, $3 + 1))
+		 ON CONFLICT (garage_id, kind) DO UPDATE
+		   SET last_n = GREATEST(doc_sequences.last_n + 1, $3 + 1)
+		 RETURNING last_n`, garageID, kind, used).Scan(&n)
 	if err != nil {
 		return "", mapPGError(err)
 	}
