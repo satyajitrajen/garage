@@ -79,6 +79,28 @@ class ContactActions {
     }
   }
 
+  /// Opens the mail app with a pre-filled account deletion request to
+  /// support, the same request the website's delete-account page sends.
+  static Future<bool> requestAccountDeletion(
+    BuildContext context, {
+    required String email,
+    String? garageName,
+  }) {
+    final body = [
+      'Please delete my NT Garage account.',
+      '',
+      'Sign-in email: $email',
+      'Garage name: ${garageName ?? '-'}',
+    ].join('\n');
+    final uri = Uri(
+      scheme: 'mailto',
+      path: 'support@nexorytechnologies.com',
+      query: 'subject=${Uri.encodeComponent('Account deletion request: $email')}'
+          '&body=${Uri.encodeComponent(body)}',
+    );
+    return _launch(context, uri);
+  }
+
   /// Launches [uri] in an external app, returning whether it launched and
   /// showing an error snack bar when the launch fails or nothing on the
   /// device can handle the link.
