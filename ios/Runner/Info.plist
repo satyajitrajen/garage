@@ -24,8 +24,8 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<!-- Schemes that may be queried/launched (url_launcher): tel dialing and
-	     the WhatsApp app scheme. https links need no entry here. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>tel</string>
@@ -33,6 +33,10 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos of expense receipts.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Attach receipt photos to expenses.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -77,9 +81,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>Take photos of expense receipts.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Attach receipt photos to expenses.</string>
 </dict>
 </plist>
