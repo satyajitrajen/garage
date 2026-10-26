@@ -86,6 +86,8 @@ func NewRouterWithOrigins(s *Server, allowedOrigins []string) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(auth.RequireAuth(s.Issuer, s.Store))
 			r.Get("/me", s.handleMe)
+			r.Patch("/me", s.updateMe)
+			r.With(auth.RateLimit(20, time.Minute)).Post("/me/password", s.changePassword)
 			r.Post("/invites/{token}/accept", s.acceptInvite)
 
 			r.Route("/garages/{garageId}", func(r chi.Router) {

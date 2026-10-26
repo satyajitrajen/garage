@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 	"time"
+
+	"garage-backend/internal/models"
 )
 
 // Identity proofing + invites (SaaS M2). Tokens are stored SHA-256 hex;
@@ -207,4 +209,33 @@ func (s *Store) IsEmailVerified(ctx context.Context, userID string) (bool, error
 		return false, mapPGError(err)
 	}
 	return t != nil, nil
+}
+
+// UpdateUserName changes the display name and returns the updated user.
+func (s *Store) UpdateUserName(ctx context.Context, userID, name string) (models.User, error) {
+	if _, err := s.Pool.Exec(ctx, `UPDATE users SET name = $2 WHERE id = $1`, userID, name); err != nil {
+		return models.User{}, mapPGError(err)
+	}
+	return s.UserByID(ctx, userID)
+}
+
+// ChangeUserPassword sets a new password hash and revokes every other
+// session of the user. keepTokenHash (the caller's own refresh token) stays
+// valid so the device that changed the password remains signed in.
+func (s *Store) ChangeUserPassword(ctx context.Context, userID, newHash, keepTokenHash string) error {
+	tx, err := s.Pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.WithoutCancel(ctx))
+	if _, err := tx.Exec(ctx,
+		`UPDATE users SET password_hash = $2 WHERE id = $1`, userID, newHash); err != nil {
+		return mapPGError(err)
+	}
+	if _, err := tx.Exec(ctx,
+		`UPDATE refresh_tokens SET revoked_at = now()
+		 WHERE user_id = $1 AND revoked_at IS NULL AND token_hash <> $2`, userID, keepTokenHash); err != nil {
+		return mapPGError(err)
+	}
+	return tx.Commit(ctx)
 }

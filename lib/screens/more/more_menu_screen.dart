@@ -19,6 +19,7 @@ import '../catalog/price_list_screen.dart';
 import '../expenses/expenses_list_screen.dart';
 import '../quotations/quotations_list_screen.dart';
 import '../settings/garage_settings_screen.dart';
+import '../settings/profile_screen.dart';
 import '../staff/staff_attendance_screen.dart';
 import '../staff/staff_list_screen.dart';
 import '../staff/staff_salary_screen.dart';
@@ -211,6 +212,12 @@ class _AccountGroup extends StatelessWidget {
         if (m != null) '${m.role} at ${m.garageName}',
       ].whereType<String>().join(' · '),
       children: [
+        _Item(
+          icon: Icons.account_circle_outlined,
+          title: 'Profile',
+          value: auth.user?.name,
+          onTap: () => push(const ProfileScreen()),
+        ),
         _Item(
           icon: Icons.credit_card_outlined,
           title: 'Subscription',

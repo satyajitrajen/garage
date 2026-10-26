@@ -373,6 +373,28 @@ class AuthProvider extends ChangeNotifier {
     return (json as Map<String, dynamic>);
   }
 
+  /// Renames the signed-in user and stores the updated identity.
+  Future<void> updateName(String name) async {
+    final json = await _client.patch('/api/me', {'name': name});
+    _user = AuthUser.fromJson(
+        (json as Map<String, dynamic>)['user'] as Map<String, dynamic>);
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Changes the password. The server signs out other devices; this one
+  /// keeps its session because its refresh token is sent along.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _client.post('/api/me/password', {
+      'current_password': currentPassword,
+      'new_password': newPassword,
+      if (_client.refreshToken != null) 'refresh_token': _client.refreshToken,
+    });
+  }
+
   /// Links an App Store transaction to the active garage. The server looks
   /// it up with Apple and activates the plan.
   Future<void> verifyApplePurchase(String transactionId) async {

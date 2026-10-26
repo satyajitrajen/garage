@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"garage-backend/internal/auth"
@@ -188,4 +189,67 @@ func (s *Server) writeSession(w http.ResponseWriter, r *http.Request, status int
 		"user":          user,
 		"memberships":   memberships,
 	})
+}
+
+// PATCH /api/me {name} → updates the signed-in user's display name.
+func (s *Server) updateMe(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name string `json:"name"`
+	}
+	if !httputil.Decode(w, r, &req) {
+		return
+	}
+	name := strings.TrimSpace(req.Name)
+	if name == "" || len(name) > 100 {
+		httputil.Error(w, 400, "invalid_request", "name is required (max 100 characters)")
+		return
+	}
+	user, err := s.Store.UpdateUserName(r.Context(), auth.UserID(r.Context()), name)
+	if err != nil {
+		httputil.Error(w, 500, "internal", "could not update profile")
+		return
+	}
+	httputil.JSON(w, 200, map[string]any{"user": user})
+}
+
+// POST /api/me/password {current_password, new_password, refresh_token?}
+// → changes the password after checking the current one. Other sessions
+// are signed out; the caller's refresh token (if sent) stays valid.
+func (s *Server) changePassword(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		CurrentPassword string `json:"current_password"`
+		NewPassword     string `json:"new_password"`
+		RefreshToken    string `json:"refresh_token"`
+	}
+	if !httputil.Decode(w, r, &req) {
+		return
+	}
+	if len(req.NewPassword) < 8 {
+		httputil.Error(w, 400, "invalid_request", "new password must be at least 8 characters")
+		return
+	}
+	userID := auth.UserID(r.Context())
+	user, err := s.Store.UserByID(r.Context(), userID)
+	if err != nil {
+		httputil.Error(w, 500, "internal", "could not load user")
+		return
+	}
+	if !auth.CheckPassword(user.PasswordHash, req.CurrentPassword) {
+		httputil.Error(w, 400, "invalid_request", "current password is incorrect")
+		return
+	}
+	hash, err := auth.HashPassword(req.NewPassword)
+	if err != nil {
+		httputil.Error(w, 500, "internal", "could not hash password")
+		return
+	}
+	keep := ""
+	if req.RefreshToken != "" {
+		keep = auth.HashToken(req.RefreshToken)
+	}
+	if err := s.Store.ChangeUserPassword(r.Context(), userID, hash, keep); err != nil {
+		httputil.Error(w, 500, "internal", "could not change password")
+		return
+	}
+	httputil.JSON(w, 200, map[string]string{"status": "ok"})
 }
