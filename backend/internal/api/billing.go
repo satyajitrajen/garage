@@ -222,6 +222,15 @@ func (s *Server) razorpayWebhook(w http.ResponseWriter, r *http.Request) {
 	if status != "" && garageID != "" {
 		_ = s.Store.UpdateSubscriptionStatus(r.Context(), garageID, status, evt.Payload.Subscription.ID, "")
 	}
+	// Push only on the first delivery of the events an owner cares about.
+	if !seen && garageID != "" {
+		switch evt.Event {
+		case "subscription.activated":
+			s.notifyGarage(garageID, "Subscription active", "Thanks! Your NT Garage subscription is now active.", map[string]string{"type": "billing"})
+		case "payment.failed", "subscription.halted":
+			s.notifyGarage(garageID, "Payment failed", "We couldn't renew your NT Garage subscription. Please update your payment method.", map[string]string{"type": "billing"})
+		}
+	}
 	httputil.JSON(w, 200, map[string]string{"status": "ok"})
 }
 

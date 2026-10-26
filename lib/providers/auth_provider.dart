@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../data/api/api_client.dart';
+import '../services/push_notification_service.dart';
 import '../data/api/api_config.dart';
 import '../data/api/auth_models.dart';
 import '../data/api/token_store.dart';
@@ -279,6 +280,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // Unregister while the session is still valid, or the device keeps
+    // getting this garage's pushes after sign-out.
+    await PushNotificationService.instance.unregister();
     final rt = _client.refreshToken;
     if (rt != null && rt.isNotEmpty) {
       try {

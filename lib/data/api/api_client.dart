@@ -172,8 +172,9 @@ class ApiClient {
     return _handle(res);
   }
 
-  Future<void> delete(String path) async {
-    final res = await _send((h) => _http.delete(_uri(path), headers: h));
+  Future<void> delete(String path, [Map<String, dynamic>? body]) async {
+    final res = await _send((h) => _http.delete(_uri(path),
+        headers: h, body: body == null ? null : jsonEncode(body)));
     await _handle(res);
   }
 

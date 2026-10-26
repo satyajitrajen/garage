@@ -15,6 +15,7 @@ import (
 	"garage-backend/internal/config"
 	"garage-backend/internal/httputil"
 	"garage-backend/internal/mail"
+	"garage-backend/internal/notify"
 	"garage-backend/internal/store"
 )
 
@@ -23,6 +24,8 @@ type Server struct {
 	Issuer *auth.TokenIssuer
 	Config config.Config
 	Mail   mail.Sender
+	// Notifier sends FCM pushes; nil or unconfigured means pushes are off.
+	Notifier *notify.FCMNotifier
 }
 
 func NewRouter(s *Server) http.Handler {
@@ -112,6 +115,8 @@ func NewRouterWithOrigins(s *Server, allowedOrigins []string) http.Handler {
 					r.Post("/apple", s.verifyApplePurchase)
 					r.Post("/cancel", s.cancelBilling)
 				})
+				r.Post("/devices/token", s.registerDeviceToken)
+				r.Delete("/devices/token", s.unregisterDeviceToken)
 				r.Route("/doc-numbers", func(r chi.Router) {
 					r.Get("/next", s.nextDocNumber)
 				})

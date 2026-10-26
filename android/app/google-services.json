@@ -1,0 +1,28 @@
+{
+  "project_info": {
+    "project_number": "213449098711",
+    "project_id": "nt-garage-68f68"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:213449098711:android:5d012614f3d9c9c2857792",
+        "android_client_info": {
+          "package_name": "com.nexory.garage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZlU6HqnU33vQDm046OY_eVnIxKfO7Bys"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

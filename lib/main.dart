@@ -12,9 +12,14 @@ import 'providers/garage_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'theme/app_theme.dart';
 import 'screens/main_navigation_screen.dart';
+import 'services/push_notification_service.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Mock mode never talks to the backend, so it has no use for push.
+  if (!ApiConfig.useMock) {
+    await PushNotificationService.instance.initialize();
+  }
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -72,6 +77,11 @@ class NTGarageApp extends StatelessWidget {
             garage ??= GarageProvider(ApiGarageRepository(apiClient));
             // Keep the repository pointed at the active garage.
             apiClient.garageId = auth.garageId;
+            // Register this device for the active garage's pushes.
+            final gid = auth.garageId;
+            if (auth.isAuthenticated && gid != null) {
+              PushNotificationService.instance.register(apiClient, gid);
+            }
             return garage;
           },
         ),

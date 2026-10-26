@@ -19,6 +19,7 @@ import (
 	"garage-backend/internal/auth"
 	"garage-backend/internal/config"
 	"garage-backend/internal/mail"
+	"garage-backend/internal/notify"
 	"garage-backend/internal/store"
 	"garage-backend/migrations"
 )
@@ -68,11 +69,21 @@ func main() {
 		}
 	}
 
+	notifier, err := notify.NewFCMNotifier(cfg.FCMCredentials)
+	if err != nil {
+		logger.Error("fcm setup failed", "err", err)
+		os.Exit(1)
+	}
+	if !notifier.Enabled() {
+		logger.Warn("FCM_CREDENTIALS is empty: push notifications are disabled")
+	}
+
 	handler := api.NewRouterWithOrigins(&api.Server{
-		Store:  store.New(pool),
-		Issuer: auth.NewTokenIssuer(cfg.JWTSecret),
-		Config: cfg,
-		Mail:   sender,
+		Store:    store.New(pool),
+		Issuer:   auth.NewTokenIssuer(cfg.JWTSecret),
+		Config:   cfg,
+		Mail:     sender,
+		Notifier: notifier,
 	}, cfg.AllowedOrigins)
 
 	srv := &http.Server{

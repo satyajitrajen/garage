@@ -50,6 +50,9 @@ type Config struct {
 	// AppleAPIBase overrides the App Store Server API host (tests point it
 	// at a fake server). Empty tries production, then sandbox.
 	AppleAPIBase string
+	// FCMCredentials is the path to a Firebase service-account JSON; empty
+	// disables push notifications.
+	FCMCredentials string
 }
 
 func Load() (Config, error) {
@@ -83,6 +86,7 @@ func Load() (Config, error) {
 		AppleProductMonthly:   getenv("APPLE_PRODUCT_MONTHLY", "com.nexory.garage.pro.monthly"),
 		AppleProductYearly:    getenv("APPLE_PRODUCT_YEARLY", "com.nexory.garage.pro.yearly"),
 		AppleAPIBase:          os.Getenv("APPLE_API_BASE"),
+		FCMCredentials:        os.Getenv("FCM_CREDENTIALS"),
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("DATABASE_URL is required")
