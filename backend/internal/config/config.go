@@ -36,6 +36,20 @@ type Config struct {
 	// RazorpayAPIBase defaults to https://api.razorpay.com; tests point it at
 	// a fake server.
 	RazorpayAPIBase string
+
+	// Apple in-app purchase (iOS). The App Store Server API key comes from
+	// App Store Connect → Users and Access → Integrations → In-App Purchase.
+	// AppleIAPPrivateKey is the .p8 file contents (PEM). Empty key disables
+	// Apple verification.
+	AppleBundleID       string
+	AppleIssuerID       string
+	AppleKeyID          string
+	AppleIAPPrivateKey  string
+	AppleProductMonthly string
+	AppleProductYearly  string
+	// AppleAPIBase overrides the App Store Server API host (tests point it
+	// at a fake server). Empty tries production, then sandbox.
+	AppleAPIBase string
 }
 
 func Load() (Config, error) {
@@ -62,6 +76,13 @@ func Load() (Config, error) {
 		PlanPriceMonthly:      getenvInt("PLAN_PRICE_MONTHLY", 0),
 		PlanPriceYearly:       getenvInt("PLAN_PRICE_YEARLY", 0),
 		SiteDir:               os.Getenv("SITE_DIR"),
+		AppleBundleID:         getenv("APPLE_BUNDLE_ID", "com.nexory.garage"),
+		AppleIssuerID:         os.Getenv("APPLE_IAP_ISSUER_ID"),
+		AppleKeyID:            os.Getenv("APPLE_IAP_KEY_ID"),
+		AppleIAPPrivateKey:    strings.ReplaceAll(os.Getenv("APPLE_IAP_PRIVATE_KEY"), `\n`, "\n"),
+		AppleProductMonthly:   getenv("APPLE_PRODUCT_MONTHLY", "com.nexory.garage.pro.monthly"),
+		AppleProductYearly:    getenv("APPLE_PRODUCT_YEARLY", "com.nexory.garage.pro.yearly"),
+		AppleAPIBase:          os.Getenv("APPLE_API_BASE"),
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("DATABASE_URL is required")

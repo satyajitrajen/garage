@@ -369,6 +369,15 @@ class AuthProvider extends ChangeNotifier {
     return (json as Map<String, dynamic>);
   }
 
+  /// Links an App Store transaction to the active garage. The server looks
+  /// it up with Apple and activates the plan.
+  Future<void> verifyApplePurchase(String transactionId) async {
+    final gid = _garageId;
+    if (gid == null || gid.isEmpty) throw StateError('No active garage');
+    await _client.post(
+        '/api/garages/$gid/billing/apple', {'transaction_id': transactionId});
+  }
+
   Future<void> cancelBilling() async {
     final gid = _garageId;
     if (gid == null || gid.isEmpty) throw StateError('No active garage');

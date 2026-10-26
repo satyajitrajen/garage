@@ -180,7 +180,20 @@ func (s *Store) SubscriptionStatusChangedAt(ctx context.Context, garageID string
 // left alone: activation only ever arrives via a signed webhook.
 func (s *Store) SetProviderSubscription(ctx context.Context, garageID, providerSubID, planCode string) error {
 	_, err := s.Pool.Exec(ctx,
-		`UPDATE subscriptions SET provider_subscription_id=$2, plan_code=$3 WHERE garage_id=$1`,
+		`UPDATE subscriptions SET provider='razorpay', provider_subscription_id=$2, plan_code=$3 WHERE garage_id=$1`,
 		garageID, providerSubID, planCode)
 	return mapPGError(err)
+}
+
+// SetAppleSubscription records an App Store subscription for the garage
+// (provider, original transaction id, plan, renewal date) and syncs the
+// status through UpdateSubscriptionStatus. A transaction already linked to
+// another garage fails the unique constraint and returns ErrDuplicate.
+func (s *Store) SetAppleSubscription(ctx context.Context, garageID, originalTxID, planCode, status string, periodEnd *time.Time) error {
+	if _, err := s.Pool.Exec(ctx,
+		`UPDATE subscriptions SET provider='apple', provider_subscription_id=$2, current_period_end=$3 WHERE garage_id=$1`,
+		garageID, originalTxID, periodEnd); err != nil {
+		return mapPGError(err)
+	}
+	return s.UpdateSubscriptionStatus(ctx, garageID, status, originalTxID, planCode)
 }

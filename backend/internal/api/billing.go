@@ -33,6 +33,9 @@ func (s *Server) getBilling(w http.ResponseWriter, r *http.Request) {
 		"trial_ends_at": sub.TrialEndsAt, "current_period_end": sub.CurrentPeriodEnd,
 		"subscription_status":      st.SubscriptionStatus,
 		"provider_subscription_id": sub.ProviderSubscription,
+		"provider":                 sub.Provider,
+		"apple_product_monthly":    s.Config.AppleProductMonthly,
+		"apple_product_yearly":     s.Config.AppleProductYearly,
 		"razorpay_key_id":          s.Config.RazorpayKeyID,
 		"price_monthly":            s.Config.PlanPriceMonthly,
 		"price_yearly":             s.Config.PlanPriceYearly,
@@ -232,6 +235,12 @@ func (s *Server) cancelBilling(w http.ResponseWriter, r *http.Request) {
 	sub, err := s.Store.SubscriptionByGarage(r.Context(), garageID)
 	if err != nil {
 		httputil.Error(w, 500, "internal", "could not load subscription")
+		return
+	}
+	// App Store subscriptions can only be cancelled by the user in Apple's
+	// settings; Apple's notification then updates the status here.
+	if sub.Provider == "apple" && sub.ProviderSubscription != "" {
+		httputil.Error(w, 400, "invalid_request", "cancel this subscription in your Apple ID settings")
 		return
 	}
 	_ = s.Store.UpdateSubscriptionStatus(r.Context(), garageID, "cancelled", sub.ProviderSubscription, sub.PlanCode)

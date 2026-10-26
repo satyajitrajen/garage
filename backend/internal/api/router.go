@@ -77,6 +77,7 @@ func NewRouterWithOrigins(s *Server, allowedOrigins []string) http.Handler {
 		r.With(auth.RateLimit(100, time.Minute)).Post("/auth/forgot", s.handleForgot)
 		r.With(auth.RateLimit(100, time.Minute)).Post("/auth/reset", s.handleReset)
 		r.Post("/billing/webhooks/razorpay", s.razorpayWebhook)
+		r.Post("/billing/webhooks/apple", s.appleWebhook)
 		r.Get("/invites/{token}", s.getInvite)
 
 		r.Group(func(r chi.Router) {
@@ -108,6 +109,7 @@ func NewRouterWithOrigins(s *Server, allowedOrigins []string) http.Handler {
 				r.Route("/billing", func(r chi.Router) {
 					r.Get("/", s.getBilling)
 					r.Post("/checkout", s.createCheckout)
+					r.Post("/apple", s.verifyApplePurchase)
 					r.Post("/cancel", s.cancelBilling)
 				})
 				r.Route("/doc-numbers", func(r chi.Router) {
