@@ -43,7 +43,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final palette = context.palette;
 
     final activeVehiclesCount = provider.activeVehiclesUnderMaintenanceCount;
-    final pendingInvoicesCount = provider.invoices.where((i) => i.balanceDue > 0).length;
+    final pendingInvoicesCount = provider.invoices
+        .where((i) => i.balanceDue > 0)
+        .length;
 
     if (provider.isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -58,7 +60,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               const SizedBox(height: 12),
               const Text('Failed to load garage data'),
               const SizedBox(height: 16),
-              FilledButton(onPressed: provider.load, child: const Text('Retry')),
+              FilledButton(
+                onPressed: provider.load,
+                child: const Text('Retry'),
+              ),
             ],
           ),
         ),
@@ -67,10 +72,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     return Scaffold(
       backgroundColor: palette.background,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
@@ -146,73 +148,80 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             // Scale the icon + label down to fit with large system text.
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSelected ? 12 : 0,
-                    vertical: isSelected ? 4 : 0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected ? context.palette.textPrimary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Icon(
-                        isSelected ? selectedIcon : icon,
-                        size: 20,
+              // The selected pill wraps both the icon and its label.
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? context.palette.textPrimary
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Icon(
+                          isSelected ? selectedIcon : icon,
+                          size: 20,
+                          color: isSelected
+                              ? Colors.white
+                              : context.palette.textSecondary,
+                        ),
+                        if (badgeCount > 0)
+                          Positioned(
+                            top: -3,
+                            right: -5,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 3,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: context.palette.pending,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${badgeCount > 9 ? '9+' : badgeCount}',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(
+                                  fontSize: AppText.micro,
+                                  height: 1,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      label,
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.micro,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         color: isSelected
                             ? Colors.white
                             : context.palette.textSecondary,
                       ),
-                      if (badgeCount > 0)
-                        Positioned(
-                          top: -3,
-                          right: -5,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 3),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: context.palette.pending,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${badgeCount > 9 ? '9+' : badgeCount}',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                fontSize: AppText.micro,
-                                height: 1,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    fontSize: AppText.micro,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected
-                        ? context.palette.textPrimary
-                        : context.palette.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+              ),
             ),
           ),
         ),
