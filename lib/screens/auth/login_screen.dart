@@ -139,10 +139,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                       builder: (_) =>
                                           const ForgotPasswordScreen()),
                                 ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 8),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.padded,
+                        ),
                         child: const Text('Forgot password?'),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     FilledButton(
                       onPressed: auth.isBusy ? null : _submit,
                       child: Padding(
@@ -160,7 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 24),
                     Row(
                       children: [
-                        const Expanded(child: Divider()),
+                        Expanded(
+                            child: Divider(
+                                color: Theme.of(context).hintColor.withValues(alpha: 0.3))),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
@@ -171,7 +179,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                        const Expanded(child: Divider()),
+                        Expanded(
+                            child: Divider(
+                                color: Theme.of(context).hintColor.withValues(alpha: 0.3))),
                       ],
                     ),
                     const SizedBox(height: 16),
