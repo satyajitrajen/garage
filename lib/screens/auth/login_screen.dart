@@ -9,7 +9,6 @@ import '../../utils/app_snack_bar.dart';
 import '../../utils/error_message.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
-import 'verify_email_screen.dart';
 
 /// Email + password gate. On success the [AuthProvider] session is stored and
 /// the app shell (AppGate) swaps to the main navigation.
@@ -129,7 +128,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       validator: (v) =>
                           (v ?? '').isEmpty ? 'Password is required' : null,
                     ),
-                    const SizedBox(height: 20),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: auth.isBusy
+                            ? null
+                            : () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          const ForgotPasswordScreen()),
+                                ),
+                        child: const Text('Forgot password?'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     FilledButton(
                       onPressed: auth.isBusy ? null : _submit,
                       child: Padding(
@@ -144,8 +157,25 @@ class _LoginScreenState extends State<LoginScreen> {
                             : const Text('Sign in'),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    TextButton(
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'New workshop?',
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.body,
+                              color: Theme.of(context).hintColor,
+                            ),
+                          ),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
                       onPressed: auth.isBusy
                           ? null
                           : () => Navigator.push(
@@ -153,35 +183,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                 MaterialPageRoute(
                                     builder: (_) => const RegisterScreen()),
                               ),
-                      child: const Text(
-                          'New workshop? Create an account'),
-                    ),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      children: [
-                        TextButton(
-                          onPressed: auth.isBusy
-                              ? null
-                              : () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const ForgotPasswordScreen()),
-                                  ),
-                          child: const Text('Forgot password?'),
-                        ),
-                        TextButton(
-                          onPressed: auth.isBusy
-                              ? null
-                              : () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const VerifyEmailScreen()),
-                                  ),
-                          child: const Text('Verify email'),
-                        ),
-                      ],
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.primary,
+                        shape: const StadiumBorder(),
+                        side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4),
+                        child: Text('Create an account'),
+                      ),
                     ),
                   ],
                 ),
