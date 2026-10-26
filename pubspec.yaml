@@ -49,6 +49,7 @@ dependencies:
   # tokens are short-lived (15 min) and refresh tokens rotate on every use.
   shared_preferences: ^2.5.5
   image_picker: ^1.2.3
+  in_app_purchase: ^3.3.1
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +75,8 @@ flutter:
 
   assets:
     - assets/images/logo.png
+    - assets/images/auth_signup_illustration.png
+    - assets/images/auth_forgot_password_illustration.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

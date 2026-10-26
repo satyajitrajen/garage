@@ -63,6 +63,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Image.asset(
+                      'assets/images/auth_forgot_password_illustration.png',
+                      height: 172,
+                      fit: BoxFit.contain,
+                      semanticLabel: 'Email secured with a lock and key',
+                    ),
+                    const SizedBox(height: 16),
                     Text('Forgot your password?',
                         style: GoogleFonts.poppins(
                             fontSize: AppText.title,

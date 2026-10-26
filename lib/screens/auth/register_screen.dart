@@ -80,6 +80,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Image.asset(
+                      'assets/images/auth_signup_illustration.png',
+                      height: 172,
+                      fit: BoxFit.contain,
+                      semanticLabel: 'Garage owner welcoming you to a workshop',
+                    ),
+                    const SizedBox(height: 16),
                     Text(
                       'Your garage, your account',
                       style: GoogleFonts.poppins(
