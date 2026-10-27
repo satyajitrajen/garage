@@ -22,12 +22,17 @@ import (
 
 // App Store Server API hosts. Production is tried first; App Review and
 // TestFlight purchases only exist in sandbox, so a "not found" falls back.
+// Production also answers 401 until the app is live on the App Store, so a
+// production 401 falls back too (a real auth problem then shows on sandbox).
 const (
 	appleProdAPI    = "https://api.storekit.itunes.apple.com"
 	appleSandboxAPI = "https://api.storekit-sandbox.itunes.apple.com"
 )
 
-var errAppleNotFound = errors.New("apple: transaction not found")
+var (
+	errAppleNotFound     = errors.New("apple: transaction not found")
+	errAppleUnauthorized = errors.New("apple: unauthorized")
+)
 
 // appleTransaction is the decoded payload of a signedTransactionInfo JWS.
 type appleTransaction struct {
@@ -199,7 +204,9 @@ func (s *Server) appleSubscriptionState(ctx context.Context, transactionID strin
 			return st, nil
 		}
 		lastErr = err
-		if !errors.Is(err, errAppleNotFound) {
+		fallback := errors.Is(err, errAppleNotFound) ||
+			(base == appleProdAPI && errors.Is(err, errAppleUnauthorized))
+		if !fallback {
 			return appleSubState{}, err
 		}
 	}
@@ -222,6 +229,9 @@ func fetchAppleStatus(ctx context.Context, base, token, transactionID string) (a
 	raw, _ := io.ReadAll(io.LimitReader(res.Body, 1<<20))
 	if res.StatusCode == 404 {
 		return appleSubState{}, errAppleNotFound
+	}
+	if res.StatusCode == 401 {
+		return appleSubState{}, errAppleUnauthorized
 	}
 	if res.StatusCode != 200 {
 		return appleSubState{}, fmt.Errorf("apple status %d: %s", res.StatusCode, raw)
