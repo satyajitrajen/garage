@@ -239,3 +239,40 @@ func (s *Store) ChangeUserPassword(ctx context.Context, userID, newHash, keepTok
 	}
 	return tx.Commit(ctx)
 }
+
+// DeleteUserAccount removes the user and every garage where they are the
+// only owner (garage data cascades). Garages with another owner keep running
+// without them. Returns the ids of the garages deleted.
+func (s *Store) DeleteUserAccount(ctx context.Context, userID string) ([]string, error) {
+	tx, err := s.Pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(context.WithoutCancel(ctx))
+	rows, err := tx.Query(ctx,
+		`DELETE FROM garages g
+		 WHERE g.id IN (SELECT garage_id FROM memberships WHERE user_id = $1 AND role = 'owner')
+		   AND NOT EXISTS (SELECT 1 FROM memberships o
+		                   WHERE o.garage_id = g.id AND o.role = 'owner' AND o.user_id <> $1)
+		 RETURNING g.id`, userID)
+	if err != nil {
+		return nil, mapPGError(err)
+	}
+	var deleted []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		deleted = append(deleted, id)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM users WHERE id = $1`, userID); err != nil {
+		return nil, mapPGError(err)
+	}
+	return deleted, tx.Commit(ctx)
+}

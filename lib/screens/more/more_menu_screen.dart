@@ -9,7 +9,6 @@ import '../../providers/garage_provider.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
-import '../../utils/contact_actions.dart';
 import '../../utils/currency_formatter.dart';
 import '../../utils/permissions.dart';
 import '../../widgets/permission_gate.dart';
@@ -19,6 +18,7 @@ import '../catalog/price_list_screen.dart';
 import '../expenses/expenses_list_screen.dart';
 import '../quotations/quotations_list_screen.dart';
 import '../settings/garage_settings_screen.dart';
+import '../settings/delete_account_dialog.dart';
 import '../settings/profile_screen.dart';
 import '../staff/staff_attendance_screen.dart';
 import '../staff/staff_list_screen.dart';
@@ -243,37 +243,11 @@ class _AccountGroup extends StatelessWidget {
           icon: Icons.delete_outline_rounded,
           title: 'Delete account',
           showChevron: false,
-          onTap: () => _confirmDelete(context, auth),
+          onTap: () => showDeleteAccountDialog(context),
         ),
       ],
     );
   }
-}
-
-Future<void> _confirmDelete(BuildContext context, AuthProvider auth) async {
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Delete account?'),
-      content: const Text(
-          'This opens an email to our support team asking to delete your '
-          'account and its data. We process requests within 30 days.'),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel')),
-        TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Continue')),
-      ],
-    ),
-  );
-  if (ok != true || !context.mounted) return;
-  await ContactActions.requestAccountDeletion(
-    context,
-    email: auth.user?.email ?? '',
-    garageName: auth.currentMembership?.garageName,
-  );
 }
 
 class _Group extends StatelessWidget {

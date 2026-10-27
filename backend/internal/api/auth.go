@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -252,4 +253,34 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.JSON(w, 200, map[string]string{"status": "ok"})
+}
+
+// DELETE /api/me {password} → permanently deletes the signed-in user's
+// account (App Store guideline 5.1.1(v)). Garages they solely own are
+// deleted with all their data; shared garages keep their other owners.
+func (s *Server) deleteMe(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Password string `json:"password"`
+	}
+	if !httputil.Decode(w, r, &req) {
+		return
+	}
+	userID := auth.UserID(r.Context())
+	user, err := s.Store.UserByID(r.Context(), userID)
+	if err != nil {
+		httputil.Error(w, 500, "internal", "could not load user")
+		return
+	}
+	if !auth.CheckPassword(user.PasswordHash, req.Password) {
+		httputil.Error(w, 400, "invalid_request", "password is incorrect")
+		return
+	}
+	garages, err := s.Store.DeleteUserAccount(r.Context(), userID)
+	if err != nil {
+		slog.Error("account deletion failed", "user", userID, "err", err)
+		httputil.Error(w, 500, "internal", "could not delete account")
+		return
+	}
+	slog.Info("account deleted", "user", userID, "garages_deleted", len(garages))
+	httputil.JSON(w, 200, map[string]any{"status": "deleted", "garages_deleted": len(garages)})
 }

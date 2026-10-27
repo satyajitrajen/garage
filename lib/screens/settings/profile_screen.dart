@@ -8,6 +8,7 @@ import '../../theme/app_palette.dart';
 import '../../theme/app_text.dart';
 import '../../utils/app_snack_bar.dart';
 import '../../utils/error_message.dart';
+import 'delete_account_dialog.dart';
 
 /// The signed-in user's own account: display name, password, and sign out.
 /// Garage details live in Garage settings; this is about the person.
@@ -235,6 +236,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               shape: const StadiumBorder(),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => showDeleteAccountDialog(context),
+            style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error),
+            child: const Text('Delete account'),
           ),
         ],
       ),

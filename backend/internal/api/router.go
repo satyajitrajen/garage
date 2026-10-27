@@ -87,6 +87,7 @@ func NewRouterWithOrigins(s *Server, allowedOrigins []string) http.Handler {
 			r.Use(auth.RequireAuth(s.Issuer, s.Store))
 			r.Get("/me", s.handleMe)
 			r.Patch("/me", s.updateMe)
+			r.With(auth.RateLimit(10, time.Minute)).Delete("/me", s.deleteMe)
 			r.With(auth.RateLimit(20, time.Minute)).Post("/me/password", s.changePassword)
 			r.Post("/invites/{token}/accept", s.acceptInvite)
 

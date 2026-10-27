@@ -279,6 +279,16 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Permanently deletes the account after the server checks [password],
+  /// then clears the local session. Garages the user solely owns are
+  /// deleted on the server along with their data.
+  Future<void> deleteAccount(String password) async {
+    // Device tokens are removed with the user row, so no unregister call.
+    await _client.delete('/api/me', {'password': password});
+    await _clearAll();
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     // Unregister while the session is still valid, or the device keeps
     // getting this garage's pushes after sign-out.
