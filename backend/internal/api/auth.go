@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -261,8 +262,13 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request) {
 func (s *Server) deleteMe(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Password string `json:"password"`
+		Confirm  string `json:"confirm"`
 	}
 	if !httputil.Decode(w, r, &req) {
+		return
+	}
+	if req.Confirm != "DELETE" {
+		httputil.Error(w, 400, "invalid_request", `type DELETE to confirm`)
 		return
 	}
 	userID := auth.UserID(r.Context())
@@ -275,12 +281,64 @@ func (s *Server) deleteMe(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, 400, "invalid_request", "password is incorrect")
 		return
 	}
-	garages, err := s.Store.DeleteUserAccount(r.Context(), userID)
+	when, err := s.Store.ScheduleAccountDeletion(r.Context(), userID, time.Now().Add(AccountDeletionGrace))
 	if err != nil {
-		slog.Error("account deletion failed", "user", userID, "err", err)
-		httputil.Error(w, 500, "internal", "could not delete account")
+		httputil.Error(w, 500, "internal", "could not schedule deletion")
 		return
 	}
-	slog.Info("account deleted", "user", userID, "garages_deleted", len(garages))
-	httputil.JSON(w, 200, map[string]any{"status": "deleted", "garages_deleted": len(garages)})
+	slog.Info("account deletion scheduled", "user", userID, "at", when)
+	date := when.Format("2 Jan 2006")
+	_ = s.Mail.Send(user.Email, "Your NT Garage account will be deleted on "+date,
+		"You asked us to delete your NT Garage account. It will be permanently deleted on "+date+
+			", together with any garage you are the only owner of.\n\n"+
+			"Changed your mind? Sign in to the app before then and tap Cancel deletion.")
+	httputil.JSON(w, 200, map[string]any{"status": "scheduled", "deletion_scheduled_at": when})
+}
+
+// AccountDeletionGrace is how long a deletion request can still be cancelled.
+const AccountDeletionGrace = 7 * 24 * time.Hour
+
+// POST /api/me/deletion/cancel → keep the account.
+func (s *Server) cancelDeleteMe(w http.ResponseWriter, r *http.Request) {
+	if err := s.Store.CancelAccountDeletion(r.Context(), auth.UserID(r.Context())); err != nil {
+		httputil.Error(w, 500, "internal", "could not cancel deletion")
+		return
+	}
+	httputil.JSON(w, 200, map[string]string{"status": "active"})
+}
+
+// PurgeDueAccounts deletes every account whose grace period has ended and
+// returns how many were deleted. Errors are logged per user, never fatal.
+func (s *Server) PurgeDueAccounts(ctx context.Context) int {
+	ids, err := s.Store.DueAccountDeletions(ctx, time.Now())
+	if err != nil {
+		slog.Error("list due account deletions failed", "err", err)
+		return 0
+	}
+	n := 0
+	for _, id := range ids {
+		garages, err := s.Store.DeleteUserAccount(ctx, id)
+		if err != nil {
+			slog.Error("account deletion failed", "user", id, "err", err)
+			continue
+		}
+		slog.Info("account deleted", "user", id, "garages_deleted", len(garages))
+		n++
+	}
+	return n
+}
+
+// RunAccountPurger runs PurgeDueAccounts now and then hourly until ctx ends.
+func (s *Server) RunAccountPurger(ctx context.Context) {
+	s.PurgeDueAccounts(ctx)
+	t := time.NewTicker(time.Hour)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			s.PurgeDueAccounts(ctx)
+		}
+	}
 }

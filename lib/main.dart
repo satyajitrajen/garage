@@ -12,6 +12,7 @@ import 'providers/garage_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'theme/app_theme.dart';
 import 'screens/main_navigation_screen.dart';
+import 'screens/settings/deletion_pending_screen.dart';
 import 'services/push_notification_service.dart';
 
 Future<void> main() async {
@@ -121,6 +122,10 @@ class _AppGateState extends State<AppGate> {
       _loadedGarage = null;
       _loadScheduled = false;
       return const LoginScreen();
+    }
+    final deleteAt = auth.user?.deletionScheduledAt;
+    if (deleteAt != null) {
+      return DeletionPendingScreen(deleteAt: deleteAt);
     }
     if (auth.garageId == null) {
       return Scaffold(

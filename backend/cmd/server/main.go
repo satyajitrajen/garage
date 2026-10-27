@@ -78,13 +78,16 @@ func main() {
 		logger.Warn("FCM_CREDENTIALS is empty: push notifications are disabled")
 	}
 
-	handler := api.NewRouterWithOrigins(&api.Server{
+	server := &api.Server{
 		Store:    store.New(pool),
 		Issuer:   auth.NewTokenIssuer(cfg.JWTSecret),
 		Config:   cfg,
 		Mail:     sender,
 		Notifier: notifier,
-	}, cfg.AllowedOrigins)
+	}
+	handler := api.NewRouterWithOrigins(server, cfg.AllowedOrigins)
+	// Deletes accounts whose 7-day deletion grace period has ended.
+	go server.RunAccountPurger(ctx)
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,

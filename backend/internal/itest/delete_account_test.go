@@ -1,6 +1,13 @@
 package itest
 
-import "testing"
+import (
+	"strings"
+	"testing"
+	"time"
+
+	"garage-backend/internal/api"
+	"garage-backend/internal/store"
+)
 
 func TestDeleteAccount(t *testing.T) {
 	truncate(t)
@@ -17,19 +24,71 @@ func TestDeleteAccount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if status, _ := doJSON(t, "DELETE", "/api/me", a.AccessToken, "", map[string]string{"password": "wrong"}); status != 400 {
+	del := func(password, confirm string) (int, []byte) {
+		return doJSON(t, "DELETE", "/api/me", a.AccessToken, "", map[string]string{"password": password, "confirm": confirm})
+	}
+	if status, _ := del("password123", ""); status != 400 {
+		t.Fatalf("missing DELETE confirmation: status %d", status)
+	}
+	if status, _ := del("wrong", "DELETE"); status != 400 {
 		t.Fatalf("wrong password: status %d", status)
 	}
-	status, data := doJSON(t, "DELETE", "/api/me", a.AccessToken, "", map[string]string{"password": "password123"})
+	status, data := del("password123", "DELETE")
 	if status != 200 {
-		t.Fatalf("delete: status %d body %s", status, data)
+		t.Fatalf("schedule delete: status %d body %s", status, data)
 	}
-	var resp struct {
-		GaragesDeleted int `json:"garages_deleted"`
+	var sched struct {
+		Status string    `json:"status"`
+		At     time.Time `json:"deletion_scheduled_at"`
 	}
-	mustUnmarshal(t, data, &resp)
-	if resp.GaragesDeleted != 1 {
-		t.Fatalf("garages deleted = %d, want 1 (only the solely owned one)", resp.GaragesDeleted)
+	mustUnmarshal(t, data, &sched)
+	if sched.Status != "scheduled" || time.Until(sched.At) < 6*24*time.Hour || time.Until(sched.At) > 7*24*time.Hour+time.Minute {
+		t.Fatalf("schedule response: %+v", sched)
+	}
+
+	// During the grace period the user can still sign in and sees the date.
+	status, data = doJSON(t, "POST", "/api/auth/login", "", "", map[string]string{
+		"email": "owner-del-a@test.dev", "password": "password123"})
+	if status != 200 {
+		t.Fatalf("login during grace: status %d", status)
+	}
+	var me struct {
+		User struct {
+			DeletionScheduledAt *time.Time `json:"deletion_scheduled_at"`
+		} `json:"user"`
+	}
+	mustUnmarshal(t, data, &me)
+	if me.User.DeletionScheduledAt == nil {
+		t.Fatal("login response does not show the pending deletion")
+	}
+	// Asking again must not push the date back.
+	if _, data := del("password123", "DELETE"); !strings.Contains(string(data), sched.At.UTC().Format("2006-01-02T15:04:05")) {
+		t.Fatalf("repeat request moved the date: %s", data)
+	}
+
+	// Purging before the date deletes nothing.
+	srv := &api.Server{Store: store.New(pool)}
+	if n := srv.PurgeDueAccounts(ctx); n != 0 {
+		t.Fatalf("purged %d accounts before the grace period ended", n)
+	}
+
+	// Cancelling keeps the account; a purge after the old date does nothing.
+	if status, data := doJSON(t, "POST", "/api/me/deletion/cancel", a.AccessToken, "", nil); status != 200 {
+		t.Fatalf("cancel: status %d body %s", status, data)
+	}
+	if n := srv.PurgeDueAccounts(ctx); n != 0 {
+		t.Fatalf("purged a cancelled account")
+	}
+
+	// Schedule again and let the grace period lapse.
+	if status, _ := del("password123", "DELETE"); status != 200 {
+		t.Fatal("reschedule failed")
+	}
+	if _, err := pool.Exec(ctx, `UPDATE users SET deletion_scheduled_at = now() - interval '1 minute' WHERE id = $1`, a.User.ID); err != nil {
+		t.Fatal(err)
+	}
+	if n := srv.PurgeDueAccounts(ctx); n != 1 {
+		t.Fatalf("purged %d accounts, want 1", n)
 	}
 
 	count := func(q string, args ...any) int {

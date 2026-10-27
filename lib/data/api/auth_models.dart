@@ -1,16 +1,27 @@
 /// Auth-session wire types. These come from the Phase 1 endpoints and use
 /// snake_case keys (unlike the camelCase domain objects in model_json.dart).
 class AuthUser {
-  const AuthUser({required this.id, required this.email, required this.name});
+  const AuthUser({
+    required this.id,
+    required this.email,
+    required this.name,
+    this.deletionScheduledAt,
+  });
 
   final String id;
   final String email;
   final String name;
 
+  /// When a requested account deletion takes effect; null if none is pending.
+  final DateTime? deletionScheduledAt;
+
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
         id: json['id'] as String,
         email: json['email'] as String,
         name: json['name'] as String,
+        deletionScheduledAt: json['deletion_scheduled_at'] == null
+            ? null
+            : DateTime.parse(json['deletion_scheduled_at'] as String).toLocal(),
       );
 }
 

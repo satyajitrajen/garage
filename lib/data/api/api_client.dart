@@ -172,10 +172,10 @@ class ApiClient {
     return _handle(res);
   }
 
-  Future<void> delete(String path, [Map<String, dynamic>? body]) async {
+  Future<dynamic> delete(String path, [Map<String, dynamic>? body]) async {
     final res = await _send((h) => _http.delete(_uri(path),
         headers: h, body: body == null ? null : jsonEncode(body)));
-    await _handle(res);
+    return _handle(res);
   }
 
   /// PUTs a raw file body (e.g. a receipt photo); the server sniffs its type.

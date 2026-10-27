@@ -8,6 +8,9 @@ type User struct {
 	Name         string    `json:"name"`
 	PasswordHash string    `json:"-"`
 	CreatedAt    time.Time `json:"created_at"`
+	// DeletionScheduledAt is when a requested account deletion takes effect;
+	// nil when no deletion is pending.
+	DeletionScheduledAt *time.Time `json:"deletion_scheduled_at"`
 }
 
 type Membership struct {

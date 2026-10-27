@@ -120,8 +120,13 @@ class AuthProvider extends ChangeNotifier {
     await _store.writeGarageId(_garageId);
     _client.garageId = _garageId;
     if (_user != null) {
-      await _store.writeUserJson(jsonEncode(
-          {'id': _user!.id, 'email': _user!.email, 'name': _user!.name}));
+      await _store.writeUserJson(jsonEncode({
+        'id': _user!.id,
+        'email': _user!.email,
+        'name': _user!.name,
+        'deletion_scheduled_at':
+            _user!.deletionScheduledAt?.toUtc().toIso8601String(),
+      }));
     } else {
       await _store.writeUserJson(null);
     }
@@ -279,13 +284,26 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Permanently deletes the account after the server checks [password],
-  /// then clears the local session. Garages the user solely owns are
-  /// deleted on the server along with their data.
-  Future<void> deleteAccount(String password) async {
-    // Device tokens are removed with the user row, so no unregister call.
-    await _client.delete('/api/me', {'password': password});
-    await _clearAll();
+  /// Schedules account deletion after the server checks [password]; it takes
+  /// effect after a 7-day grace period, during which signing in shows a
+  /// Cancel option. Signs this device out and returns the deletion date.
+  /// Garages the user solely owns are deleted with the account.
+  Future<DateTime> deleteAccount(String password) async {
+    final json = await _client.delete('/api/me', {
+      'password': password,
+      'confirm': 'DELETE',
+    });
+    final at = DateTime.parse(
+            (json as Map<String, dynamic>)['deletion_scheduled_at'] as String)
+        .toLocal();
+    await logout();
+    return at;
+  }
+
+  /// Cancels a pending account deletion and refreshes the identity.
+  Future<void> cancelAccountDeletion() async {
+    await _client.postNoGarage('/api/me/deletion/cancel');
+    await _fetchMe();
     notifyListeners();
   }
 

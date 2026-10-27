@@ -24,9 +24,9 @@ func (s *Store) userByColumn(ctx context.Context, column, value string) (models.
 		return models.User{}, fmt.Errorf("userByColumn: unsupported column %q", column)
 	}
 	row := s.Pool.QueryRow(ctx,
-		`SELECT id, email, name, password_hash, created_at FROM users WHERE `+column+` = $1`, value)
+		`SELECT id, email, name, password_hash, created_at, deletion_scheduled_at FROM users WHERE `+column+` = $1`, value)
 	var u models.User
-	err := row.Scan(&u.ID, &u.Email, &u.Name, &u.PasswordHash, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.Email, &u.Name, &u.PasswordHash, &u.CreatedAt, &u.DeletionScheduledAt)
 	return u, mapPGError(err)
 }
 

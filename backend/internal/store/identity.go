@@ -276,3 +276,38 @@ func (s *Store) DeleteUserAccount(ctx context.Context, userID string) ([]string,
 	}
 	return deleted, tx.Commit(ctx)
 }
+
+// ScheduleAccountDeletion marks the user for deletion at `at`, keeping an
+// earlier date if one is already set so repeated requests cannot postpone it.
+func (s *Store) ScheduleAccountDeletion(ctx context.Context, userID string, at time.Time) (time.Time, error) {
+	var when time.Time
+	err := s.Pool.QueryRow(ctx,
+		`UPDATE users SET deletion_scheduled_at = COALESCE(deletion_scheduled_at, $2)
+		 WHERE id = $1 RETURNING deletion_scheduled_at`, userID, at).Scan(&when)
+	return when, mapPGError(err)
+}
+
+// CancelAccountDeletion clears a pending deletion; a no-op if none is set.
+func (s *Store) CancelAccountDeletion(ctx context.Context, userID string) error {
+	_, err := s.Pool.Exec(ctx, `UPDATE users SET deletion_scheduled_at = NULL WHERE id = $1`, userID)
+	return mapPGError(err)
+}
+
+// DueAccountDeletions lists users whose scheduled deletion time has passed.
+func (s *Store) DueAccountDeletions(ctx context.Context, now time.Time) ([]string, error) {
+	rows, err := s.Pool.Query(ctx,
+		`SELECT id FROM users WHERE deletion_scheduled_at IS NOT NULL AND deletion_scheduled_at <= $1`, now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
