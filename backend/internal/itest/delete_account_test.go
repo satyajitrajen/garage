@@ -1,7 +1,6 @@
 package itest
 
 import (
-	"strings"
 	"testing"
 	"time"
 
@@ -62,7 +61,13 @@ func TestDeleteAccount(t *testing.T) {
 		t.Fatal("login response does not show the pending deletion")
 	}
 	// Asking again must not push the date back.
-	if _, data := del("password123", "DELETE"); !strings.Contains(string(data), sched.At.UTC().Format("2006-01-02T15:04:05")) {
+	// Compare instants, not text: the database may return a non-UTC offset.
+	_, data = del("password123", "DELETE")
+	var again struct {
+		At time.Time `json:"deletion_scheduled_at"`
+	}
+	mustUnmarshal(t, data, &again)
+	if !again.At.Equal(sched.At) {
 		t.Fatalf("repeat request moved the date: %s", data)
 	}
 
