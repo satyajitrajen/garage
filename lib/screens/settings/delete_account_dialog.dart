@@ -19,12 +19,15 @@ Future<void> showDeleteAccountDialog(BuildContext context) async {
   );
   if (at != null) {
     navigator.popUntil((r) => r.isFirst);
-    messenger.showSnackBar(SnackBar(
-      duration: const Duration(seconds: 8),
-      content: Text(
+    messenger.showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 8),
+        content: Text(
           'Your account will be deleted on ${DateFormat('d MMM y').format(at)}. '
-          'Sign in before then to cancel.'),
-    ));
+          'Sign in before then to cancel.',
+        ),
+      ),
+    );
   }
 }
 
@@ -61,7 +64,9 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
       _error = null;
     });
     try {
-      final at = await context.read<AuthProvider>().deleteAccount(_password.text);
+      final at = await context.read<AuthProvider>().deleteAccount(
+        _password.text,
+      );
       if (mounted) Navigator.pop(context, at);
     } on ApiException catch (e) {
       if (mounted) {
@@ -142,7 +147,10 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
                   height: 18,
                   width: 18,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
               : const Text('Delete account'),
         ),
       ],

@@ -20,7 +20,11 @@ import '../../theme/app_text.dart';
 class StaffListScreen extends StatelessWidget {
   const StaffListScreen({super.key});
 
-  void _showStaffActions(BuildContext context, GarageProvider provider, Staff staff) {
+  void _showStaffActions(
+    BuildContext context,
+    GarageProvider provider,
+    Staff staff,
+  ) {
     void go(Widget screen) {
       Navigator.pop(context);
       Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
@@ -33,7 +37,10 @@ class StaffListScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: Text(staff.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              title: Text(
+                staff.name,
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
               subtitle: Text(staff.role.displayName),
             ),
             const Divider(height: 1),
@@ -53,8 +60,14 @@ class StaffListScreen extends StatelessWidget {
               onTap: () => go(AddStaffScreen(staffToEdit: staff)),
             ),
             ListTile(
-              leading: Icon(Icons.delete_outline_rounded, color: ctx.palette.absent),
-              title: Text('Remove from staff', style: TextStyle(color: ctx.palette.absent)),
+              leading: Icon(
+                Icons.delete_outline_rounded,
+                color: ctx.palette.absent,
+              ),
+              title: Text(
+                'Remove from staff',
+                style: TextStyle(color: ctx.palette.absent),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 _confirmDeleteStaff(context, provider, staff);
@@ -73,14 +86,20 @@ class StaffListScreen extends StatelessWidget {
     );
   }
 
-  void _confirmDeleteStaff(BuildContext context, GarageProvider provider, Staff staff) {
+  void _confirmDeleteStaff(
+    BuildContext context,
+    GarageProvider provider,
+    Staff staff,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) {
         final palette = ctx.palette;
         return AlertDialog(
           title: const Text('Delete Staff Member?'),
-          content: Text('Are you sure you want to remove ${staff.name} from the workshop team?'),
+          content: Text(
+            'Are you sure you want to remove ${staff.name} from the workshop team?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -117,7 +136,10 @@ class StaffListScreen extends StatelessWidget {
     final palette = context.palette;
     final today = DateTime.now();
 
-    final totalMonthlyPayroll = staffMembers.fold<double>(0, (sum, s) => sum + s.monthlySalary);
+    final totalMonthlyPayroll = staffMembers.fold<double>(
+      0,
+      (sum, s) => sum + s.monthlySalary,
+    );
 
     return Scaffold(
       backgroundColor: palette.background,
@@ -132,14 +154,16 @@ class StaffListScreen extends StatelessWidget {
         ),
       ),
       // Empty list: its empty state already has the Add button.
-      floatingActionButton: provider.staff.isEmpty ? null : PermissionGate(
-        permission: Permissions.staffManage,
-        child: GradientFloatingActionButton(
-        onPressed: () => _openAddStaff(context),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Staff'),
-      ),
-      ),
+      floatingActionButton: provider.staff.isEmpty
+          ? null
+          : PermissionGate(
+              permission: Permissions.staffManage,
+              child: GradientFloatingActionButton(
+                onPressed: () => _openAddStaff(context),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add Staff'),
+              ),
+            ),
       body: Column(
         children: [
           // Top Staff & Attendance Actions Strip
@@ -174,25 +198,28 @@ class StaffListScreen extends StatelessWidget {
                 ),
                 // Nothing to mark until someone active is on the roster.
                 if (staffMembers.any((s) => s.isActive)) ...[
-                const SizedBox(width: 8),
-                Flexible(
-                  child: GradientButton(
-                  onPressed: () async {
-                    await provider.markAllPresentToday();
-                    if (!context.mounted) return;
-                    showAppSnackBar(
-                      context,
-                      'Marked all active staff as Present today!',
-                      type: SnackBarType.success,
-                    );
-                  },
-                  icon: const Icon(Icons.done_all_rounded, size: 16),
-                  label: const Text('Mark All Present'),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  height: 38,
-                  borderRadius: 14,
-                ),
-                ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: GradientButton(
+                      onPressed: () async {
+                        await provider.markAllPresentToday();
+                        if (!context.mounted) return;
+                        showAppSnackBar(
+                          context,
+                          'Marked all active staff as Present today!',
+                          type: SnackBarType.success,
+                        );
+                      },
+                      icon: const Icon(Icons.done_all_rounded, size: 16),
+                      label: const Text('Mark All Present'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      height: 38,
+                      borderRadius: 14,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -204,7 +231,8 @@ class StaffListScreen extends StatelessWidget {
                 ? EmptyStateWidget(
                     icon: Icons.badge_outlined,
                     title: 'No Staff Registered',
-                    description: 'Add mechanics, electricians, painters, and helpers to manage workshop jobs.',
+                    description:
+                        'Add mechanics, electricians, painters, and helpers to manage workshop jobs.',
                     buttonText: 'Add First Employee',
                     onButtonPressed: () => _openAddStaff(context),
                   )
@@ -214,8 +242,11 @@ class StaffListScreen extends StatelessWidget {
                     separatorBuilder: (_, _) => const RowDivider(),
                     itemBuilder: (context, index) {
                       final staff = staffMembers[index];
-                      final todayAttendance = provider.getAttendanceForStaffOnDate(staff.id, today);
-                      final activeJobsCount = provider.getStaffActiveJobCount(staff.id);
+                      final todayAttendance = provider
+                          .getAttendanceForStaffOnDate(staff.id, today);
+                      final activeJobsCount = provider.getStaffActiveJobCount(
+                        staff.id,
+                      );
                       return ListRow(
                         title: staff.name,
                         subtitle: staff.role.displayName,
@@ -224,11 +255,16 @@ class StaffListScreen extends StatelessWidget {
                           if (activeJobsCount > 0)
                             '$activeJobsCount active ${activeJobsCount == 1 ? 'job' : 'jobs'}',
                         ].join(' · '),
-                        trailingTop: RowAmount('${CurrencyFormatter.format(staff.monthlySalary)}/mo'),
+                        trailingTop: RowAmount(
+                          '${CurrencyFormatter.format(staff.monthlySalary)}/mo',
+                        ),
                         trailingBottom: todayAttendance == null
                             ? null
-                            : StatusBadge.fromAttendanceStatus(todayAttendance.status),
-                        onTap: () => _showStaffActions(context, provider, staff),
+                            : StatusBadge.fromAttendanceStatus(
+                                todayAttendance.status,
+                              ),
+                        onTap: () =>
+                            _showStaffActions(context, provider, staff),
                       );
                     },
                   ),

@@ -15,15 +15,16 @@ import '../../utils/error_message.dart';
 
 /// Display label for a backend subscription status ("past_due" → "Past due").
 String subscriptionStatusLabel(String status) => switch (status) {
-      'trialing' => 'Trial',
-      'active' => 'Active',
-      'past_due' => 'Past due',
-      'cancelled' => 'Cancelled',
-      'suspended' => 'Suspended',
-      _ => status.isEmpty
-          ? 'Unknown'
-          : status[0].toUpperCase() + status.substring(1).replaceAll('_', ' '),
-    };
+  'trialing' => 'Trial',
+  'active' => 'Active',
+  'past_due' => 'Past due',
+  'cancelled' => 'Cancelled',
+  'suspended' => 'Suspended',
+  _ =>
+    status.isEmpty
+        ? 'Unknown'
+        : status[0].toUpperCase() + status.substring(1).replaceAll('_', ' '),
+};
 
 /// SaaS subscription screen: trial countdown, plan status, checkout, and
 /// cancel. On iOS plans are bought through Apple in-app purchase (App Store
@@ -89,12 +90,15 @@ class _BillingScreenState extends State<BillingScreen>
       if (!mounted) return;
       setState(() {
         _products = products;
-        _productsError =
-            products.isEmpty ? 'Plans are not available right now.' : null;
+        _productsError = products.isEmpty
+            ? 'Plans are not available right now.'
+            : null;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _productsError = 'Could not load plans from the App Store.');
+      setState(
+        () => _productsError = 'Could not load plans from the App Store.',
+      );
     }
   }
 
@@ -107,8 +111,11 @@ class _BillingScreenState extends State<BillingScreen>
     } catch (_) {
       if (!mounted) return;
       setState(() => _purchasing = false);
-      showAppSnackBar(context, 'Could not start the purchase.',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Could not start the purchase.',
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -118,8 +125,11 @@ class _BillingScreenState extends State<BillingScreen>
       await _iap.restore();
     } catch (_) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Could not restore purchases.',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Could not restore purchases.',
+        type: SnackBarType.error,
+      );
     } finally {
       // Restore with nothing to restore sends no event.
       Future.delayed(const Duration(seconds: 4), () {
@@ -144,8 +154,11 @@ class _BillingScreenState extends State<BillingScreen>
       case IapEventKind.cancelled:
         break;
       case IapEventKind.error:
-        showAppSnackBar(context, e.message ?? 'Purchase failed.',
-            type: SnackBarType.error);
+        showAppSnackBar(
+          context,
+          e.message ?? 'Purchase failed.',
+          type: SnackBarType.error,
+        );
     }
   }
 
@@ -192,39 +205,50 @@ class _BillingScreenState extends State<BillingScreen>
 
   Future<void> _checkout(String plan) async {
     try {
-      final res =
-          await context.read<AuthProvider>().startCheckout(plan: plan);
+      final res = await context.read<AuthProvider>().startCheckout(plan: plan);
       if (!mounted) return;
       if (res['configured'] == false) {
         showAppSnackBar(
-            context, (res['message'] as String?) ?? 'Payment not configured.');
+          context,
+          (res['message'] as String?) ?? 'Payment not configured.',
+        );
         return;
       }
       final url = Uri.tryParse((res['short_url'] as String?) ?? '');
       if (url == null || !url.hasScheme) {
-        showAppSnackBar(context, 'Checkout link missing. Please try again.',
-            type: SnackBarType.error);
+        showAppSnackBar(
+          context,
+          'Checkout link missing. Please try again.',
+          type: SnackBarType.error,
+        );
         return;
       }
       _awaitingPayment = true;
-      final opened =
-          await launchUrl(url, mode: LaunchMode.externalApplication);
+      final opened = await launchUrl(url, mode: LaunchMode.externalApplication);
       if (!mounted) return;
       if (!opened) {
         _awaitingPayment = false;
-        showAppSnackBar(context, 'Could not open the payment page.',
-            type: SnackBarType.error);
+        showAppSnackBar(
+          context,
+          'Could not open the payment page.',
+          type: SnackBarType.error,
+        );
         return;
       }
-      showAppSnackBar(context,
-          'Complete payment in the browser. Your plan activates automatically.');
+      showAppSnackBar(
+        context,
+        'Complete payment in the browser. Your plan activates automatically.',
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Checkout failed. Please try again.',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Checkout failed. Please try again.',
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -234,14 +258,17 @@ class _BillingScreenState extends State<BillingScreen>
       builder: (ctx) => AlertDialog(
         title: const Text('Cancel subscription?'),
         content: const Text(
-            'Writes will be blocked when the subscription lapses. You can resubscribe anytime.'),
+          'Writes will be blocked when the subscription lapses. You can resubscribe anytime.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Keep')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Cancel'),
+          ),
         ],
       ),
     );
@@ -266,74 +293,134 @@ class _BillingScreenState extends State<BillingScreen>
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!),
-                      const SizedBox(height: 12),
-                      FilledButton(
-                          onPressed: _load, child: const Text('Retry')),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      _statusCard(),
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_error!),
+                  const SizedBox(height: 12),
+                  FilledButton(onPressed: _load, child: const Text('Retry')),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _statusCard(),
+                  const SizedBox(height: 16),
+                  if (isOwner && AppleIapService.isSupported)
+                    ..._applePlans()
+                  else if (isOwner && _isApple)
+                    Text(
+                      'This subscription is billed through the App Store. Manage it on the iPhone or iPad that bought it.',
+                      style: GoogleFonts.poppins(
+                        color: Theme.of(context).hintColor,
+                      ),
+                    )
+                  else if (isOwner) ...[
+                    Text(
+                      'Plans',
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.subtitle,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _planTile(
+                      'Pro Monthly',
+                      'Billed every month',
+                      'monthly',
+                      Icons.calendar_month_rounded,
+                      price: _price('price_monthly'),
+                      per: 'month',
+                    ),
+                    const SizedBox(height: 8),
+                    _planTile(
+                      'Pro Yearly',
+                      'Two months free vs monthly',
+                      'yearly',
+                      Icons.calendar_today_rounded,
+                      price: _price('price_yearly'),
+                      per: 'year',
+                    ),
+                    // Only a live paid plan can be cancelled; during the
+                    // trial there is nothing to cancel.
+                    if (_canCancel) ...[
                       const SizedBox(height: 16),
-                      if (isOwner && AppleIapService.isSupported)
-                        ..._applePlans()
-                      else if (isOwner && _isApple)
-                        Text(
-                          'This subscription is billed through the App Store. Manage it on the iPhone or iPad that bought it.',
-                          style: GoogleFonts.poppins(
-                              color: Theme.of(context).hintColor),
-                        )
-                      else if (isOwner) ...[
-                        Text('Plans',
-                            style: GoogleFonts.poppins(
-                                fontSize: AppText.subtitle,
-                                fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 8),
-                        _planTile('Pro Monthly', 'Billed every month',
-                            'monthly', Icons.calendar_month_rounded,
-                            price: _price('price_monthly'), per: 'month'),
-                        const SizedBox(height: 8),
-                        _planTile('Pro Yearly', 'Two months free vs monthly',
-                            'yearly', Icons.calendar_today_rounded,
-                            price: _price('price_yearly'), per: 'year'),
-                        // Only a live paid plan can be cancelled; during the
-                        // trial there is nothing to cancel.
-                        if (_canCancel) ...[
-                          const SizedBox(height: 16),
-                          OutlinedButton(
-                            onPressed: _cancel,
-                            child: const Text('Cancel subscription'),
-                          ),
-                        ],
-                      ] else
-                        Text(
-                          'Only the workshop owner can change the subscription.',
-                          style: GoogleFonts.poppins(
-                              color: Theme.of(context).hintColor),
-                        ),
+                      OutlinedButton(
+                        onPressed: _cancel,
+                        child: const Text('Cancel subscription'),
+                      ),
                     ],
-                  ),
-                ),
+                  ] else
+                    Text(
+                      'Only the workshop owner can change the subscription.',
+                      style: GoogleFonts.poppins(
+                        color: Theme.of(context).hintColor,
+                      ),
+                    ),
+                ],
+              ),
+            ),
     );
   }
 
+  static const _proBenefits = [
+    'Unlimited job cards, estimates and GST invoices',
+    'Payments, UPI QR on bills and customer dues',
+    'Customers, vehicles and spare-parts price list',
+    'Expenses, staff attendance, advances and payslips',
+    'Team logins with per-member permissions',
+  ];
+
   List<Widget> _applePlans() {
     final hint = GoogleFonts.poppins(
-        fontSize: AppText.caption, color: Theme.of(context).hintColor);
+      fontSize: AppText.caption,
+      color: Theme.of(context).hintColor,
+    );
     final active = (_billing?['status'] as String?) == 'active';
     return [
-      Text('Plans',
-          style: GoogleFonts.poppins(
-              fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
+      // App Review (3.1.2(c)) needs what the price buys stated next to it.
+      Text(
+        'Garage Pro includes',
+        style: GoogleFonts.poppins(
+          fontSize: AppText.subtitle,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      const SizedBox(height: 8),
+      for (final b in _proBenefits)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.check_circle_rounded,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(b, style: GoogleFonts.poppins())),
+            ],
+          ),
+        ),
+      const SizedBox(height: 4),
+      Text(
+        'Both plans include everything above for your whole team. '
+        'Without an active plan your data stays viewable but read-only.',
+        style: hint,
+      ),
+      const SizedBox(height: 16),
+      Text(
+        'Plans',
+        style: GoogleFonts.poppins(
+          fontSize: AppText.subtitle,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
       const SizedBox(height: 8),
       if (_products.isEmpty && _productsError == null)
         const Padding(
@@ -345,24 +432,32 @@ class _BillingScreenState extends State<BillingScreen>
           child: ListTile(
             title: Text(_productsError!),
             trailing: TextButton(
-                onPressed: () {
-                  setState(() => _productsError = null);
-                  _loadProducts();
-                },
-                child: const Text('Retry')),
+              onPressed: () {
+                setState(() => _productsError = null);
+                _loadProducts();
+              },
+              child: const Text('Retry'),
+            ),
           ),
         )
       else
         for (final p in _products) ...[
           Card(
             child: ListTile(
-              leading: Icon(p.id.endsWith('yearly')
-                  ? Icons.calendar_today_rounded
-                  : Icons.calendar_month_rounded),
-              title: Text(p.title.isEmpty ? p.id : p.title,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              leading: Icon(
+                p.id.endsWith('yearly')
+                    ? Icons.calendar_today_rounded
+                    : Icons.calendar_month_rounded,
+              ),
+              title: Text(
+                p.title.isEmpty ? p.id : p.title,
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
               subtitle: Text(
-                  '${p.price} / ${p.id.endsWith('yearly') ? 'year' : 'month'}'),
+                p.id.endsWith('yearly')
+                    ? '${p.price} per year · 12 months of Garage Pro, auto-renews yearly'
+                    : '${p.price} per month · 1 month of Garage Pro, auto-renews monthly',
+              ),
               trailing: FilledButton(
                 onPressed: _purchasing ? null : () => _buyApple(p),
                 child: const Text('Subscribe'),
@@ -408,11 +503,13 @@ class _BillingScreenState extends State<BillingScreen>
       Wrap(
         children: [
           TextButton(
-              onPressed: () => _open(_termsUrl),
-              child: const Text('Terms of Use')),
+            onPressed: () => _open(_termsUrl),
+            child: const Text('Terms of Use'),
+          ),
           TextButton(
-              onPressed: () => _open(_privacyUrl),
-              child: const Text('Privacy Policy')),
+            onPressed: () => _open(_privacyUrl),
+            child: const Text('Privacy Policy'),
+          ),
         ],
       ),
     ];
@@ -441,8 +538,13 @@ class _BillingScreenState extends State<BillingScreen>
       final end = DateTime.tryParse(trialEnds)?.toLocal();
       if (end != null) {
         final left = AppDateFormatter.daysUntil(end);
-        subtitle = 'Trial ends ${AppDateFormatter.formatDate(end)}'
-            '${left < 0 ? ' (expired)' : left == 0 ? ' (today)' : ' ($left day${left == 1 ? '' : 's'} left)'}';
+        subtitle =
+            'Trial ends ${AppDateFormatter.formatDate(end)}'
+            '${left < 0
+                ? ' (expired)'
+                : left == 0
+                ? ' (today)'
+                : ' ($left day${left == 1 ? '' : 's'} left)'}';
       }
     }
     Color dot = Colors.green;
@@ -455,23 +557,35 @@ class _BillingScreenState extends State<BillingScreen>
     return Card(
       child: ListTile(
         leading: Icon(Icons.circle, color: dot, size: 14),
-        title: Text('Status: ${subscriptionStatusLabel(status)}',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          'Status: ${subscriptionStatusLabel(status)}',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
         subtitle: Text(subtitle),
       ),
     );
   }
 
-  Widget _planTile(String title, String subtitle, String plan, IconData icon,
-      {num? price, required String per}) {
+  Widget _planTile(
+    String title,
+    String subtitle,
+    String plan,
+    IconData icon, {
+    num? price,
+    required String per,
+  }) {
     return Card(
       child: ListTile(
         leading: Icon(icon),
-        title: Text(title,
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        subtitle: Text(price == null
-            ? subtitle
-            : '${CurrencyFormatter.format(price.toDouble())} / $per · $subtitle'),
+        title: Text(
+          title,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          price == null
+              ? subtitle
+              : '${CurrencyFormatter.format(price.toDouble())} / $per · $subtitle',
+        ),
         trailing: FilledButton(
           onPressed: () => _checkout(plan),
           child: const Text('Subscribe'),

@@ -29,7 +29,11 @@ class QuickServiceWizard extends StatefulWidget {
   final Customer? initialCustomer;
   final Vehicle? initialVehicle;
 
-  const QuickServiceWizard({super.key, this.initialCustomer, this.initialVehicle});
+  const QuickServiceWizard({
+    super.key,
+    this.initialCustomer,
+    this.initialVehicle,
+  });
 
   @override
   State<QuickServiceWizard> createState() => _QuickServiceWizardState();
@@ -152,7 +156,11 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       final provider = Provider.of<GarageProvider>(context, listen: false);
       final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
       if (discount < 0) {
-        showAppSnackBar(context, 'Discount cannot be negative', type: SnackBarType.info);
+        showAppSnackBar(
+          context,
+          'Discount cannot be negative',
+          type: SnackBarType.info,
+        );
         return;
       }
       final gross = _selectedItems.fold(0.0, (sum, i) => sum + i.totalAmount);
@@ -171,7 +179,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       final invoice = await provider.quickServiceCheckout(
         customerId: _selectedCustomer!.id,
         vehicleId: _selectedVehicle!.id,
-        kmReading: parseGroupedInt(_kmController.text) ?? _selectedVehicle!.currentKm,
+        kmReading:
+            parseGroupedInt(_kmController.text) ?? _selectedVehicle!.currentKm,
         items: List.of(_selectedItems),
         discount: discount,
         existingJobCard: _reusableJobCard,
@@ -186,11 +195,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     } catch (e) {
       if (e is QuickServiceBillingException) _pendingJobCard = e.jobCard;
       if (!mounted) return;
-      showAppSnackBar(
-        context,
-        errorMessage(e),
-        type: SnackBarType.error,
-      );
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } finally {
       _isGeneratingBill = false;
     }
@@ -210,6 +215,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
+            tooltip: 'Back',
             icon: const Icon(Icons.arrow_back_rounded),
             onPressed: () {
               if (_currentStep > 0) {
@@ -219,7 +225,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               }
             },
           ),
-          title: Text('Quick Service Flow', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+          title: Text(
+            'Quick Service Flow',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+          ),
         ),
         body: Column(
           children: [
@@ -227,29 +236,31 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               color: context.palette.cardAlt,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildStepIndicator(0, 'Customer', Icons.person_rounded),
-                _buildStepLine(0),
-                _buildStepIndicator(1, 'Vehicle', Icons.directions_car_rounded),
-                _buildStepLine(1),
-                _buildStepIndicator(2, 'Items', Icons.build_rounded),
-                _buildStepLine(2),
-                _buildStepIndicator(3, 'Bill / Pay', Icons.payments_rounded),
-              ],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildStepIndicator(0, 'Customer', Icons.person_rounded),
+                  _buildStepLine(0),
+                  _buildStepIndicator(
+                    1,
+                    'Vehicle',
+                    Icons.directions_car_rounded,
+                  ),
+                  _buildStepLine(1),
+                  _buildStepIndicator(2, 'Items', Icons.build_rounded),
+                  _buildStepLine(2),
+                  _buildStepIndicator(3, 'Bill / Pay', Icons.payments_rounded),
+                ],
+              ),
             ),
-          ),
 
-          // Step Body
-          Expanded(
-            child: _buildCurrentStepView(provider),
-          ),
-        ],
+            // Step Body
+            Expanded(child: _buildCurrentStepView(provider)),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildStepIndicator(int stepIndex, String title, IconData icon) {
     final palette = context.palette;
@@ -260,32 +271,32 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     return Flexible(
       flex: 2,
       child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CircleAvatar(
-          radius: 16,
-          // Filled with a palette slot in both states, so the foreground
-          // follows onPrimary (white in light, dark navy in dark mode).
-          backgroundColor: isActive ? palette.primary : palette.textMuted,
-          child: Icon(
-            isCurrent ? icon : (isActive ? Icons.check_rounded : icon),
-            size: 16,
-            color: palette.onPrimary,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 16,
+            // Filled with a palette slot in both states, so the foreground
+            // follows onPrimary (white in light, dark navy in dark mode).
+            backgroundColor: isActive ? palette.primary : palette.textMuted,
+            child: Icon(
+              isCurrent ? icon : (isActive ? Icons.check_rounded : icon),
+              size: 16,
+              color: palette.onPrimary,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          maxLines: 1,
-          softWrap: false,
-          overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.poppins(
-            fontSize: AppText.label,
-            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-            color: isActive ? palette.primary : palette.textSecondary,
+          const SizedBox(height: 4),
+          Text(
+            title,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: AppText.label,
+              fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+              color: isActive ? palette.primary : palette.textSecondary,
+            ),
           ),
-        ),
-      ],
+        ],
       ),
     );
   }
@@ -337,14 +348,19 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               Expanded(
                 child: Text(
                   'Choose customer',
-                  style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                  style: GoogleFonts.poppins(
+                    fontSize: AppText.title,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               OutlinedButton.icon(
                 onPressed: () async {
                   final newCust = await Navigator.push<Customer>(
                     context,
-                    MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const AddCustomerScreen(),
+                    ),
                   );
                   if (!mounted) return;
                   if (newCust != null) _onCustomerSelected(newCust);
@@ -365,6 +381,7 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               prefixIcon: const Icon(Icons.search_rounded, size: 20),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
+                      tooltip: 'Clear search',
                       icon: const Icon(Icons.clear_rounded, size: 18),
                       onPressed: () {
                         _searchController.clear();
@@ -372,7 +389,10 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                       },
                     )
                   : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 10,
+              ),
             ),
           ),
         ),
@@ -395,12 +415,31 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                       child: ListTile(
                         onTap: () => _onCustomerSelected(c),
                         leading: CircleAvatar(
-                          backgroundColor: palette.primary.withValues(alpha: 0.12),
-                          child: Text(c.name.substring(0, 1).toUpperCase(), style: TextStyle(fontWeight: FontWeight.bold, color: palette.primary)),
+                          backgroundColor: palette.primary.withValues(
+                            alpha: 0.12,
+                          ),
+                          child: Text(
+                            c.name.substring(0, 1).toUpperCase(),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: palette.primary,
+                            ),
+                          ),
                         ),
-                        title: Text(c.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
-                        subtitle: Text('${c.phone} · ${vehicles.length} ${vehicles.length == 1 ? 'vehicle' : 'vehicles'}'),
-                        trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: palette.textMuted),
+                        title: Text(
+                          c.name,
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${c.phone} · ${vehicles.length} ${vehicles.length == 1 ? 'vehicle' : 'vehicles'}',
+                        ),
+                        trailing: Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: palette.textMuted,
+                        ),
                       ),
                     );
                   },
@@ -426,8 +465,23 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Choose vehicle', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
-                    Text('For ${_selectedCustomer!.name}', maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.primary, fontWeight: FontWeight.w600)),
+                    Text(
+                      'Choose vehicle',
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.title,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'For ${_selectedCustomer!.name}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.caption,
+                        color: palette.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -436,7 +490,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                 onPressed: () async {
                   final newV = await showDialog<Vehicle>(
                     context: context,
-                    builder: (_) => AddVehicleDialog(customerId: _selectedCustomer!.id),
+                    builder: (_) =>
+                        AddVehicleDialog(customerId: _selectedCustomer!.id),
                   );
                   if (!mounted) return;
                   if (newV != null) _onVehicleSelected(newV);
@@ -459,12 +514,30 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                   onTap: () => _onVehicleSelected(v),
                   leading: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: palette.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                    child: Icon(Icons.directions_car_rounded, color: palette.primary),
+                    decoration: BoxDecoration(
+                      color: palette.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.directions_car_rounded,
+                      color: palette.primary,
+                    ),
                   ),
-                  title: Text(v.registrationNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-                  subtitle: Text('${v.displayName} • ${v.currentKm} KM • ${v.fuelType.displayName}'),
-                  trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: palette.textMuted),
+                  title: Text(
+                    v.registrationNumber,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${v.displayName} • ${v.currentKm} KM • ${v.fuelType.displayName}',
+                  ),
+                  trailing: Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: palette.textMuted,
+                  ),
                 ),
               );
             },
@@ -495,191 +568,268 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     final netGrandTotal = draft.grandTotal;
     // Short viewport (keyboard up on a small phone): Scaffold strips the inset
     // from the body's MediaQuery, so decide from the space actually given.
-    return LayoutBuilder(builder: (context, constraints) {
-    final keyboardOpen = constraints.maxHeight < 380;
-    // Also scroll (but keep the totals) when large text leaves too little
-    // room for a pinned list.
-    final scrolling = keyboardOpen ||
-        constraints.maxHeight < 600 * MediaQuery.textScalerOf(context).scale(1);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final keyboardOpen = constraints.maxHeight < 380;
+        // Also scroll (but keep the totals) when large text leaves too little
+        // room for a pinned list.
+        final scrolling =
+            keyboardOpen ||
+            constraints.maxHeight <
+                600 * MediaQuery.textScalerOf(context).scale(1);
 
-    // With the keyboard up the step has ~250px on a small phone: scroll the
-    // whole step (list shrink-wrapped) instead of pinning an Expanded list.
-    final content = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Work & parts', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
-                    Text(
-                      '${_selectedVehicle!.registrationNumber} (${_selectedVehicle!.displayName})',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.primary),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: _openAddItems,
-                icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('Add'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // KM and Discount fields
-          Container(
-            key: _itemsFieldsKey,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: palette.card,
-              borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
-              border: Border.all(color: palette.border),
-            ),
-            child: Row(
+        // With the keyboard up the step has ~250px on a small phone: scroll the
+        // whole step (list shrink-wrapped) instead of pinning an Expanded list.
+        final content = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _kmController,
-                    inputFormatters: const [GroupedDigitsInputFormatter()],
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Odometer (KM)',
-                      prefixIcon: Icon(Icons.speed_rounded, size: 18),
-                      isDense: true,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Work & parts',
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.title,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        '${_selectedVehicle!.registrationNumber} (${_selectedVehicle!.displayName})',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.caption,
+                          color: palette.primary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _discountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    onChanged: (_) => setState(() {}),
-                    decoration: const InputDecoration(
-                      labelText: 'Discount (₹)',
-                      prefixIcon: Icon(Icons.discount_rounded, size: 18),
-                      isDense: true,
-                    ),
-                  ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: _openAddItems,
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  label: const Text('Add'),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          _expandUnlessScrolling(
-            scrolling,
-            _selectedItems.isEmpty
-                ? (scrolling
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text('No items added yet',
-                            style: GoogleFonts.poppins(color: palette.textMuted)),
-                      )
-                    : const EmptyStateWidget(
-                        icon: Icons.build_circle_outlined,
-                        title: 'No items added yet',
-                        description: 'Tap "Add Items" to choose oil, filters, labour, etc.',
-                      ))
-                : ListView.separated(
-                    shrinkWrap: scrolling,
-                    physics: scrolling ? const NeverScrollableScrollPhysics() : null,
-                    itemCount: _selectedItems.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final item = _selectedItems[index];
-                      return Card(
-                        child: ListTile(
-                          title: Text(item.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                          subtitle: Text('${formatQuantity(item.quantity)} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(CurrencyFormatter.format(item.totalAmount), style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: palette.primary)),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                icon: Icon(Icons.delete_outline_rounded, size: 18, color: palette.pending),
-                                onPressed: () => setState(() => _selectedItems.removeAt(index)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          if (!keyboardOpen) ...[
-          const SizedBox(height: 12),
-          SafeArea(
-            top: false,
-            child: Container(
-              padding: const EdgeInsets.all(16),
+            // KM and Discount fields
+            Container(
+              key: _itemsFieldsKey,
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: palette.card,
-                borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
                 border: Border.all(color: palette.border),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+              child: Row(
                 children: [
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    spacing: 12,
-                    children: [
-                      Text('Subtotal: ${CurrencyFormatter.format(subtotal)}', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
-                      if (discount > 0)
-                        Text('Discount: -${CurrencyFormatter.format(discount)}', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.paid, fontWeight: FontWeight.w600)),
-                      Text('GST: ${CurrencyFormatter.format(tax)}', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
-                    ],
+                  Expanded(
+                    child: TextField(
+                      controller: _kmController,
+                      inputFormatters: const [GroupedDigitsInputFormatter()],
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Odometer (KM)',
+                        prefixIcon: Icon(Icons.speed_rounded, size: 18),
+                        isDense: true,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Net Bill Total:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: Text(CurrencyFormatter.format(netGrandTotal), style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.primary)),
-                            ),
-                          ],
-                        ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _discountController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: GradientButton(
-                          onPressed: _generateFinalBill,
-                          icon: const Icon(Icons.receipt_long_rounded),
-                          label: const Text('Generate Bill'),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
+                      onChanged: (_) => setState(() {}),
+                      decoration: const InputDecoration(
+                        labelText: 'Discount (₹)',
+                        prefixIcon: Icon(Icons.discount_rounded, size: 18),
+                        isDense: true,
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
+            const SizedBox(height: 12),
+
+            _expandUnlessScrolling(
+              scrolling,
+              _selectedItems.isEmpty
+                  ? (scrolling
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'No items added yet',
+                              style: GoogleFonts.poppins(
+                                color: palette.textMuted,
+                              ),
+                            ),
+                          )
+                        : const EmptyStateWidget(
+                            icon: Icons.build_circle_outlined,
+                            title: 'No items added yet',
+                            description:
+                                'Tap "Add Items" to choose oil, filters, labour, etc.',
+                          ))
+                  : ListView.separated(
+                      shrinkWrap: scrolling,
+                      physics: scrolling
+                          ? const NeverScrollableScrollPhysics()
+                          : null,
+                      itemCount: _selectedItems.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final item = _selectedItems[index];
+                        return Card(
+                          child: ListTile(
+                            title: Text(
+                              item.name,
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${formatQuantity(item.quantity)} ${item.unit} x ${CurrencyFormatter.format(item.unitPrice)}',
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  CurrencyFormatter.format(item.totalAmount),
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w700,
+                                    color: palette.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  tooltip: 'Remove item',
+                                  icon: Icon(
+                                    Icons.delete_outline_rounded,
+                                    size: 18,
+                                    color: palette.pending,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _selectedItems.removeAt(index),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            if (!keyboardOpen) ...[
+              const SizedBox(height: 12),
+              SafeArea(
+                top: false,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: palette.card,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                    border: Border.all(color: palette.border),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        spacing: 12,
+                        children: [
+                          Text(
+                            'Subtotal: ${CurrencyFormatter.format(subtotal)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.label,
+                              color: palette.textMuted,
+                            ),
+                          ),
+                          if (discount > 0)
+                            Text(
+                              'Discount: -${CurrencyFormatter.format(discount)}',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.label,
+                                color: palette.paid,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          Text(
+                            'GST: ${CurrencyFormatter.format(tax)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.label,
+                              color: palette.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Net Bill Total:',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: AppText.caption,
+                                    color: palette.textMuted,
+                                  ),
+                                ),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    CurrencyFormatter.format(netGrandTotal),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: AppText.headline,
+                                      fontWeight: FontWeight.w700,
+                                      color: palette.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: GradientButton(
+                              onPressed: _generateFinalBill,
+                              icon: const Icon(Icons.receipt_long_rounded),
+                              label: const Text('Generate Bill'),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
-      );
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: scrolling ? SingleChildScrollView(child: content) : content,
+        );
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: scrolling ? SingleChildScrollView(child: content) : content,
+        );
+      },
     );
-    });
   }
 
   Widget _expandUnlessScrolling(bool scrolling, Widget child) =>
@@ -690,8 +840,11 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
     final palette = context.palette;
     if (_generatedInvoice == null) return const SizedBox.shrink();
 
-    final inv = provider.getInvoiceById(_generatedInvoice!.id) ?? _generatedInvoice!;
-    final job = inv.jobCardId == null ? null : provider.getJobCardById(inv.jobCardId!);
+    final inv =
+        provider.getInvoiceById(_generatedInvoice!.id) ?? _generatedInvoice!;
+    final job = inv.jobCardId == null
+        ? null
+        : provider.getJobCardById(inv.jobCardId!);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -704,29 +857,47 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               color: palette.paid.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.check_circle_rounded, color: palette.paid, size: 64),
+            child: Icon(
+              Icons.check_circle_rounded,
+              color: palette.paid,
+              size: 64,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             'Job Card & Bill Generated!',
-            style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700),
+            style: GoogleFonts.poppins(
+              fontSize: AppText.headline,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             'Bill #${inv.invoiceNumber}',
-            style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.primary),
+            style: GoogleFonts.poppins(
+              fontSize: AppText.title,
+              fontWeight: FontWeight.w700,
+              color: palette.primary,
+            ),
           ),
           if (job != null) ...[
             const SizedBox(height: 6),
             Text(
               'Job Card #${job.jobCardNumber} • Marked Delivered',
-              style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600, color: palette.paid),
+              style: GoogleFonts.poppins(
+                fontSize: AppText.caption,
+                fontWeight: FontWeight.w600,
+                color: palette.paid,
+              ),
             ),
           ],
           const SizedBox(height: 6),
           Text(
             'Total Amount: ${CurrencyFormatter.format(inv.grandTotal)} • Pending Due: ${CurrencyFormatter.format(inv.balanceDue)}',
-            style: GoogleFonts.poppins(fontSize: AppText.body, color: palette.textSecondary),
+            style: GoogleFonts.poppins(
+              fontSize: AppText.body,
+              color: palette.textSecondary,
+            ),
           ),
           const SizedBox(height: 28),
 
@@ -734,7 +905,8 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
             GradientButton(
               width: double.infinity,
               onPressed: () {
-                if (!ensurePermission(context, Permissions.paymentsRecord)) return;
+                if (!ensurePermission(context, Permissions.paymentsRecord))
+                  return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -743,7 +915,9 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
                 );
               },
               icon: const Icon(Icons.payments_rounded),
-              label: Text('Record Payment (${CurrencyFormatter.format(inv.balanceDue)})'),
+              label: Text(
+                'Record Payment (${CurrencyFormatter.format(inv.balanceDue)})',
+              ),
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             const SizedBox(height: 12),
@@ -755,12 +929,16 @@ class _QuickServiceWizardState extends State<QuickServiceWizard> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoiceId: inv.id)),
+                  MaterialPageRoute(
+                    builder: (_) => InvoicePreviewScreen(invoiceId: inv.id),
+                  ),
                 );
               },
               icon: const Icon(Icons.receipt_rounded),
               label: const Text('View Bill'),
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
             ),
           ),
           const SizedBox(height: 12),

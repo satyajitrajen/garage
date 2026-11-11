@@ -56,7 +56,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(invoice.invoiceNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          invoice.invoiceNumber,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
         actions: [
           // One share action covering the whole bill — PDF/print is out of
           // scope, so the old "Print Tax Bill" stub was removed.
@@ -71,32 +74,36 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   )
                 : const Icon(Icons.share_rounded),
             tooltip: 'Share Bill',
-            onPressed: _sharing ? null : () async {
-              final lines = [
-                '${profile.name} — ${profile.gstin.trim().isEmpty ? 'Bill' : 'Tax Invoice'} ${invoice.invoiceNumber}',
-                'Customer: ${customer?.name ?? '-'}',
-                if (vehicle != null) 'Vehicle: ${vehicle.registrationNumber}',
-                'Grand Total: ${CurrencyFormatter.format(invoice.grandTotal)}',
-                'Balance Due: ${CurrencyFormatter.format(invoice.balanceDue)}',
-                if (invoice.dueDate != null)
-                  'Due Date: ${AppDateFormatter.formatDate(invoice.dueDate!)}',
-              ];
-              setState(() => _sharing = true);
-              try {
-                await ContactActions.shareText(
-                  context,
-                  title: 'Bill ${invoice.invoiceNumber}',
-                  text: lines.join('\n'),
-                );
-              } finally {
-                if (mounted) setState(() => _sharing = false);
-              }
-            },
+            onPressed: _sharing
+                ? null
+                : () async {
+                    final lines = [
+                      '${profile.name} — ${profile.gstin.trim().isEmpty ? 'Bill' : 'Tax Invoice'} ${invoice.invoiceNumber}',
+                      'Customer: ${customer?.name ?? '-'}',
+                      if (vehicle != null)
+                        'Vehicle: ${vehicle.registrationNumber}',
+                      'Grand Total: ${CurrencyFormatter.format(invoice.grandTotal)}',
+                      'Balance Due: ${CurrencyFormatter.format(invoice.balanceDue)}',
+                      if (invoice.dueDate != null)
+                        'Due Date: ${AppDateFormatter.formatDate(invoice.dueDate!)}',
+                    ];
+                    setState(() => _sharing = true);
+                    try {
+                      await ContactActions.shareText(
+                        context,
+                        title: 'Bill ${invoice.invoiceNumber}',
+                        text: lines.join('\n'),
+                      );
+                    } finally {
+                      if (mounted) setState(() => _sharing = false);
+                    }
+                  },
           ),
           // Cancel action is only meaningful while nothing has been paid and
           // the invoice is still active — paid invoices need a refund flow and
           // cancelled ones are already voided.
-          if (invoice.totalPaidAmount <= 0 && invoice.status != InvoiceStatus.cancelled)
+          if (invoice.totalPaidAmount <= 0 &&
+              invoice.status != InvoiceStatus.cancelled)
             PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == 'cancel_invoice') {
@@ -108,7 +115,11 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   value: 'cancel_invoice',
                   child: Row(
                     children: [
-                      Icon(Icons.cancel_outlined, size: 18, color: palette.absent),
+                      Icon(
+                        Icons.cancel_outlined,
+                        size: 18,
+                        color: palette.absent,
+                      ),
                       const SizedBox(width: 8),
                       const Text('Cancel bill'),
                     ],
@@ -128,9 +139,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
               decoration: BoxDecoration(
                 color: palette.paperBg,
                 borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                border: Border.all(
-                  color: palette.border,
-                ),
+                border: Border.all(color: palette.border),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.04),
@@ -151,28 +160,42 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(profile.name,
-                                style: GoogleFonts.poppins(
-                                    fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                            Text(
+                              profile.name,
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.title,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                             for (final line in [
                               profile.tagline,
-                              [profile.addressLine, profile.city]
-                                  .where((e) => e.trim().isNotEmpty)
-                                  .join(', '),
-                              if (profile.phone.trim().isNotEmpty) 'Ph ${profile.phone}',
-                              if (profile.email.trim().isNotEmpty) profile.email,
+                              [
+                                profile.addressLine,
+                                profile.city,
+                              ].where((e) => e.trim().isNotEmpty).join(', '),
+                              if (profile.phone.trim().isNotEmpty)
+                                'Ph ${profile.phone}',
+                              if (profile.email.trim().isNotEmpty)
+                                profile.email,
                             ].where((e) => e.trim().isNotEmpty))
-                              Text(line,
-                                  style: GoogleFonts.poppins(
-                                      fontSize: AppText.label, color: palette.textSecondary)),
+                              Text(
+                                line,
+                                style: GoogleFonts.poppins(
+                                  fontSize: AppText.label,
+                                  color: palette.textSecondary,
+                                ),
+                              ),
                             if (profile.gstin.trim().isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 2),
-                                child: Text('GSTIN ${profile.gstin}',
-                                    style: GoogleFonts.poppins(
-                                        fontSize: AppText.label,
-                                        fontWeight: FontWeight.w600,
-                                        color: palette.textPrimary)),
+                                child: Text(
+                                  'GSTIN ${profile.gstin}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: AppText.label,
+                                    fontWeight: FontWeight.w600,
+                                    color: palette.textPrimary,
+                                  ),
+                                ),
                               ),
                           ],
                         ),
@@ -185,33 +208,54 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.topRight,
                           child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          // Only a GST-registered garage can issue a tax
-                          // invoice; without a GSTIN this is a plain bill.
-                          Text(profile.gstin.trim().isEmpty ? 'Bill' : 'Tax invoice',
-                              style: GoogleFonts.poppins(
-                                  fontSize: AppText.label, color: palette.textMuted)),
-                          Text(invoice.invoiceNumber,
-                              style: GoogleFonts.poppins(
-                                  fontSize: AppText.body, fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 6),
-                          _metaLine('Date', AppDateFormatter.formatDate(invoice.invoiceDate), palette),
-                          if (invoice.dueDate != null)
-                            _metaLine(
-                              'Pay by',
-                              AppDateFormatter.formatDate(invoice.dueDate!),
-                              palette,
-                              color: invoice.isOverdue ? palette.absent : null,
-                            ),
-                          if (invoice.jobCardId != null)
-                            _metaLine(
-                              'Job card',
-                              provider.getJobCardById(invoice.jobCardId!)?.jobCardNumber ?? '—',
-                              palette,
-                            ),
-                        ],
-                      ),
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              // Only a GST-registered garage can issue a tax
+                              // invoice; without a GSTIN this is a plain bill.
+                              Text(
+                                profile.gstin.trim().isEmpty
+                                    ? 'Bill'
+                                    : 'Tax invoice',
+                                style: GoogleFonts.poppins(
+                                  fontSize: AppText.label,
+                                  color: palette.textMuted,
+                                ),
+                              ),
+                              Text(
+                                invoice.invoiceNumber,
+                                style: GoogleFonts.poppins(
+                                  fontSize: AppText.body,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              _metaLine(
+                                'Date',
+                                AppDateFormatter.formatDate(
+                                  invoice.invoiceDate,
+                                ),
+                                palette,
+                              ),
+                              if (invoice.dueDate != null)
+                                _metaLine(
+                                  'Pay by',
+                                  AppDateFormatter.formatDate(invoice.dueDate!),
+                                  palette,
+                                  color: invoice.isOverdue
+                                      ? palette.absent
+                                      : null,
+                                ),
+                              if (invoice.jobCardId != null)
+                                _metaLine(
+                                  'Job card',
+                                  provider
+                                          .getJobCardById(invoice.jobCardId!)
+                                          ?.jobCardNumber ??
+                                      '—',
+                                  palette,
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -229,17 +273,47 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Billed to', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
+                            Text(
+                              'Billed to',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.label,
+                                color: palette.textMuted,
+                              ),
+                            ),
                             const SizedBox(height: 2),
-                            Text(customer?.name ?? '', style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
-                            Text(customer?.phone ?? '', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary)),
+                            Text(
+                              customer?.name ?? '',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.subtitle,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              customer?.phone ?? '',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.caption,
+                                color: palette.textSecondary,
+                              ),
+                            ),
                             if (customer?.address != null)
-                              Text(customer!.address!, style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted), maxLines: 2),
-                            if (customerGstin != null && customerGstin.isNotEmpty) ...[
+                              Text(
+                                customer!.address!,
+                                style: GoogleFonts.poppins(
+                                  fontSize: AppText.label,
+                                  color: palette.textMuted,
+                                ),
+                                maxLines: 2,
+                              ),
+                            if (customerGstin != null &&
+                                customerGstin.isNotEmpty) ...[
                               const SizedBox(height: 2),
                               Text(
                                 'GSTIN: $customerGstin',
-                                style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w600, color: palette.textSecondary),
+                                style: GoogleFonts.poppins(
+                                  fontSize: AppText.label,
+                                  fontWeight: FontWeight.w600,
+                                  color: palette.textSecondary,
+                                ),
                               ),
                             ],
                           ],
@@ -250,11 +324,36 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text('Vehicle', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
+                            Text(
+                              'Vehicle',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.label,
+                                color: palette.textMuted,
+                              ),
+                            ),
                             const SizedBox(height: 2),
-                            Text(vehicle?.registrationNumber ?? '', style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-                            Text(vehicle?.displayName ?? "", style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary)),
-                            Text('${invoice.kmReading} km', style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textSecondary)),
+                            Text(
+                              vehicle?.registrationNumber ?? '',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.subtitle,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            Text(
+                              vehicle?.displayName ?? "",
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.caption,
+                                color: palette.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              '${invoice.kmReading} km',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.label,
+                                color: palette.textSecondary,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -264,7 +363,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
 
                   // Table Header
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: palette.paperHeaderBg,
                       borderRadius: BorderRadius.circular(8),
@@ -273,19 +375,50 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                       children: [
                         Expanded(
                           flex: 4,
-                          child: Text('Item', style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(
+                            'Item',
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.label,
+                              fontWeight: FontWeight.w700,
+                              color: palette.textSecondary,
+                            ),
+                          ),
                         ),
                         Expanded(
                           flex: 1,
-                          child: Text('Qty', textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(
+                            'Qty',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.label,
+                              fontWeight: FontWeight.w700,
+                              color: palette.textSecondary,
+                            ),
+                          ),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('Rate', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(
+                            'Rate',
+                            textAlign: TextAlign.right,
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.label,
+                              fontWeight: FontWeight.w700,
+                              color: palette.textSecondary,
+                            ),
+                          ),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('Amount', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(
+                            'Amount',
+                            textAlign: TextAlign.right,
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.label,
+                              fontWeight: FontWeight.w700,
+                              color: palette.textSecondary,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -297,7 +430,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     final index = entry.key + 1;
                     final item = entry.value;
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
                       child: Row(
                         children: [
                           Expanded(
@@ -307,29 +443,56 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                               children: [
                                 Text(
                                   '$index. ${item.name}',
-                                  style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: AppText.body,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 Text(
                                   [
-                                    item.isLabour ? 'Labour Charge' : 'Part • ${item.category.displayName}',
+                                    item.isLabour
+                                        ? 'Labour Charge'
+                                        : 'Part • ${item.category.displayName}',
                                     ?item.discountLabel,
                                   ].join(' • '),
-                                  style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: AppText.label,
+                                    color: palette.textMuted,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           Expanded(
                             flex: 1,
-                            child: Text(formatQuantity(item.quantity), textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: AppText.caption)),
+                            child: Text(
+                              formatQuantity(item.quantity),
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.caption,
+                              ),
+                            ),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(CurrencyFormatter.format(item.unitPrice), textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.caption)),
+                            child: Text(
+                              CurrencyFormatter.format(item.unitPrice),
+                              textAlign: TextAlign.right,
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.caption,
+                              ),
+                            ),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(CurrencyFormatter.format(item.taxableAmount), textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w700)),
+                            child: Text(
+                              CurrencyFormatter.format(item.taxableAmount),
+                              textAlign: TextAlign.right,
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.body,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -338,30 +501,53 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   const Divider(height: 24),
 
                   // Financial Breakdown
-                  _buildSummaryRow('Parts', CurrencyFormatter.format(invoice.partsSubtotal)),
+                  _buildSummaryRow(
+                    'Parts',
+                    CurrencyFormatter.format(invoice.partsSubtotal),
+                  ),
                   const SizedBox(height: 4),
-                  _buildSummaryRow('Labour', CurrencyFormatter.format(invoice.labourSubtotal)),
+                  _buildSummaryRow(
+                    'Labour',
+                    CurrencyFormatter.format(invoice.labourSubtotal),
+                  ),
                   const SizedBox(height: 4),
                   if (invoice.discountAmount > 0) ...[
-                    _buildSummaryRow('Discount Applied:', '- ${CurrencyFormatter.format(invoice.discountAmount)}', color: palette.paid),
+                    _buildSummaryRow(
+                      'Discount Applied:',
+                      '- ${CurrencyFormatter.format(invoice.discountAmount)}',
+                      color: palette.paid,
+                    ),
                     const SizedBox(height: 4),
                   ],
                   for (final line in gstLines(invoice.taxBreakdown)) ...[
-                    _buildSummaryRow('${line.key}:', CurrencyFormatter.format(line.value)),
+                    _buildSummaryRow(
+                      '${line.key}:',
+                      CurrencyFormatter.format(line.value),
+                    ),
                     const SizedBox(height: 4),
                   ],
                   const Divider(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Total', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                      Text(
+                        'Total',
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.title,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       const SizedBox(width: 12),
                       Flexible(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
                             CurrencyFormatter.format(invoice.grandTotal),
-                            style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.primary),
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.headline,
+                              fontWeight: FontWeight.w700,
+                              color: palette.primary,
+                            ),
                           ),
                         ),
                       ),
@@ -371,10 +557,21 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Paid', style: GoogleFonts.poppins(fontSize: AppText.body, color: palette.paid, fontWeight: FontWeight.w600)),
+                      Text(
+                        'Paid',
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.body,
+                          color: palette.paid,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       Text(
                         CurrencyFormatter.format(invoice.totalPaidAmount),
-                        style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700, color: palette.paid),
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.title,
+                          fontWeight: FontWeight.w700,
+                          color: palette.paid,
+                        ),
                       ),
                     ],
                   ),
@@ -383,7 +580,16 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text('Balance due', style: GoogleFonts.poppins(fontSize: AppText.body, color: invoice.balanceDue > 0 ? palette.pending : palette.paid, fontWeight: FontWeight.w700)),
+                        child: Text(
+                          'Balance due',
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.body,
+                            color: invoice.balanceDue > 0
+                                ? palette.pending
+                                : palette.paid,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -391,7 +597,9 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: AppText.title,
                           fontWeight: FontWeight.w700,
-                          color: invoice.balanceDue > 0 ? palette.pending : palette.paid,
+                          color: invoice.balanceDue > 0
+                              ? palette.pending
+                              : palette.paid,
                         ),
                       ),
                     ],
@@ -418,7 +626,9 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         border: Border.all(color: palette.border),
-                        borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
+                        borderRadius: BorderRadius.circular(
+                          AppDimens.radiusBadge,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -433,13 +643,21 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Scan to pay ${CurrencyFormatter.format(invoice.balanceDue)}',
-                                    style: GoogleFonts.poppins(
-                                        fontSize: AppText.body, fontWeight: FontWeight.w600)),
+                                Text(
+                                  'Scan to pay ${CurrencyFormatter.format(invoice.balanceDue)}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: AppText.body,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                                 const SizedBox(height: 2),
-                                Text('UPI · ${profile.upiId.trim()}',
-                                    style: GoogleFonts.poppins(
-                                        fontSize: AppText.label, color: palette.textSecondary)),
+                                Text(
+                                  'UPI · ${profile.upiId.trim()}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: AppText.label,
+                                    color: palette.textSecondary,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -453,13 +671,20 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   if (invoice.payments.isNotEmpty) ...[
                     Text(
                       'Payment History',
-                      style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: palette.textSecondary),
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.caption,
+                        fontWeight: FontWeight.w700,
+                        color: palette.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     ...invoice.payments.map((p) {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: palette.paid.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(6),
@@ -474,19 +699,27 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                                   // friends don't crowd the one-line row.
                                   p.mode.label,
                                   AppDateFormatter.formatDate(p.paymentDate),
-                                  if (p.transactionRef?.trim().isNotEmpty ?? false)
+                                  if (p.transactionRef?.trim().isNotEmpty ??
+                                      false)
                                     'ref ${p.transactionRef!.trim()}',
                                   if (p.receivedBy?.trim().isNotEmpty ?? false)
                                     'by ${p.receivedBy!.trim()}',
                                 ].join(' • '),
-                                style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w500),
+                                style: GoogleFonts.poppins(
+                                  fontSize: AppText.label,
+                                  fontWeight: FontWeight.w500,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             Text(
                               CurrencyFormatter.format(p.amount),
-                              style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: palette.paid),
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.caption,
+                                fontWeight: FontWeight.w700,
+                                color: palette.paid,
+                              ),
                             ),
                           ],
                         ),
@@ -500,24 +733,40 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                     if (notesText.isNotEmpty) ...[
                       Text(
                         'Notes',
-                        style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: palette.textSecondary),
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.caption,
+                          fontWeight: FontWeight.w700,
+                          color: palette.textSecondary,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         notesText,
-                        style: GoogleFonts.poppins(fontSize: AppText.label, height: 1.4, color: palette.textSecondary),
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.label,
+                          height: 1.4,
+                          color: palette.textSecondary,
+                        ),
                       ),
                     ],
                     if (termsText.isNotEmpty) ...[
                       if (notesText.isNotEmpty) const SizedBox(height: 10),
                       Text(
                         'Terms & Conditions',
-                        style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w700, color: palette.textSecondary),
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.caption,
+                          fontWeight: FontWeight.w700,
+                          color: palette.textSecondary,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         termsText,
-                        style: GoogleFonts.poppins(fontSize: AppText.label, height: 1.4, color: palette.textSecondary),
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.label,
+                          height: 1.4,
+                          color: palette.textSecondary,
+                        ),
                       ),
                     ],
                   ],
@@ -541,7 +790,11 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.cancel_rounded, color: palette.cancelled, size: 22),
+                    Icon(
+                      Icons.cancel_rounded,
+                      color: palette.cancelled,
+                      size: 22,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Bill Cancelled',
@@ -559,16 +812,20 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    if (!ensurePermission(context, Permissions.paymentsRecord)) return;
+                    if (!ensurePermission(context, Permissions.paymentsRecord))
+                      return;
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => PaymentCollectionScreen(invoice: invoice),
+                        builder: (_) =>
+                            PaymentCollectionScreen(invoice: invoice),
                       ),
                     );
                   },
                   icon: const Icon(Icons.payments_rounded),
-                  label: Text('Record Payment (${CurrencyFormatter.format(invoice.balanceDue)} Due)'),
+                  label: Text(
+                    'Record Payment (${CurrencyFormatter.format(invoice.balanceDue)} Due)',
+                  ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: palette.primary,
@@ -588,7 +845,11 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.check_circle_rounded, color: palette.paid, size: 22),
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: palette.paid,
+                      size: 22,
+                    ),
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
@@ -613,7 +874,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
   }
 
   void _confirmCancelInvoice(
-      BuildContext context, GarageProvider provider, Invoice invoice) {
+    BuildContext context,
+    GarageProvider provider,
+    Invoice invoice,
+  ) {
     if (!ensurePermission(context, Permissions.invoicesManage)) return;
     showDialog(
       context: context,
@@ -662,16 +926,29 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     );
   }
 
-  Widget _metaLine(String label, String value, AppPalette palette, {Color? color}) => Text.rich(
-        TextSpan(children: [
-          TextSpan(text: '$label  ', style: GoogleFonts.poppins(color: palette.textMuted)),
-          TextSpan(
-              text: value,
-              style: GoogleFonts.poppins(
-                  color: color ?? palette.textPrimary, fontWeight: FontWeight.w500)),
-        ]),
-        style: const TextStyle(fontSize: AppText.label),
-      );
+  Widget _metaLine(
+    String label,
+    String value,
+    AppPalette palette, {
+    Color? color,
+  }) => Text.rich(
+    TextSpan(
+      children: [
+        TextSpan(
+          text: '$label  ',
+          style: GoogleFonts.poppins(color: palette.textMuted),
+        ),
+        TextSpan(
+          text: value,
+          style: GoogleFonts.poppins(
+            color: color ?? palette.textPrimary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    ),
+    style: const TextStyle(fontSize: AppText.label),
+  );
 
   Widget _buildSummaryRow(String label, String value, {Color? color}) {
     final palette = context.palette;
@@ -681,11 +958,21 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary),
+            style: GoogleFonts.poppins(
+              fontSize: AppText.caption,
+              color: palette.textSecondary,
+            ),
           ),
         ),
         const SizedBox(width: 8),
-        Text(value, style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: AppText.body,
+            fontWeight: FontWeight.w600,
+            color: color ?? palette.textPrimary,
+          ),
+        ),
       ],
     );
   }

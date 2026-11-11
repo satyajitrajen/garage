@@ -77,10 +77,10 @@ class _MembersScreenState extends State<MembersScreen> {
     if (request == null || !mounted) return;
     try {
       await context.read<AuthProvider>().inviteMember(
-            email: request.email,
-            role: request.role,
-            permissions: request.role == 'owner' ? null : request.permissions,
-          );
+        email: request.email,
+        role: request.role,
+        permissions: request.role == 'owner' ? null : request.permissions,
+      );
       if (!mounted) return;
       showAppSnackBar(context, 'Invite sent to ${request.email}.');
       await _load();
@@ -99,11 +99,13 @@ class _MembersScreenState extends State<MembersScreen> {
         content: Text('The invite link sent to $email will stop working.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Keep')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Revoke')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Revoke'),
+          ),
         ],
       ),
     );
@@ -120,11 +122,15 @@ class _MembersScreenState extends State<MembersScreen> {
   }
 
   Widget _sectionLabel(String text) => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 6),
-        child: Text(text,
-            style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w700, fontSize: AppText.caption)),
-      );
+    padding: const EdgeInsets.only(top: 8, bottom: 6),
+    child: Text(
+      text,
+      style: GoogleFonts.poppins(
+        fontWeight: FontWeight.w700,
+        fontSize: AppText.caption,
+      ),
+    ),
+  );
 
   Widget _memberTile(Map<String, dynamic> m) {
     final role = (m['role'] as String?) ?? 'staff';
@@ -136,12 +142,18 @@ class _MembersScreenState extends State<MembersScreen> {
         leading: CircleAvatar(
           child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?'),
         ),
-        title: Text(name.isNotEmpty ? name : 'Member',
-            style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600, fontSize: AppText.body)),
-        subtitle: Text('${m['email'] ?? ''} • $role • '
-            '$perms permission${perms == 1 ? '' : 's'}'
-            '${active ? '' : ' • deactivated'}'),
+        title: Text(
+          name.isNotEmpty ? name : 'Member',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            fontSize: AppText.body,
+          ),
+        ),
+        subtitle: Text(
+          '${m['email'] ?? ''} • $role • '
+          '$perms permission${perms == 1 ? '' : 's'}'
+          '${active ? '' : ' • deactivated'}',
+        ),
         trailing: role == 'owner'
             ? const Icon(Icons.star_rounded, color: Colors.amber)
             : null,
@@ -151,16 +163,23 @@ class _MembersScreenState extends State<MembersScreen> {
 
   Widget _inviteTile(Map<String, dynamic> invite) {
     final role = (invite['role'] as String?) ?? 'staff';
-    final expires =
-        DateTime.tryParse((invite['expires_at'] as String?) ?? '')?.toLocal();
+    final expires = DateTime.tryParse(
+      (invite['expires_at'] as String?) ?? '',
+    )?.toLocal();
     return Card(
       child: ListTile(
         leading: const CircleAvatar(child: Icon(Icons.mail_outline_rounded)),
-        title: Text((invite['email'] as String?) ?? '',
-            style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600, fontSize: AppText.body)),
-        subtitle: Text('$role • pending'
-            '${expires == null ? '' : ' • expires ${AppDateFormatter.formatDate(expires)}'}'),
+        title: Text(
+          (invite['email'] as String?) ?? '',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            fontSize: AppText.body,
+          ),
+        ),
+        subtitle: Text(
+          '$role • pending'
+          '${expires == null ? '' : ' • expires ${AppDateFormatter.formatDate(expires)}'}',
+        ),
         trailing: IconButton(
           tooltip: 'Revoke invite',
           icon: const Icon(Icons.close_rounded),
@@ -182,43 +201,44 @@ class _MembersScreenState extends State<MembersScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!),
-                      const SizedBox(height: 12),
-                      FilledButton(
-                          onPressed: _load, child: const Text('Retry')),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _members.isEmpty && _invites.isEmpty
-                      ? ListView(children: const [
-                          SizedBox(height: 80),
-                          Center(child: Text('No team members yet.')),
-                        ])
-                      : ListView(
-                          // Bottom padding keeps the last card clear of the FAB.
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-                          children: [
-                            if (_invites.isNotEmpty) ...[
-                              _sectionLabel('Pending invites'),
-                              for (final invite in _invites) ...[
-                                _inviteTile(invite),
-                                const SizedBox(height: 8),
-                              ],
-                              _sectionLabel('Members'),
-                            ],
-                            for (final member in _members) ...[
-                              _memberTile(member),
-                              const SizedBox(height: 8),
-                            ],
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_error!),
+                  const SizedBox(height: 12),
+                  FilledButton(onPressed: _load, child: const Text('Retry')),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _members.isEmpty && _invites.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 80),
+                        Center(child: Text('No team members yet.')),
+                      ],
+                    )
+                  : ListView(
+                      // Bottom padding keeps the last card clear of the FAB.
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                      children: [
+                        if (_invites.isNotEmpty) ...[
+                          _sectionLabel('Pending invites'),
+                          for (final invite in _invites) ...[
+                            _inviteTile(invite),
+                            const SizedBox(height: 8),
                           ],
-                        ),
-                ),
+                          _sectionLabel('Members'),
+                        ],
+                        for (final member in _members) ...[
+                          _memberTile(member),
+                          const SizedBox(height: 8),
+                        ],
+                      ],
+                    ),
+            ),
     );
   }
 }
@@ -261,8 +281,11 @@ class _InviteDialogState extends State<_InviteDialog> {
       return;
     }
     if (_role == 'staff' && _permissions.isEmpty) {
-      showAppSnackBar(context, 'Pick at least one permission',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Pick at least one permission',
+        type: SnackBarType.error,
+      );
       return;
     }
     Navigator.pop(
@@ -308,12 +331,18 @@ class _InviteDialogState extends State<_InviteDialog> {
             ],
             const SizedBox(height: 8),
             if (_role == 'owner')
-              Text('Owners get full access, including billing and the team.',
-                  style: GoogleFonts.poppins(fontSize: AppText.caption))
+              Text(
+                'Owners get full access, including billing and the team.',
+                style: GoogleFonts.poppins(fontSize: AppText.caption),
+              )
             else ...[
-              Text('Can manage',
-                  style: GoogleFonts.poppins(
-                      fontSize: AppText.caption, fontWeight: FontWeight.w600)),
+              Text(
+                'Can manage',
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.caption,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               for (final p in Permissions.all)
                 CheckboxListTile(
                   dense: true,
@@ -321,8 +350,11 @@ class _InviteDialogState extends State<_InviteDialog> {
                   controlAffinity: ListTileControlAffinity.leading,
                   title: Text(Permissions.label(p)),
                   value: _permissions.contains(p),
-                  onChanged: (on) => setState(() =>
-                      on == true ? _permissions.add(p) : _permissions.remove(p)),
+                  onChanged: (on) => setState(
+                    () => on == true
+                        ? _permissions.add(p)
+                        : _permissions.remove(p),
+                  ),
                 ),
             ],
           ],
@@ -330,8 +362,9 @@ class _InviteDialogState extends State<_InviteDialog> {
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         FilledButton(onPressed: _submit, child: const Text('Send invite')),
       ],
     );

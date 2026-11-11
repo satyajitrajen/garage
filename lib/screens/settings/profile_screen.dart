@@ -34,7 +34,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _name = TextEditingController(
-        text: context.read<AuthProvider>().user?.name ?? '');
+      text: context.read<AuthProvider>().user?.name ?? '',
+    );
   }
 
   @override
@@ -68,15 +69,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _savingPassword = true);
     try {
       await context.read<AuthProvider>().changePassword(
-            currentPassword: _current.text,
-            newPassword: _new.text,
-          );
+        currentPassword: _current.text,
+        newPassword: _new.text,
+      );
       if (!mounted) return;
       _current.clear();
       _new.clear();
       _confirm.clear();
       showAppSnackBar(
-          context, 'Password changed. Other devices have been signed out.');
+        context,
+        'Password changed. Other devices have been signed out.',
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
@@ -90,14 +93,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Sign out?'),
-        content: const Text('You can sign back in with your email and password.'),
+        content: const Text(
+          'You can sign back in with your email and password.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Sign out')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sign out'),
+          ),
         ],
       ),
     );
@@ -115,7 +122,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final name = user?.name ?? '';
     final initial = name.isEmpty ? '?' : name.trim()[0].toUpperCase();
     final sectionStyle = GoogleFonts.poppins(
-        fontSize: AppText.subtitle, fontWeight: FontWeight.w700);
+      fontSize: AppText.subtitle,
+      fontWeight: FontWeight.w700,
+    );
 
     return Scaffold(
       backgroundColor: palette.background,
@@ -128,30 +137,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: palette.primary,
-                child: Text(initial,
-                    style: GoogleFonts.poppins(
-                        fontSize: AppText.headline,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white)),
+                child: Text(
+                  initial,
+                  style: GoogleFonts.poppins(
+                    fontSize: AppText.headline,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name,
-                        style: GoogleFonts.poppins(
-                            fontSize: AppText.headline,
-                            fontWeight: FontWeight.w600)),
-                    Text(user?.email ?? '',
-                        style: GoogleFonts.poppins(
-                            fontSize: AppText.caption,
-                            color: palette.textSecondary)),
+                    Text(
+                      name,
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.headline,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      user?.email ?? '',
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.caption,
+                        color: palette.textSecondary,
+                      ),
+                    ),
                     if (m != null)
-                      Text('${m.role[0].toUpperCase()}${m.role.substring(1)} · ${m.garageName}',
-                          style: GoogleFonts.poppins(
-                              fontSize: AppText.caption,
-                              color: palette.textSecondary)),
+                      Text(
+                        '${m.role[0].toUpperCase()}${m.role.substring(1)} · ${m.garageName}',
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.caption,
+                          color: palette.textSecondary,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -188,7 +209,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 20,
                     width: 20,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
                 : const Text('Save name'),
           ),
           const SizedBox(height: 32),
@@ -198,19 +222,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
             key: _passwordForm,
             child: Column(
               children: [
-                _passwordField(_current, 'Current password',
-                    validator: (v) => (v ?? '').isEmpty
-                        ? 'Enter your current password'
-                        : null),
+                _passwordField(
+                  _current,
+                  'Current password',
+                  validator: (v) =>
+                      (v ?? '').isEmpty ? 'Enter your current password' : null,
+                ),
                 const SizedBox(height: 12),
-                _passwordField(_new, 'New password (min 8 characters)',
-                    validator: (v) => (v ?? '').length < 8
-                        ? 'Use at least 8 characters'
-                        : null),
+                _passwordField(
+                  _new,
+                  'New password (min 8 characters)',
+                  validator: (v) =>
+                      (v ?? '').length < 8 ? 'Use at least 8 characters' : null,
+                ),
                 const SizedBox(height: 12),
-                _passwordField(_confirm, 'Confirm new password',
-                    validator: (v) =>
-                        v != _new.text ? 'Passwords do not match' : null),
+                _passwordField(
+                  _confirm,
+                  'Confirm new password',
+                  validator: (v) =>
+                      v != _new.text ? 'Passwords do not match' : null,
+                ),
               ],
             ),
           ),
@@ -222,7 +253,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 20,
                     width: 20,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
                 : const Text('Change password'),
           ),
           const SizedBox(height: 32),
@@ -241,7 +275,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: () => showDeleteAccountDialog(context),
             style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error),
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Delete account'),
           ),
         ],
@@ -249,8 +284,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _passwordField(TextEditingController c, String label,
-      {required String? Function(String?) validator}) {
+  Widget _passwordField(
+    TextEditingController c,
+    String label, {
+    required String? Function(String?) validator,
+  }) {
     return TextFormField(
       controller: c,
       obscureText: _obscure,
@@ -260,9 +298,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         border: const OutlineInputBorder(),
         prefixIcon: const Icon(Icons.lock_outline),
         suffixIcon: IconButton(
-          icon: Icon(_obscure
-              ? Icons.visibility_outlined
-              : Icons.visibility_off_outlined),
+          tooltip: _obscure ? 'Show password' : 'Hide password',
+          icon: Icon(
+            _obscure
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+          ),
           onPressed: () => setState(() => _obscure = !_obscure),
         ),
       ),

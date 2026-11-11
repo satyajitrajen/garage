@@ -49,7 +49,11 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
   Future<void> _giveAdvance() async {
     final amount = double.tryParse(_advanceAmountController.text.trim()) ?? 0.0;
     if (amount <= 0) {
-      showAppSnackBar(context, 'Please enter a valid advance amount', type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Please enter a valid advance amount',
+        type: SnackBarType.error,
+      );
       return;
     }
 
@@ -57,7 +61,9 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
     await provider.addSalaryAdvance(
       staffId: widget.staff.id,
       amount: amount,
-      reason: _advanceReasonController.text.trim().isEmpty ? null : _advanceReasonController.text.trim(),
+      reason: _advanceReasonController.text.trim().isEmpty
+          ? null
+          : _advanceReasonController.text.trim(),
     );
     if (!mounted) return;
 
@@ -92,11 +98,7 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(
-        context,
-        errorMessage(e),
-        type: SnackBarType.error,
-      );
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } finally {
       if (mounted) setState(() => _isDisbursing = false);
     }
@@ -108,34 +110,43 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
       builder: (ctx) {
         final palette = ctx.palette;
         return AlertDialog(
-          title: Text('Record Salary Advance', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+          title: Text(
+            'Record Salary Advance',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+          ),
           content: SingleChildScrollView(
             child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Advance loan given to ${widget.staff.name}. This will be auto-deducted from monthly salary payout.',
-                style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _advanceAmountController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Advance Amount (₹) *',
-                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.primary),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Advance loan given to ${widget.staff.name}. This will be auto-deducted from monthly salary payout.',
+                  style: GoogleFonts.poppins(
+                    fontSize: AppText.caption,
+                    color: palette.textSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _advanceReasonController,
-                decoration: const InputDecoration(
-                  labelText: 'Reason / Remarks',
-                  hintText: 'e.g. Medical emergency / Festival',
-                  prefixIcon: Icon(Icons.edit_note_rounded),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _advanceAmountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Advance Amount (₹) *',
+                    prefixIcon: Icon(
+                      Icons.currency_rupee_rounded,
+                      color: palette.primary,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _advanceReasonController,
+                  decoration: const InputDecoration(
+                    labelText: 'Reason / Remarks',
+                    hintText: 'e.g. Medical emergency / Festival',
+                    prefixIcon: Icon(Icons.edit_note_rounded),
+                  ),
+                ),
+              ],
             ),
           ),
           actions: [
@@ -170,7 +181,8 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
       year: _selectedMonth.year,
     );
 
-    final baseSalary = (summary['baseSalary'] as double?) ?? widget.staff.monthlySalary;
+    final baseSalary =
+        (summary['baseSalary'] as double?) ?? widget.staff.monthlySalary;
     final absentDeduction = (summary['absentDeduction'] as double?) ?? 0.0;
     final halfDayDeduction = (summary['halfDayDeduction'] as double?) ?? 0.0;
     final totalAdvances = (summary['totalAdvances'] as double?) ?? 0.0;
@@ -178,7 +190,10 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.staff.name} - Payroll', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          '${widget.staff.name} - Payroll',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_card_rounded),
@@ -208,43 +223,69 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                     children: [
                       Expanded(
                         child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('MONTHLY PAYSLIP', style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.primary, letterSpacing: 1)),
-                          // ‹ Month › — past payslips can be viewed and paid;
-                          // the arrow stops at the current month.
-                          Row(
-                            children: [
-                              IconButton(
-                                tooltip: 'Previous month',
-                                visualDensity: VisualDensity.compact,
-                                icon: const Icon(Icons.chevron_left_rounded),
-                                onPressed: () => setState(() => _selectedMonth =
-                                    DateTime(_selectedMonth.year, _selectedMonth.month - 1, 1)),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'MONTHLY PAYSLIP',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.label,
+                                fontWeight: FontWeight.w700,
+                                color: palette.primary,
+                                letterSpacing: 1,
                               ),
-                              Flexible(
-                                child: Text(
-                                  AppDateFormatter.formatMonthYear(_selectedMonth),
-                                  style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                            ),
+                            // ‹ Month › — past payslips can be viewed and paid;
+                            // the arrow stops at the current month.
+                            Row(
+                              children: [
+                                IconButton(
+                                  tooltip: 'Previous month',
+                                  visualDensity: VisualDensity.compact,
+                                  icon: const Icon(Icons.chevron_left_rounded),
+                                  onPressed: () => setState(
+                                    () => _selectedMonth = DateTime(
+                                      _selectedMonth.year,
+                                      _selectedMonth.month - 1,
+                                      1,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              IconButton(
-                                tooltip: 'Next month',
-                                visualDensity: VisualDensity.compact,
-                                icon: const Icon(Icons.chevron_right_rounded),
-                                onPressed: _isCurrentMonth
-                                    ? null
-                                    : () => setState(() => _selectedMonth =
-                                        DateTime(_selectedMonth.year, _selectedMonth.month + 1, 1)),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                                Flexible(
+                                  child: Text(
+                                    AppDateFormatter.formatMonthYear(
+                                      _selectedMonth,
+                                    ),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: AppText.title,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: 'Next month',
+                                  visualDensity: VisualDensity.compact,
+                                  icon: const Icon(Icons.chevron_right_rounded),
+                                  onPressed: _isCurrentMonth
+                                      ? null
+                                      : () => setState(
+                                          () => _selectedMonth = DateTime(
+                                            _selectedMonth.year,
+                                            _selectedMonth.month + 1,
+                                            1,
+                                          ),
+                                        ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: palette.primary.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(8),
@@ -253,7 +294,11 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                           widget.staff.role.displayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.primary),
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.label,
+                            fontWeight: FontWeight.w700,
+                            color: palette.primary,
+                          ),
                         ),
                       ),
                     ],
@@ -275,7 +320,11 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                         Expanded(
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
-                            child: _buildMiniPill(label, '${summary[key] ?? 0}', color),
+                            child: _buildMiniPill(
+                              label,
+                              '${summary[key] ?? 0}',
+                              color,
+                            ),
                           ),
                         ),
                     ],
@@ -283,28 +332,67 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                   const SizedBox(height: 20),
 
                   // Earnings & Deductions Breakdown
-                  Text('Earnings & Allowances', style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w700)),
+                  Text(
+                    'Earnings & Allowances',
+                    style: GoogleFonts.poppins(
+                      fontSize: AppText.body,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  _buildSalaryLine('Base Monthly Salary', CurrencyFormatter.format(baseSalary)),
+                  _buildSalaryLine(
+                    'Base Monthly Salary',
+                    CurrencyFormatter.format(baseSalary),
+                  ),
                   const Divider(height: 20),
 
-                  Text('Deductions & Advances', style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w700, color: palette.pending)),
+                  Text(
+                    'Deductions & Advances',
+                    style: GoogleFonts.poppins(
+                      fontSize: AppText.body,
+                      fontWeight: FontWeight.w700,
+                      color: palette.pending,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   if (absentDeduction > 0)
-                    _buildSalaryLine('Absent Deduction (${summary["absentDays"]} days)', '- ${CurrencyFormatter.format(absentDeduction)}', isDeduction: true),
+                    _buildSalaryLine(
+                      'Absent Deduction (${summary["absentDays"]} days)',
+                      '- ${CurrencyFormatter.format(absentDeduction)}',
+                      isDeduction: true,
+                    ),
                   if (halfDayDeduction > 0)
-                    _buildSalaryLine('Half Day Deduction (${summary["halfDays"]} days)', '- ${CurrencyFormatter.format(halfDayDeduction)}', isDeduction: true),
+                    _buildSalaryLine(
+                      'Half Day Deduction (${summary["halfDays"]} days)',
+                      '- ${CurrencyFormatter.format(halfDayDeduction)}',
+                      isDeduction: true,
+                    ),
                   if (totalAdvances > 0)
-                    _buildSalaryLine('Salary Advances Deducted', '- ${CurrencyFormatter.format(totalAdvances)}', isDeduction: true),
-                  if (absentDeduction == 0 && halfDayDeduction == 0 && totalAdvances == 0)
-                    _buildSalaryLine('No deductions this month', CurrencyFormatter.format(0)),
+                    _buildSalaryLine(
+                      'Salary Advances Deducted',
+                      '- ${CurrencyFormatter.format(totalAdvances)}',
+                      isDeduction: true,
+                    ),
+                  if (absentDeduction == 0 &&
+                      halfDayDeduction == 0 &&
+                      totalAdvances == 0)
+                    _buildSalaryLine(
+                      'No deductions this month',
+                      CurrencyFormatter.format(0),
+                    ),
 
                   const Divider(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text('Net Salary Payout:', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                        child: Text(
+                          'Net Salary Payout:',
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.title,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Flexible(
@@ -342,7 +430,13 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text('Salary Advances Log', style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
+                        child: Text(
+                          'Salary Advances Log',
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.subtitle,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                       TextButton.icon(
                         onPressed: _showAddAdvanceDialog,
@@ -355,7 +449,10 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'No advances given in ${AppDateFormatter.formatMonthYear(_selectedMonth)}',
-                      style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted),
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.caption,
+                        color: palette.textMuted,
+                      ),
                     ),
                   ] else ...[
                     const SizedBox(height: 8),
@@ -367,21 +464,34 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
                           children: [
                             Expanded(
                               child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  AppDateFormatter.formatDate(adv.date),
-                                  style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600),
-                                ),
-                                if (adv.reason != null)
-                                  Text(adv.reason!, style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted)),
-                              ],
-                            ),
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    AppDateFormatter.formatDate(adv.date),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: AppText.caption,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (adv.reason != null)
+                                    Text(
+                                      adv.reason!,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: AppText.label,
+                                        color: palette.textMuted,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Text(
                               CurrencyFormatter.format(adv.amount),
-                              style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w700, color: palette.pending),
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.body,
+                                fontWeight: FontWeight.w700,
+                                color: palette.pending,
+                              ),
                             ),
                           ],
                         ),
@@ -395,37 +505,47 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
 
             // Mark Salary Paid Button: once the month is paid it turns into a
             // read-only "paid" state so the same payout can't be recorded twice.
-            Builder(builder: (context) {
-              final paid = provider.salaryPaymentFor(
-                widget.staff.id,
-                _selectedMonth.month,
-                _selectedMonth.year,
-              );
-              final monthLabel = AppDateFormatter.formatMonthYear(_selectedMonth);
-              return SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: paid != null || _isDisbursing
-                      ? null
-                      : () => _disburse(netPayable),
-                  icon: Icon(paid != null
-                      ? Icons.check_circle_rounded
-                      : Icons.payments_rounded),
-                  label: Text(paid != null
-                      ? 'Salary paid for $monthLabel (${CurrencyFormatter.format(paid.amount)})'
-                      : _isDisbursing
+            Builder(
+              builder: (context) {
+                final paid = provider.salaryPaymentFor(
+                  widget.staff.id,
+                  _selectedMonth.month,
+                  _selectedMonth.year,
+                );
+                final monthLabel = AppDateFormatter.formatMonthYear(
+                  _selectedMonth,
+                );
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: paid != null || _isDisbursing
+                        ? null
+                        : () => _disburse(netPayable),
+                    icon: Icon(
+                      paid != null
+                          ? Icons.check_circle_rounded
+                          : Icons.payments_rounded,
+                    ),
+                    label: Text(
+                      paid != null
+                          ? 'Salary paid for $monthLabel (${CurrencyFormatter.format(paid.amount)})'
+                          : _isDisbursing
                           ? 'Recording payout...'
-                          : 'Disburse & Mark Salary Paid'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: palette.paid,
-                    foregroundColor: palette.onPrimary,
-                    disabledBackgroundColor: palette.paid.withValues(alpha: 0.15),
-                    disabledForegroundColor: palette.paid,
+                          : 'Disburse & Mark Salary Paid',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: palette.paid,
+                      foregroundColor: palette.onPrimary,
+                      disabledBackgroundColor: palette.paid.withValues(
+                        alpha: 0.15,
+                      ),
+                      disabledForegroundColor: palette.paid,
+                    ),
                   ),
-                ),
-              );
-            }),
+                );
+              },
+            ),
             const SizedBox(height: 80),
           ],
         ),
@@ -442,14 +562,31 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
       ),
       child: Column(
         children: [
-          Text(count, style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: color)),
-          Text(label, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w600)),
+          Text(
+            count,
+            style: GoogleFonts.poppins(
+              fontSize: AppText.subtitle,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: AppText.label,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSalaryLine(String label, String val, {bool isDeduction = false}) {
+  Widget _buildSalaryLine(
+    String label,
+    String val, {
+    bool isDeduction = false,
+  }) {
     final palette = context.palette;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -459,7 +596,10 @@ class _StaffSalaryScreenState extends State<StaffSalaryScreen> {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.poppins(fontSize: AppText.body, color: palette.textSecondary),
+              style: GoogleFonts.poppins(
+                fontSize: AppText.body,
+                color: palette.textSecondary,
+              ),
             ),
           ),
           const SizedBox(width: 8),

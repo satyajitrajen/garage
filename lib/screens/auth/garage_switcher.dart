@@ -31,14 +31,20 @@ class GarageSwitcherSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Switch garage',
-                style: GoogleFonts.poppins(
-                    fontSize: AppText.title, fontWeight: FontWeight.w700)),
+            Text(
+              'Switch garage',
+              style: GoogleFonts.poppins(
+                fontSize: AppText.title,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 4),
             Text(
               'Signed in as ${auth.user?.name ?? ''} (${auth.user?.email ?? ''})',
               style: GoogleFonts.poppins(
-                  fontSize: AppText.caption, color: Theme.of(context).hintColor),
+                fontSize: AppText.caption,
+                color: Theme.of(context).hintColor,
+              ),
             ),
             const SizedBox(height: 12),
             Flexible(
@@ -50,17 +56,20 @@ class GarageSwitcherSheet extends StatelessWidget {
                   final selected = m.garageId == auth.garageId;
                   return ListTile(
                     leading: CircleAvatar(
-                      child: Text(m.garageName.isEmpty
-                          ? '?'
-                          : m.garageName[0].toUpperCase()),
+                      child: Text(
+                        m.garageName.isEmpty
+                            ? '?'
+                            : m.garageName[0].toUpperCase(),
+                      ),
                     ),
-                    title: Text(m.garageName,
-                        style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600)),
+                    title: Text(
+                      m.garageName,
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    ),
                     subtitle: Text(
-                        '${m.role}${m.isActive ? '' : ' • deactivated'}'),
-                    trailing:
-                        selected ? const Icon(Icons.check_rounded) : null,
+                      '${m.role}${m.isActive ? '' : ' • deactivated'}',
+                    ),
+                    trailing: selected ? const Icon(Icons.check_rounded) : null,
                     selected: selected,
                     onTap: () async {
                       if (selected) {
@@ -75,8 +84,10 @@ class GarageSwitcherSheet extends StatelessWidget {
                       } catch (_) {
                         if (!context.mounted) return;
                         showAppSnackBar(
-                            context, 'Switched garage but reload failed.',
-                            type: SnackBarType.error);
+                          context,
+                          'Switched garage but reload failed.',
+                          type: SnackBarType.error,
+                        );
                       }
                     },
                   );

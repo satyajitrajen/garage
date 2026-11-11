@@ -57,7 +57,9 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
         final palette = ctx.palette;
         return AlertDialog(
           title: const Text('Delete this expense?'),
-          content: Text('"${exp.title}" (${CurrencyFormatter.format(exp.amount)}) will be removed.'),
+          content: Text(
+            '"${exp.title}" (${CurrencyFormatter.format(exp.amount)}) will be removed.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -69,7 +71,10 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                 foregroundColor: palette.onPrimary,
               ),
               onPressed: () async {
-                final provider = Provider.of<GarageProvider>(context, listen: false);
+                final provider = Provider.of<GarageProvider>(
+                  context,
+                  listen: false,
+                );
                 await provider.deleteExpense(exp.id);
                 if (!ctx.mounted) return;
                 Navigator.pop(ctx);
@@ -92,7 +97,8 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
     final expenses = provider.expenses.where((e) {
-      if (_selectedCategory != null && e.category != _selectedCategory) return false;
+      if (_selectedCategory != null && e.category != _selectedCategory)
+        return false;
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase().trim();
         final titleMatches = e.title.toLowerCase().contains(q);
@@ -117,14 +123,16 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
         ),
       ),
       // Empty list: its empty state already has the Add button.
-      floatingActionButton: provider.expenses.isEmpty ? null : PermissionGate(
-        permission: Permissions.expensesManage,
-        child: GradientFloatingActionButton(
-        onPressed: _openAddExpense,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Expense'),
-      ),
-      ),
+      floatingActionButton: provider.expenses.isEmpty
+          ? null
+          : PermissionGate(
+              permission: Permissions.expensesManage,
+              child: GradientFloatingActionButton(
+                onPressed: _openAddExpense,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add Expense'),
+              ),
+            ),
       body: Column(
         children: [
           // Monthly vs Today KPI Card (Exact User Gradient)
@@ -166,11 +174,7 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                 // Vertical hairline: kept as a sized Container because a
                 // Divider is horizontal and a VerticalDivider stretches to
                 // the full row height (visual change).
-                Container(
-                  height: 36,
-                  width: 1,
-                  color: palette.divider,
-                ),
+                Container(height: 36, width: 1, color: palette.divider),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(left: 16),
@@ -224,8 +228,12 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                   selected: _selectedCategory == null,
                   selectedColor: palette.primary.withOpacity(0.15),
                   labelStyle: TextStyle(
-                    color: _selectedCategory == null ? palette.primary : palette.textPrimary,
-                    fontWeight: _selectedCategory == null ? FontWeight.w700 : FontWeight.w500,
+                    color: _selectedCategory == null
+                        ? palette.primary
+                        : palette.textPrimary,
+                    fontWeight: _selectedCategory == null
+                        ? FontWeight.w700
+                        : FontWeight.w500,
                   ),
                   onSelected: (_) => setState(() => _selectedCategory = null),
                 ),
@@ -234,16 +242,26 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                   return Padding(
                     padding: const EdgeInsets.only(left: 8),
                     child: FilterChip(
-                      avatar: Icon(cat.icon, size: 14, color: isSelected ? palette.primary : palette.textMuted),
+                      avatar: Icon(
+                        cat.icon,
+                        size: 14,
+                        color: isSelected ? palette.primary : palette.textMuted,
+                      ),
                       label: Text(cat.displayName),
                       selected: isSelected,
                       selectedColor: palette.primary.withOpacity(0.15),
                       labelStyle: TextStyle(
-                        color: isSelected ? palette.primary : palette.textPrimary,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected
+                            ? palette.primary
+                            : palette.textPrimary,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                       ),
                       onSelected: (selected) {
-                        setState(() => _selectedCategory = selected ? cat : null);
+                        setState(
+                          () => _selectedCategory = selected ? cat : null,
+                        );
                       },
                     ),
                   );
@@ -273,19 +291,22 @@ class _ExpensesListScreenState extends State<ExpensesListScreen> {
                       final exp = expenses[index];
                       return ListRow(
                         title: exp.title,
-                        subtitle: [exp.category.displayName, exp.vendorName]
-                            .whereType<String>()
-                            .join(' · '),
+                        subtitle: [
+                          exp.category.displayName,
+                          exp.vendorName,
+                        ].whereType<String>().join(' · '),
                         detail:
                             '${AppDateFormatter.formatDate(exp.expenseDate)} · ${exp.paymentMode.shortName}',
-                        trailingTop: RowAmount(CurrencyFormatter.format(exp.amount)),
+                        trailingTop: RowAmount(
+                          CurrencyFormatter.format(exp.amount),
+                        ),
                         // Tap edits; delete lives behind a long press with a
                         // confirmation so it is never one stray tap away.
                         onTap: () => _openEditExpense(exp),
                         onLongPress: () => _confirmDeleteExpense(exp),
                       );
                     },
-                  )
+                  ),
           ),
         ],
       ),

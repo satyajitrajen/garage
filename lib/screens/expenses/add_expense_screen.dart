@@ -70,8 +70,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Future<void> _loadReceipt(String expenseId) async {
     setState(() => _receiptLoading = true);
     try {
-      final bytes =
-          await context.read<GarageProvider>().fetchExpenseReceipt(expenseId);
+      final bytes = await context.read<GarageProvider>().fetchExpenseReceipt(
+        expenseId,
+      );
       if (mounted) setState(() => _receiptBytes = bytes);
     } catch (_) {
       // Missing/unreadable receipt: the form still works without a preview.
@@ -83,13 +84,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Future<void> _pickReceipt(ImageSource source) async {
     try {
       final file = await ImagePicker().pickImage(
-          source: source, maxWidth: 1600, maxHeight: 1600, imageQuality: 80);
+        source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 80,
+      );
       if (file == null) return;
       final bytes = await file.readAsBytes();
       if (bytes.length > 5 * 1024 * 1024) {
         if (!mounted) return;
-        showAppSnackBar(context, 'Photo is too large (max 5 MB)',
-            type: SnackBarType.error);
+        showAppSnackBar(
+          context,
+          'Photo is too large (max 5 MB)',
+          type: SnackBarType.error,
+        );
         return;
       }
       setState(() {
@@ -99,16 +107,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Could not open the camera or gallery',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Could not open the camera or gallery',
+        type: SnackBarType.error,
+      );
     }
   }
 
   void _removeReceipt() => setState(() {
-        _receiptBytes = null;
-        _receiptChanged = false;
-        _receiptRemoved = widget.existing?.receiptPath != null;
-      });
+    _receiptBytes = null;
+    _receiptChanged = false;
+    _receiptRemoved = widget.existing?.receiptPath != null;
+  });
 
   /// Uploads/removes the receipt once the expense exists. Returns false when
   /// that failed (the expense itself is already saved).
@@ -139,13 +150,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Receipt photo',
-            style: GoogleFonts.poppins(
-                fontSize: AppText.body, fontWeight: FontWeight.w600)),
+        Text(
+          'Receipt photo',
+          style: GoogleFonts.poppins(
+            fontSize: AppText.body,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 8),
         if (_receiptLoading)
           const SizedBox(
-              height: 120, child: Center(child: CircularProgressIndicator()))
+            height: 120,
+            child: Center(child: CircularProgressIndicator()),
+          )
         else if (_receiptBytes != null)
           Stack(
             children: [
@@ -154,22 +171,30 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   context: context,
                   builder: (_) => Dialog(
                     child: InteractiveViewer(
-                        child: Image.memory(_receiptBytes!,
-                            errorBuilder: (_, _, _) => const Padding(
-                                padding: EdgeInsets.all(24),
-                                child: Text('Preview not available'))))),
+                      child: Image.memory(
+                        _receiptBytes!,
+                        errorBuilder: (_, _, _) => const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text('Preview not available'),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
-                  child: Image.memory(_receiptBytes!,
-                      height: 160,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Container(
-                          height: 80,
-                          alignment: Alignment.center,
-                          color: palette.cardAlt,
-                          child: const Text('Receipt attached'))),
+                  child: Image.memory(
+                    _receiptBytes!,
+                    height: 160,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      height: 80,
+                      alignment: Alignment.center,
+                      color: palette.cardAlt,
+                      child: const Text('Receipt attached'),
+                    ),
+                  ),
                 ),
               ),
               Positioned(
@@ -190,8 +215,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _pickReceipt(ImageSource.camera),
                 icon: const Icon(Icons.photo_camera_outlined),
-                label: Text(_receiptBytes == null ? 'Take photo' : 'Retake',
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                label: Text(
+                  _receiptBytes == null ? 'Take photo' : 'Retake',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
             const SizedBox(width: 10),
@@ -199,8 +227,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _pickReceipt(ImageSource.gallery),
                 icon: const Icon(Icons.photo_library_outlined),
-                label: const Text('Gallery',
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                label: const Text(
+                  'Gallery',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
           ],
@@ -242,8 +273,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final title = _titleController.text.trim().isEmpty
         ? _category.displayName
         : _titleController.text.trim();
-    final vendor = _vendorController.text.trim().isEmpty ? null : _vendorController.text.trim();
-    final notes = _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
+    final vendor = _vendorController.text.trim().isEmpty
+        ? null
+        : _vendorController.text.trim();
+    final notes = _notesController.text.trim().isEmpty
+        ? null
+        : _notesController.text.trim();
 
     setState(() => _isSaving = true);
 
@@ -298,11 +333,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(
-        context,
-        errorMessage(e),
-        type: SnackBarType.error,
-      );
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -314,7 +345,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Garage Expense' : 'Add Garage Expense', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          _isEditing ? 'Edit Garage Expense' : 'Add Garage Expense',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -326,7 +360,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // Expense Category Picker
               Text(
                 'Expense Category *',
-                style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.subtitle,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -335,13 +372,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 children: ExpenseCategory.values.map((cat) {
                   final isSelected = _category == cat;
                   return ChoiceChip(
-                    avatar: Icon(cat.icon, size: 16, color: isSelected ? palette.onPrimary : palette.primary),
+                    avatar: Icon(
+                      cat.icon,
+                      size: 16,
+                      color: isSelected ? palette.onPrimary : palette.primary,
+                    ),
                     label: Text(cat.displayName),
                     selected: isSelected,
                     selectedColor: palette.primary,
                     labelStyle: TextStyle(
-                      color: isSelected ? palette.onPrimary : palette.textPrimary,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected
+                          ? palette.onPrimary
+                          : palette.textPrimary,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                       fontSize: AppText.caption,
                     ),
                     onSelected: (selected) {
@@ -365,9 +410,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 decoration: InputDecoration(
                   labelText: 'Expense Title / Description *',
                   hintText: 'e.g. Brake cleaner sprays / Monthly electricity',
-                  prefixIcon: Icon(Icons.edit_note_rounded, color: palette.primary),
+                  prefixIcon: Icon(
+                    Icons.edit_note_rounded,
+                    color: palette.primary,
+                  ),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Enter description' : null,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'Enter description'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -375,10 +425,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.headline,
+                  fontWeight: FontWeight.w700,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Amount Spent (₹) *',
-                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.primary),
+                  prefixIcon: Icon(
+                    Icons.currency_rupee_rounded,
+                    color: palette.primary,
+                  ),
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return 'Enter amount';
@@ -394,7 +450,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 onTap: _pickDate,
                 borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: palette.card,
                     borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
@@ -405,31 +464,42 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     children: [
                       Expanded(
                         child: Row(
-                        children: [
-                          Icon(Icons.calendar_month_rounded, color: palette.primary, size: 20),
-                          const SizedBox(width: 10),
-                          Flexible(
-                            child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Expense Date',
-                                style: GoogleFonts.poppins(
-                                  fontSize: AppText.label,
-                                  color: palette.textMuted,
-                                ),
+                          children: [
+                            Icon(
+                              Icons.calendar_month_rounded,
+                              color: palette.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Expense Date',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: AppText.label,
+                                      color: palette.textMuted,
+                                    ),
+                                  ),
+                                  Text(
+                                    AppDateFormatter.formatDate(_expenseDate),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: AppText.subtitle,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                AppDateFormatter.formatDate(_expenseDate),
-                                style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
+                      Icon(
+                        Icons.edit_calendar_rounded,
+                        size: 18,
+                        color: palette.primary,
                       ),
-                      Icon(Icons.edit_calendar_rounded, size: 18, color: palette.primary),
                     ],
                   ),
                 ),
@@ -439,7 +509,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // Paid Via (Payment Mode)
               Text(
                 'Paid Via Mode',
-                style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.subtitle,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -452,8 +525,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     selected: isSelected,
                     selectedColor: palette.primary,
                     labelStyle: TextStyle(
-                      color: isSelected ? palette.onPrimary : palette.textPrimary,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected
+                          ? palette.onPrimary
+                          : palette.textPrimary,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                     ),
                     onSelected: (selected) {
                       if (selected) setState(() => _paymentMode = mode);

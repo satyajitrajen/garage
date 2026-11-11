@@ -38,8 +38,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   Future<void> _resend() async {
     if (_email.text.trim().isEmpty) {
-      showAppSnackBar(context, 'Enter your account email first.',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Enter your account email first.',
+        type: SnackBarType.error,
+      );
       return;
     }
     try {
@@ -51,8 +54,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Request failed. Please try again.',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Request failed. Please try again.',
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -68,8 +74,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Verification failed. Please try again.',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Verification failed. Please try again.',
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -89,16 +98,20 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Verify your email',
-                        style: GoogleFonts.poppins(
-                            fontSize: AppText.title,
-                            fontWeight: FontWeight.w700)),
+                    Text(
+                      'Verify your email',
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.title,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Text(
                       'We sent a link after registration. Paste the token here or resend the email.',
                       style: GoogleFonts.poppins(
-                          fontSize: AppText.body,
-                          color: Theme.of(context).hintColor),
+                        fontSize: AppText.body,
+                        color: Theme.of(context).hintColor,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     TextFormField(

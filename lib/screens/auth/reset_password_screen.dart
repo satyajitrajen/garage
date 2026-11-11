@@ -42,9 +42,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     if (!(_form.currentState?.validate() ?? false)) return;
     FocusScope.of(context).unfocus();
     try {
-      await context
-          .read<AuthProvider>()
-          .reset(token: _token.text, password: _password.text);
+      await context.read<AuthProvider>().reset(
+        token: _token.text,
+        password: _password.text,
+      );
       if (!mounted) return;
       showAppSnackBar(context, 'Password updated. Please sign in.');
       Navigator.popUntil(context, (r) => r.isFirst);
@@ -53,8 +54,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Reset failed. Please try again.',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Reset failed. Please try again.',
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -74,10 +78,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Choose a new password',
-                        style: GoogleFonts.poppins(
-                            fontSize: AppText.title,
-                            fontWeight: FontWeight.w700)),
+                    Text(
+                      'Choose a new password',
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.title,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _token,
@@ -98,16 +105,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         border: const OutlineInputBorder(),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscure
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined),
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure),
+                          tooltip: _obscure ? 'Show password' : 'Hide password',
+                          icon: Icon(
+                            _obscure
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                          onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                       ),
-                      validator: (v) => (v ?? '').length < 8
-                          ? 'Minimum 8 characters'
-                          : null,
+                      validator: (v) =>
+                          (v ?? '').length < 8 ? 'Minimum 8 characters' : null,
                     ),
                     const SizedBox(height: 16),
                     FilledButton(

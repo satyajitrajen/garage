@@ -26,8 +26,9 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
   late List<double> _taxOptions;
   bool _isSaving = false;
 
-  static final _gstinPattern =
-      RegExp(r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$');
+  static final _gstinPattern = RegExp(
+    r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$',
+  );
 
   @override
   void initState() {
@@ -46,7 +47,9 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
       'upi': TextEditingController(text: p.upiId),
       'dueDays': TextEditingController(text: '${c.invoiceDueDays}'),
       'workingDays': TextEditingController(text: '${c.workingDaysPerMonth}'),
-      'deliveryHours': TextEditingController(text: '${c.promisedDeliveryHours}'),
+      'deliveryHours': TextEditingController(
+        text: '${c.promisedDeliveryHours}',
+      ),
       'receivedBy': TextEditingController(text: c.defaultReceivedBy),
       'notes': TextEditingController(text: c.invoiceNotes),
       'terms': TextEditingController(text: c.invoiceTerms),
@@ -94,15 +97,19 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
       promisedDeliveryHours: int.parse(_t('deliveryHours')),
       invoiceNotes: _t('notes'),
       invoiceTerms: _t('terms'),
-      defaultReceivedBy:
-          _t('receivedBy').isEmpty ? old.defaultReceivedBy : _t('receivedBy'),
+      defaultReceivedBy: _t('receivedBy').isEmpty
+          ? old.defaultReceivedBy
+          : _t('receivedBy'),
     );
     setState(() => _isSaving = true);
     try {
       await provider.updateSettings(profile, config);
       if (!mounted) return;
-      showAppSnackBar(context, 'Garage settings saved',
-          type: SnackBarType.success);
+      showAppSnackBar(
+        context,
+        'Garage settings saved',
+        type: SnackBarType.success,
+      );
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -142,16 +149,16 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
   }
 
   Widget _section(String title) => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 12),
-        child: Text(
-          title,
-          style: GoogleFonts.poppins(
-            fontSize: AppText.body,
-            fontWeight: FontWeight.w600,
-            color: context.palette.textPrimary,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(top: 8, bottom: 12),
+    child: Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontSize: AppText.body,
+        fontWeight: FontWeight.w600,
+        color: context.palette.textPrimary,
+      ),
+    ),
+  );
 
   Future<void> _addTaxOption() async {
     final controller = TextEditingController();
@@ -167,7 +174,9 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () {
               final v = double.tryParse(controller.text.trim());
@@ -191,8 +200,10 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Garage Settings',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          'Garage Settings',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -200,33 +211,50 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
           padding: const EdgeInsets.all(20),
           children: [
             _section('Bill header'),
-            _field('name', 'Garage name *',
-                icon: Icons.store_rounded,
-                caps: TextCapitalization.words,
-                validator: (v) => (v ?? '').trim().isEmpty
-                    ? 'Garage name is required'
-                    : null),
+            _field(
+              'name',
+              'Garage name *',
+              icon: Icons.store_rounded,
+              caps: TextCapitalization.words,
+              validator: (v) =>
+                  (v ?? '').trim().isEmpty ? 'Garage name is required' : null,
+            ),
             _field('tagline', 'Tagline', icon: Icons.short_text_rounded),
             _field('address', 'Address', icon: Icons.location_on_outlined),
             _field('city', 'City / State', icon: Icons.location_city_rounded),
-            _field('phone', 'Phone',
-                icon: Icons.phone_rounded, keyboard: TextInputType.phone),
-            _field('email', 'Email',
-                icon: Icons.email_outlined,
-                keyboard: TextInputType.emailAddress),
-            _field('gstin', 'GSTIN',
-                icon: Icons.receipt_long_rounded,
-                caps: TextCapitalization.characters, validator: (v) {
-              final s = (v ?? '').trim().toUpperCase();
-              if (s.isEmpty || _gstinPattern.hasMatch(s)) return null;
-              return 'Enter a valid 15-character GSTIN';
-            }),
-            _field('upi', 'UPI ID (for payment QR)',
-                icon: Icons.qr_code_rounded, validator: (v) {
-              final s = (v ?? '').trim();
-              if (s.isEmpty || s.contains('@')) return null;
-              return 'UPI ID looks like name@bank';
-            }),
+            _field(
+              'phone',
+              'Phone',
+              icon: Icons.phone_rounded,
+              keyboard: TextInputType.phone,
+            ),
+            _field(
+              'email',
+              'Email',
+              icon: Icons.email_outlined,
+              keyboard: TextInputType.emailAddress,
+            ),
+            _field(
+              'gstin',
+              'GSTIN',
+              icon: Icons.receipt_long_rounded,
+              caps: TextCapitalization.characters,
+              validator: (v) {
+                final s = (v ?? '').trim().toUpperCase();
+                if (s.isEmpty || _gstinPattern.hasMatch(s)) return null;
+                return 'Enter a valid 15-character GSTIN';
+              },
+            ),
+            _field(
+              'upi',
+              'UPI ID (for payment QR)',
+              icon: Icons.qr_code_rounded,
+              validator: (v) {
+                final s = (v ?? '').trim();
+                if (s.isEmpty || s.contains('@')) return null;
+                return 'UPI ID looks like name@bank';
+              },
+            ),
             _section('GST rates'),
             Wrap(
               spacing: 8,
@@ -247,21 +275,33 @@ class _GarageSettingsScreenState extends State<GarageSettingsScreen> {
             ),
             Padding(
               padding: const EdgeInsets.only(top: 6, bottom: 14),
-              child: Text('Selected rate is the default on new bills.',
-                  style: GoogleFonts.poppins(
-                      fontSize: AppText.label,
-                      color: context.palette.textMuted)),
+              child: Text(
+                'Selected rate is the default on new bills.',
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.label,
+                  color: context.palette.textMuted,
+                ),
+              ),
             ),
             _section('Defaults'),
-            _field('dueDays', 'Bill due in (days)',
-                keyboard: TextInputType.number,
-                validator: (v) => _intInRange(v, 0, 1000)),
-            _field('deliveryHours', 'Promised delivery (hours)',
-                keyboard: TextInputType.number,
-                validator: (v) => _intInRange(v, 0, 1000)),
-            _field('workingDays', 'Working days per month (payroll)',
-                keyboard: TextInputType.number,
-                validator: (v) => _intInRange(v, 1, 31)),
+            _field(
+              'dueDays',
+              'Bill due in (days)',
+              keyboard: TextInputType.number,
+              validator: (v) => _intInRange(v, 0, 1000),
+            ),
+            _field(
+              'deliveryHours',
+              'Promised delivery (hours)',
+              keyboard: TextInputType.number,
+              validator: (v) => _intInRange(v, 0, 1000),
+            ),
+            _field(
+              'workingDays',
+              'Working days per month (payroll)',
+              keyboard: TextInputType.number,
+              validator: (v) => _intInRange(v, 1, 31),
+            ),
             _field('receivedBy', 'Payments received by'),
             _field('notes', 'Bill notes', maxLines: 2),
             _field('terms', 'Terms & conditions', maxLines: 3),

@@ -19,7 +19,8 @@ class AddStaffScreen extends StatefulWidget {
 }
 
 class _AddStaffScreenState extends State<AddStaffScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
+
   /// Set by the first submit attempt; from then on fields re-validate
   /// as they are edited, so fixed errors clear immediately.
   bool _submitted = false;
@@ -40,7 +41,8 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
       _nameController.text = s.name;
       _phoneController.text = s.phone;
       _emailController.text = s.email ?? '';
-      _salaryController.text = s.monthlySalary == s.monthlySalary.roundToDouble()
+      _salaryController.text =
+          s.monthlySalary == s.monthlySalary.roundToDouble()
           ? s.monthlySalary.toStringAsFixed(0)
           : s.monthlySalary.toStringAsFixed(2);
       _addressController.text = s.address ?? '';
@@ -74,10 +76,14 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
           id: original.id,
           name: _nameController.text.trim(),
           phone: _phoneController.text.trim(),
-          email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+          email: _emailController.text.trim().isEmpty
+              ? null
+              : _emailController.text.trim(),
           monthlySalary: salary,
           role: _selectedRole,
-          address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
+          address: _addressController.text.trim().isEmpty
+              ? null
+              : _addressController.text.trim(),
           isActive: original.isActive,
           joiningDate: original.joiningDate,
           emergencyContact: original.emergencyContact,
@@ -94,10 +100,14 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
           id: const Uuid().v4(),
           name: _nameController.text.trim(),
           phone: _phoneController.text.trim(),
-          email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+          email: _emailController.text.trim().isEmpty
+              ? null
+              : _emailController.text.trim(),
           monthlySalary: salary,
           role: _selectedRole,
-          address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
+          address: _addressController.text.trim().isEmpty
+              ? null
+              : _addressController.text.trim(),
         );
         final saved = await provider.addStaff(newStaff);
         if (!mounted) return;
@@ -114,11 +124,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
       final message = e is ApiException
           ? e.userMessage
           : 'Failed to save staff. Please try again.';
-      showAppSnackBar(
-        context,
-        message,
-        type: SnackBarType.error,
-      );
+      showAppSnackBar(context, message, type: SnackBarType.error);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -151,9 +157,14 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                 decoration: InputDecoration(
                   labelText: 'Staff Full Name *',
                   hintText: 'e.g. Ramesh Sharma',
-                  prefixIcon: Icon(Icons.person_rounded, color: palette.primary),
+                  prefixIcon: Icon(
+                    Icons.person_rounded,
+                    color: palette.primary,
+                  ),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Name is required' : null,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'Name is required'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -165,7 +176,9 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                   hintText: 'e.g. +91 98765 43210',
                   prefixIcon: Icon(Icons.phone_rounded, color: palette.primary),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Phone is required' : null,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'Phone is required'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -183,7 +196,9 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                     child: Text(role.displayName),
                   );
                 }).toList(),
-                onChanged: (val) => setState(() => _selectedRole = val ?? StaffRole.seniorTechnician),
+                onChanged: (val) => setState(
+                  () => _selectedRole = val ?? StaffRole.seniorTechnician,
+                ),
               ),
               const SizedBox(height: 14),
 
@@ -191,16 +206,23 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               TextFormField(
                 controller: _salaryController,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.title,
+                  fontWeight: FontWeight.w700,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Monthly Base Salary (₹) *',
                   hintText: 'e.g. 24000',
-                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.primary),
+                  prefixIcon: Icon(
+                    Icons.currency_rupee_rounded,
+                    color: palette.primary,
+                  ),
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return 'Enter salary';
                   final num = double.tryParse(val.trim());
-                  if (num == null || num <= 0 || !num.isFinite) return 'Invalid salary amount';
+                  if (num == null || num <= 0 || !num.isFinite)
+                    return 'Invalid salary amount';
                   return null;
                 },
               ),
@@ -231,7 +253,11 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _isSaving ? null : _saveStaff,
                   icon: const Icon(Icons.check_rounded),
-                  label: Text(widget.staffToEdit != null ? 'Save Changes' : 'Add Employee'),
+                  label: Text(
+                    widget.staffToEdit != null
+                        ? 'Save Changes'
+                        : 'Add Employee',
+                  ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),

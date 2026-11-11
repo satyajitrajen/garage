@@ -18,7 +18,8 @@ class PaymentCollectionScreen extends StatefulWidget {
   const PaymentCollectionScreen({super.key, required this.invoice});
 
   @override
-  State<PaymentCollectionScreen> createState() => _PaymentCollectionScreenState();
+  State<PaymentCollectionScreen> createState() =>
+      _PaymentCollectionScreenState();
 }
 
 class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
@@ -51,7 +52,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       if (isFull) {
         _amountController.text = widget.invoice.balanceDue.toStringAsFixed(2);
       } else {
-        _amountController.text = (widget.invoice.balanceDue / 2).toStringAsFixed(2);
+        _amountController.text = (widget.invoice.balanceDue / 2)
+            .toStringAsFixed(2);
       }
     });
   }
@@ -67,7 +69,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     final provider = Provider.of<GarageProvider>(context, listen: false);
     // Always validate against the live invoice, not the snapshot passed to
     // this screen — the invoice may have changed since we were pushed.
-    final invoice = provider.getInvoiceById(widget.invoice.id) ?? widget.invoice;
+    final invoice =
+        provider.getInvoiceById(widget.invoice.id) ?? widget.invoice;
 
     final amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
     if (amount <= 0) {
@@ -96,8 +99,12 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
         invoiceId: invoice.id,
         amount: amount,
         mode: _selectedMode,
-        transactionRef: _refController.text.trim().isEmpty ? null : _refController.text.trim(),
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        transactionRef: _refController.text.trim().isEmpty
+            ? null
+            : _refController.text.trim(),
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
       );
     } catch (e) {
       if (!mounted) return;
@@ -112,8 +119,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     }
 
     // Show confirmation modal / dialog
-    _remainingDueSnapshot =
-        (invoice.balanceDue - payment.amount).clamp(0, double.infinity);
+    _remainingDueSnapshot = (invoice.balanceDue - payment.amount).clamp(
+      0,
+      double.infinity,
+    );
     _showReceiptSuccessDialog(payment, invoice.invoiceNumber);
   }
 
@@ -126,113 +135,144 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
         // live theme, like the other dialogs in the app.
         final palette = dialogContext.palette;
         return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusCard)),
-        backgroundColor: palette.card,
-        title: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                // The design-system green badge background stands in for the
-                // old one-off pastel literal (0xFFDCFCE7).
-                color: palette.badgeGreenBg,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.check_circle_rounded, color: palette.paid, size: 48),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Payment Received!',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: AppText.headline),
-            ),
-          ],
-        ),
-        // Scrolls when large text makes the receipt taller than the dialog.
-        content: SingleChildScrollView(
-          child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                CurrencyFormatter.format(payment.amount),
-                style: GoogleFonts.poppins(
-                  fontSize: AppText.display,
-                  fontWeight: FontWeight.w700,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimens.radiusCard),
+          ),
+          backgroundColor: palette.card,
+          title: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  // The design-system green badge background stands in for the
+                  // old one-off pastel literal (0xFFDCFCE7).
+                  color: palette.badgeGreenBg,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_circle_rounded,
                   color: palette.paid,
+                  size: 48,
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Paid via ${payment.mode.label}',
-              style: GoogleFonts.poppins(
-                fontSize: AppText.body,
-                fontWeight: FontWeight.w600,
-                color: palette.textSecondary,
-              ),
-            ),
-            if (payment.transactionRef != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 12),
               Text(
-                'Ref: ${payment.transactionRef}',
-                style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted),
+                'Payment Received!',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700,
+                  fontSize: AppText.headline,
+                ),
               ),
             ],
-            const SizedBox(height: 12),
-            const Divider(),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+          // Scrolls when large text makes the receipt taller than the dialog.
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Flexible(
-                  child: Text('Bill:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(invoiceNumber,
-                      textAlign: TextAlign.end,
-                      style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w700)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text('Remaining Due:', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textMuted)),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
                   child: Text(
-                    CurrencyFormatter.format(_remainingDueSnapshot),
-                    textAlign: TextAlign.end,
+                    CurrencyFormatter.format(payment.amount),
                     style: GoogleFonts.poppins(
-                      fontSize: AppText.caption,
+                      fontSize: AppText.display,
                       fontWeight: FontWeight.w700,
-                      color: _remainingDueSnapshot > 0 ? palette.pending : palette.paid,
+                      color: palette.paid,
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'Paid via ${payment.mode.label}',
+                  style: GoogleFonts.poppins(
+                    fontSize: AppText.body,
+                    fontWeight: FontWeight.w600,
+                    color: palette.textSecondary,
+                  ),
+                ),
+                if (payment.transactionRef != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Ref: ${payment.transactionRef}',
+                    style: GoogleFonts.poppins(
+                      fontSize: AppText.caption,
+                      color: palette.textMuted,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Bill:',
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.caption,
+                          color: palette.textMuted,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        invoiceNumber,
+                        textAlign: TextAlign.end,
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.caption,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Remaining Due:',
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.caption,
+                          color: palette.textMuted,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        CurrencyFormatter.format(_remainingDueSnapshot),
+                        textAlign: TextAlign.end,
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.caption,
+                          fontWeight: FontWeight.w700,
+                          color: _remainingDueSnapshot > 0
+                              ? palette.pending
+                              : palette.paid,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(dialogContext); // Close dialog
-                Navigator.pop(context, true); // Return to invoice preview
-              },
-              child: const Text('Done'),
-            ),
           ),
-        ],
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext); // Close dialog
+                  Navigator.pop(context, true); // Return to invoice preview
+                },
+                child: const Text('Done'),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -241,14 +281,18 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final invoice = provider.getInvoiceById(widget.invoice.id) ?? widget.invoice;
+    final invoice =
+        provider.getInvoiceById(widget.invoice.id) ?? widget.invoice;
     final customer = provider.getCustomerById(invoice.customerId);
     final vehicle = provider.getVehicleById(invoice.vehicleId);
     final palette = context.palette;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Record Payment / Collection', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          'Record Payment / Collection',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -286,13 +330,19 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       children: [
                         Text(
                           invoice.invoiceNumber,
-                          style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             '${vehicle?.registrationNumber ?? ""} • ${customer?.name ?? ""}',
-                            style: GoogleFonts.poppins(color: Colors.white70, fontSize: AppText.caption),
+                            style: GoogleFonts.poppins(
+                              color: Colors.white70,
+                              fontSize: AppText.caption,
+                            ),
                             textAlign: TextAlign.end,
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
@@ -303,7 +353,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     const SizedBox(height: 14),
                     Text(
                       'Outstanding Balance Due',
-                      style: GoogleFonts.poppins(color: Colors.white70, fontSize: AppText.caption),
+                      style: GoogleFonts.poppins(
+                        color: Colors.white70,
+                        fontSize: AppText.caption,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -322,12 +375,19 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       children: [
                         Text(
                           'Total Bill: ${CurrencyFormatter.format(invoice.grandTotal)}',
-                          style: GoogleFonts.poppins(color: Colors.white70, fontSize: AppText.label),
+                          style: GoogleFonts.poppins(
+                            color: Colors.white70,
+                            fontSize: AppText.label,
+                          ),
                         ),
                         Text(
                           'Paid So Far: ${CurrencyFormatter.format(invoice.totalPaidAmount)}',
                           // White on the red card: green on red was unreadable.
-                          style: GoogleFonts.poppins(color: Colors.white, fontSize: AppText.label, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: AppText.label,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ],
                     ),
@@ -339,7 +399,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               // Full vs Partial Payment Choice
               Text(
                 'Payment Type',
-                style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.subtitle,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 10),
               Row(
@@ -348,9 +411,13 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     child: OutlinedButton(
                       onPressed: () => _onPaymentTypeToggle(true),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: _isFullPayment ? palette.primary.withOpacity(0.12) : Colors.transparent,
+                        backgroundColor: _isFullPayment
+                            ? palette.primary.withOpacity(0.12)
+                            : Colors.transparent,
                         side: BorderSide(
-                          color: _isFullPayment ? palette.primary : palette.textMuted,
+                          color: _isFullPayment
+                              ? palette.primary
+                              : palette.textMuted,
                           width: _isFullPayment ? 2 : 1,
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -358,8 +425,12 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       child: Text(
                         'Full Payment (${CurrencyFormatter.format(invoice.balanceDue)})',
                         style: GoogleFonts.poppins(
-                          fontWeight: _isFullPayment ? FontWeight.w700 : FontWeight.w500,
-                          color: _isFullPayment ? palette.primary : palette.textPrimary,
+                          fontWeight: _isFullPayment
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: _isFullPayment
+                              ? palette.primary
+                              : palette.textPrimary,
                         ),
                       ),
                     ),
@@ -369,9 +440,13 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     child: OutlinedButton(
                       onPressed: () => _onPaymentTypeToggle(false),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: !_isFullPayment ? palette.primary.withOpacity(0.12) : Colors.transparent,
+                        backgroundColor: !_isFullPayment
+                            ? palette.primary.withOpacity(0.12)
+                            : Colors.transparent,
                         side: BorderSide(
-                          color: !_isFullPayment ? palette.primary : palette.textMuted,
+                          color: !_isFullPayment
+                              ? palette.primary
+                              : palette.textMuted,
                           width: !_isFullPayment ? 2 : 1,
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -379,8 +454,12 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       child: Text(
                         'Partial Payment',
                         style: GoogleFonts.poppins(
-                          fontWeight: !_isFullPayment ? FontWeight.w700 : FontWeight.w500,
-                          color: !_isFullPayment ? palette.primary : palette.textPrimary,
+                          fontWeight: !_isFullPayment
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: !_isFullPayment
+                              ? palette.primary
+                              : palette.textPrimary,
                         ),
                       ),
                     ),
@@ -393,10 +472,16 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.headline,
+                  fontWeight: FontWeight.w700,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Amount Received (₹) *',
-                  prefixIcon: Icon(Icons.currency_rupee_rounded, color: palette.primary),
+                  prefixIcon: Icon(
+                    Icons.currency_rupee_rounded,
+                    color: palette.primary,
+                  ),
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return 'Enter amount';
@@ -410,7 +495,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               // Payment Mode Selector
               Text(
                 'Payment Mode',
-                style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.subtitle,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -425,7 +513,9 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                         Icon(
                           mode.icon,
                           size: 16,
-                          color: isSelected ? palette.onPrimary : palette.primary,
+                          color: isSelected
+                              ? palette.onPrimary
+                              : palette.primary,
                         ),
                         const SizedBox(width: 6),
                         Text(mode.label),
@@ -434,8 +524,12 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     selected: isSelected,
                     selectedColor: palette.primary,
                     labelStyle: TextStyle(
-                      color: isSelected ? palette.onPrimary : palette.textPrimary,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected
+                          ? palette.onPrimary
+                          : palette.textPrimary,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                     ),
                     onSelected: (selected) {
                       if (selected) setState(() => _selectedMode = mode);
@@ -452,10 +546,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                   labelText: _selectedMode == PaymentMode.cash
                       ? 'Cash Receipt / Handover Note (Optional)'
                       : _selectedMode == PaymentMode.upi
-                          ? 'UPI Reference / UTR Number'
-                          : _selectedMode == PaymentMode.card
-                              ? 'POS Approval / Last 4 Digits'
-                              : 'Bank UTR / Cheque Number',
+                      ? 'UPI Reference / UTR Number'
+                      : _selectedMode == PaymentMode.card
+                      ? 'POS Approval / Last 4 Digits'
+                      : 'Bank UTR / Cheque Number',
                   prefixIcon: const Icon(Icons.pin_outlined),
                 ),
               ),
@@ -467,7 +561,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 maxLines: 2,
                 decoration: const InputDecoration(
                   labelText: 'Payment Notes / Receiver Remarks',
-                  hintText: 'e.g. Received full settlement in cash with receipt issued',
+                  hintText:
+                      'e.g. Received full settlement in cash with receipt issued',
                   prefixIcon: Icon(Icons.note_alt_outlined),
                 ),
               ),
@@ -483,7 +578,9 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : const Icon(Icons.verified_rounded),
                   label: const Text('Confirm & Record Payment'),

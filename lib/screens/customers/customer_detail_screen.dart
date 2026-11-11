@@ -78,14 +78,20 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
     }
   }
 
-  void _confirmDeleteCustomer(BuildContext context, GarageProvider provider, Customer customer) {
+  void _confirmDeleteCustomer(
+    BuildContext context,
+    GarageProvider provider,
+    Customer customer,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) {
         final palette = ctx.palette;
         return AlertDialog(
           title: const Text('Delete Customer?'),
-          content: Text('Are you sure you want to delete ${customer.name}? This will also remove their registered fleet.'),
+          content: Text(
+            'Are you sure you want to delete ${customer.name}? This will also remove their registered fleet.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -123,14 +129,20 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
     );
   }
 
-  void _confirmDeleteVehicle(BuildContext context, GarageProvider provider, Vehicle vehicle) {
+  void _confirmDeleteVehicle(
+    BuildContext context,
+    GarageProvider provider,
+    Vehicle vehicle,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) {
         final palette = ctx.palette;
         return AlertDialog(
           title: const Text('Delete Vehicle?'),
-          content: Text('Are you sure you want to remove ${vehicle.registrationNumber} from fleet?'),
+          content: Text(
+            'Are you sure you want to remove ${vehicle.registrationNumber} from fleet?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -163,10 +175,15 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final customer = provider.getCustomerById(widget.customer.id) ?? widget.customer;
+    final customer =
+        provider.getCustomerById(widget.customer.id) ?? widget.customer;
     final vehicles = provider.getVehiclesForCustomer(customer.id);
-    final customerInvoices = provider.invoices.where((inv) => inv.customerId == customer.id).toList();
-    final customerJobCards = provider.jobCards.where((jc) => jc.customerId == customer.id).toList();
+    final customerInvoices = provider.invoices
+        .where((inv) => inv.customerId == customer.id)
+        .toList();
+    final customerJobCards = provider.jobCards
+        .where((jc) => jc.customerId == customer.id)
+        .toList();
     final outstandingDues = provider.getCustomerOutstandingBalance(customer.id);
 
     final palette = context.palette;
@@ -190,12 +207,16 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
           PopupMenuButton<String>(
             tooltip: 'More',
             onSelected: (v) {
-              if (v == 'delete') _confirmDeleteCustomer(context, provider, customer);
+              if (v == 'delete')
+                _confirmDeleteCustomer(context, provider, customer);
             },
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'delete',
-                child: Text('Delete customer', style: TextStyle(color: palette.absent)),
+                child: Text(
+                  'Delete customer',
+                  style: TextStyle(color: palette.absent),
+                ),
               ),
             ],
           ),
@@ -220,17 +241,24 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  [customer.phone, if (customer.email != null) customer.email!].join(' · '),
+                  [
+                    customer.phone,
+                    if (customer.email != null) customer.email!,
+                  ].join(' · '),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary),
+                  style: GoogleFonts.poppins(
+                    fontSize: AppText.caption,
+                    color: palette.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () => ContactActions.call(context, customer.phone),
+                        onPressed: () =>
+                            ContactActions.call(context, customer.phone),
                         icon: const Icon(Icons.phone_outlined, size: 18),
                         label: const Text('Call'),
                       ),
@@ -258,7 +286,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(Icons.location_on_outlined, size: 16, color: palette.textMuted),
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: palette.textMuted,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -275,7 +307,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                 if (customer.gstin?.trim().isNotEmpty ?? false) ...[
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: palette.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
@@ -296,7 +331,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.note_alt_outlined, size: 16, color: palette.textMuted),
+                      Icon(
+                        Icons.note_alt_outlined,
+                        size: 16,
+                        color: palette.textMuted,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -316,18 +355,27 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                 if (outstandingDues > 0) ...[
                   const SizedBox(height: 14),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: palette.pending.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: palette.pending.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: palette.pending.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.warning_amber_rounded, color: palette.pending, size: 20),
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              color: palette.pending,
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               'Balance due',
@@ -358,7 +406,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
           // Tabs for Vehicles, Job Cards, and Invoices
           TabBar(
             controller: _tabController,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
+            labelStyle: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: AppText.body,
+            ),
             tabs: [
               Tab(text: 'Vehicles (${vehicles.length})'),
               Tab(text: 'Job Cards (${customerJobCards.length})'),
@@ -390,7 +441,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
   Widget _buildVehiclesTab(List<Vehicle> vehicles) {
     final palette = context.palette;
     final provider = Provider.of<GarageProvider>(context);
-    final customer = provider.getCustomerById(widget.customer.id) ?? widget.customer;
+    final customer =
+        provider.getCustomerById(widget.customer.id) ?? widget.customer;
 
     return ListView(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 84),
@@ -401,7 +453,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             Expanded(
               child: Text(
                 'Vehicles',
-                style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.title,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             ElevatedButton.icon(
@@ -409,7 +464,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
               icon: const Icon(Icons.add_rounded, size: 16),
               label: const Text('Add Vehicle'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
               ),
             ),
           ],
@@ -440,7 +498,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: palette.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
@@ -459,20 +520,29 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                   const SizedBox(height: 6),
                   Text(
                     v.displayName,
-                    style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(
+                      fontSize: AppText.subtitle,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Wrap(
                     children: [
                       Text(
                         '${v.currentKm} km',
-                        style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary),
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.caption,
+                          color: palette.textSecondary,
+                        ),
                       ),
                       if (v.year != null) ...[
                         const SizedBox(width: 12),
                         Text(
                           '${v.year} model',
-                          style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary),
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.caption,
+                            color: palette.textSecondary,
+                          ),
                         ),
                       ],
                     ],
@@ -501,13 +571,20 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                         tooltip: 'Vehicle options',
                         onSelected: (choice) {
                           if (choice == 'edit') _editVehicle(v);
-                          if (choice == 'delete') _confirmDeleteVehicle(context, provider, v);
+                          if (choice == 'delete')
+                            _confirmDeleteVehicle(context, provider, v);
                         },
                         itemBuilder: (_) => [
-                          const PopupMenuItem(value: 'edit', child: Text('Edit vehicle')),
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit vehicle'),
+                          ),
                           PopupMenuItem(
                             value: 'delete',
-                            child: Text('Delete vehicle', style: TextStyle(color: palette.absent)),
+                            child: Text(
+                              'Delete vehicle',
+                              style: TextStyle(color: palette.absent),
+                            ),
                           ),
                         ],
                       ),
@@ -526,7 +603,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
     final palette = context.palette;
     if (jobCards.isEmpty) {
       return Center(
-        child: Text('No job cards recorded yet', style: GoogleFonts.poppins(color: palette.textMuted)),
+        child: Text(
+          'No job cards recorded yet',
+          style: GoogleFonts.poppins(color: palette.textMuted),
+        ),
       );
     }
     return ListView.builder(
@@ -540,7 +620,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => JobCardDetailScreen(jobCardId: jc.id)),
+                MaterialPageRoute(
+                  builder: (_) => JobCardDetailScreen(jobCardId: jc.id),
+                ),
               );
             },
             title: Text(
@@ -562,7 +644,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
     final palette = context.palette;
     if (invoices.isEmpty) {
       return Center(
-        child: Text('No bills yet', style: GoogleFonts.poppins(color: palette.textMuted)),
+        child: Text(
+          'No bills yet',
+          style: GoogleFonts.poppins(color: palette.textMuted),
+        ),
       );
     }
     return ListView.builder(
@@ -576,7 +661,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoiceId: inv.id)),
+                MaterialPageRoute(
+                  builder: (_) => InvoicePreviewScreen(invoiceId: inv.id),
+                ),
               );
             },
             title: Text(
@@ -594,7 +681,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
               children: [
                 if (inv.isOverdue) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: palette.pending,
                       borderRadius: BorderRadius.circular(6),

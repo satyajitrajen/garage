@@ -49,13 +49,18 @@ class _PriceListScreenState extends State<PriceListScreen> {
         await provider.updateCatalogItem(result);
       }
       if (!mounted) return;
-      showAppSnackBar(context, existing == null ? 'Item added' : 'Item updated',
-          type: SnackBarType.success);
+      showAppSnackBar(
+        context,
+        existing == null ? 'Item added' : 'Item updated',
+        type: SnackBarType.success,
+      );
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context,
-          e is ApiException ? e.userMessage : 'Could not save item',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        e is ApiException ? e.userMessage : 'Could not save item',
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -64,15 +69,19 @@ class _PriceListScreenState extends State<PriceListScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Remove from price list?'),
-        content: Text('"${item.name}" will no longer appear when adding items. '
-            'Existing job cards and bills are not affected.'),
+        content: Text(
+          '"${item.name}" will no longer appear when adding items. '
+          'Existing job cards and bills are not affected.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Keep')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Remove')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove'),
+          ),
         ],
       ),
     );
@@ -81,9 +90,11 @@ class _PriceListScreenState extends State<PriceListScreen> {
       await context.read<GarageProvider>().deleteCatalogItem(item.id);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context,
-          e is ApiException ? e.userMessage : 'Could not remove item',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        e is ApiException ? e.userMessage : 'Could not remove item',
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -92,14 +103,19 @@ class _PriceListScreenState extends State<PriceListScreen> {
     final palette = context.palette;
     final catalog = context.watch<GarageProvider>().catalog;
     final q = _query.toLowerCase();
-    final items = catalog
-        .where((i) => _filter == null || i.category == _filter)
-        .where((i) =>
-            q.isEmpty ||
-            i.name.toLowerCase().contains(q) ||
-            (i.partNumber?.toLowerCase().contains(q) ?? false))
-        .toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final items =
+        catalog
+            .where((i) => _filter == null || i.category == _filter)
+            .where(
+              (i) =>
+                  q.isEmpty ||
+                  i.name.toLowerCase().contains(q) ||
+                  (i.partNumber?.toLowerCase().contains(q) ?? false),
+            )
+            .toList()
+          ..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
 
     return Scaffold(
       backgroundColor: palette.background,
@@ -160,9 +176,12 @@ class _PriceListScreenState extends State<PriceListScreen> {
                         margin: EdgeInsets.zero,
                         child: ListTile(
                           onTap: () => _openForm(item),
-                          title: Text(item.name,
-                              style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w600)),
+                          title: Text(
+                            item.name,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           subtitle: Text(
                             [
                               item.category.displayName,
@@ -170,8 +189,9 @@ class _PriceListScreenState extends State<PriceListScreen> {
                                 'Part# ${item.partNumber}',
                             ].join(' · '),
                             style: GoogleFonts.poppins(
-                                fontSize: AppText.caption,
-                                color: palette.textMuted),
+                              fontSize: AppText.caption,
+                              color: palette.textMuted,
+                            ),
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -179,13 +199,16 @@ class _PriceListScreenState extends State<PriceListScreen> {
                               Text(
                                 '${CurrencyFormatter.format(item.unitPrice)}/${item.unit}',
                                 style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.w700,
-                                    color: palette.primary),
+                                  fontWeight: FontWeight.w700,
+                                  color: palette.primary,
+                                ),
                               ),
                               IconButton(
                                 tooltip: 'Remove',
-                                icon: Icon(Icons.delete_outline_rounded,
-                                    color: palette.textMuted),
+                                icon: Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: palette.textMuted,
+                                ),
                                 onPressed: () => _delete(item),
                               ),
                             ],
@@ -213,14 +236,16 @@ class _ItemFormState extends State<_ItemForm> {
   final _formKey = GlobalKey<FormState>();
   late final _name = TextEditingController(text: widget.existing?.name);
   late final _price = TextEditingController(
-      text: widget.existing == null ? '' : _fmt(widget.existing!.unitPrice));
-  late final _unit =
-      TextEditingController(text: widget.existing?.unit ?? 'Pcs');
-  late final _partNo =
-      TextEditingController(text: widget.existing?.partNumber);
+    text: widget.existing == null ? '' : _fmt(widget.existing!.unitPrice),
+  );
+  late final _unit = TextEditingController(
+    text: widget.existing?.unit ?? 'Pcs',
+  );
+  late final _partNo = TextEditingController(text: widget.existing?.partNumber);
   late ItemCategory _category =
       widget.existing?.category ?? ItemCategory.sparePart;
-  late double _tax = widget.existing?.taxPercent ??
+  late double _tax =
+      widget.existing?.taxPercent ??
       context.read<GarageProvider>().config.defaultTaxPercent;
 
   static String _fmt(double v) =>
@@ -258,7 +283,11 @@ class _ItemFormState extends State<_ItemForm> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-          20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+        20,
+        20,
+        20,
+        MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -266,16 +295,22 @@ class _ItemFormState extends State<_ItemForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(widget.existing == null ? 'Add item' : 'Edit item',
-                  style: GoogleFonts.poppins(
-                      fontSize: AppText.title, fontWeight: FontWeight.w700)),
+              Text(
+                widget.existing == null ? 'Add item' : 'Edit item',
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.title,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _name,
                 autofocus: widget.existing == null,
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(
-                    labelText: 'Name', hintText: 'e.g. Brake pad set'),
+                  labelText: 'Name',
+                  hintText: 'e.g. Brake pad set',
+                ),
                 validator: (v) =>
                     (v ?? '').trim().isEmpty ? 'Enter a name' : null,
               ),
@@ -297,9 +332,12 @@ class _ItemFormState extends State<_ItemForm> {
                     child: TextFormField(
                       controller: _price,
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                        decimal: true,
+                      ),
                       decoration: const InputDecoration(
-                          labelText: 'Price', prefixText: '₹ '),
+                        labelText: 'Price',
+                        prefixText: '₹ ',
+                      ),
                       validator: (v) {
                         final n = double.tryParse(v?.trim() ?? '');
                         return n == null || n <= 0
@@ -334,14 +372,18 @@ class _ItemFormState extends State<_ItemForm> {
               TextFormField(
                 controller: _partNo,
                 decoration: const InputDecoration(
-                    labelText: 'Part number (optional)'),
+                  labelText: 'Part number (optional)',
+                ),
               ),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: _submit,
                 style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14)),
-                child: Text(widget.existing == null ? 'Add to price list' : 'Save'),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: Text(
+                  widget.existing == null ? 'Add to price list' : 'Save',
+                ),
               ),
             ],
           ),

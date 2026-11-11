@@ -42,8 +42,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Request failed. Please try again.',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Request failed. Please try again.',
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -70,16 +73,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       semanticLabel: 'Email secured with a lock and key',
                     ),
                     const SizedBox(height: 16),
-                    Text('Forgot your password?',
-                        style: GoogleFonts.poppins(
-                            fontSize: AppText.title,
-                            fontWeight: FontWeight.w700)),
+                    Text(
+                      'Forgot your password?',
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.title,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Text(
                       'Enter your account email and we will send a reset link.',
                       style: GoogleFonts.poppins(
-                          fontSize: AppText.body,
-                          color: Theme.of(context).hintColor),
+                        fontSize: AppText.body,
+                        color: Theme.of(context).hintColor,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
@@ -108,7 +115,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         onPressed: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const ResetPasswordScreen()),
+                            builder: (_) => const ResetPasswordScreen(),
+                          ),
                         ),
                         child: const Text('I have a reset token'),
                       ),

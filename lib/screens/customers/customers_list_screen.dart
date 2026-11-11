@@ -80,19 +80,23 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
         ),
       ),
       // Empty list: its empty state already has the Add button.
-      floatingActionButton: provider.customers.isEmpty ? null : PermissionGate(
-        permission: Permissions.customersManage,
-        child: GradientFloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
-          );
-        },
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Customer'),
-      ),
-      ),
+      floatingActionButton: provider.customers.isEmpty
+          ? null
+          : PermissionGate(
+              permission: Permissions.customersManage,
+              child: GradientFloatingActionButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AddCustomerScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('New Customer'),
+              ),
+            ),
       body: Column(
         children: [
           // Search Header
@@ -142,7 +146,9 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                     onButtonPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AddCustomerScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const AddCustomerScreen(),
+                        ),
                       );
                     },
                   )
@@ -152,17 +158,25 @@ class _CustomersListScreenState extends State<CustomersListScreen> {
                     separatorBuilder: (_, _) => const RowDivider(),
                     itemBuilder: (context, index) {
                       final customer = customers[index];
-                      final vehicles = provider.getVehiclesForCustomer(customer.id);
-                      final due = provider.getCustomerOutstandingBalance(customer.id);
+                      final vehicles = provider.getVehiclesForCustomer(
+                        customer.id,
+                      );
+                      final due = provider.getCustomerOutstandingBalance(
+                        customer.id,
+                      );
                       return ListRow(
                         title: customer.name,
                         subtitle: customer.phone,
                         detail: vehicles.isEmpty
                             ? 'No vehicle'
-                            : vehicles.map((v) => v.registrationNumber).join(', '),
+                            : vehicles
+                                  .map((v) => v.registrationNumber)
+                                  .join(', '),
                         trailingTop: due > 0
-                            ? RowAmount('${CurrencyFormatter.format(due)} due',
-                                color: palette.pending)
+                            ? RowAmount(
+                                '${CurrencyFormatter.format(due)} due',
+                                color: palette.pending,
+                              )
                             : null,
                         onTap: () => _onCustomerSelected(customer),
                       );

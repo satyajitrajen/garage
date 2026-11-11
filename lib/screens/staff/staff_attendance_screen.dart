@@ -43,9 +43,17 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
   Future<void> _markAttendance(AttendanceStatus status) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final day = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+    final day = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+    );
     if (day.isAfter(today)) {
-      showAppSnackBar(context, 'Attendance cannot be marked for a future date', type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Attendance cannot be marked for a future date',
+        type: SnackBarType.error,
+      );
       return;
     }
 
@@ -75,14 +83,27 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
       _currentMonth.year,
     );
 
-    final daysInMonth = DateUtils.getDaysInMonth(_currentMonth.year, _currentMonth.month);
-    final firstWeekday = DateTime(_currentMonth.year, _currentMonth.month, 1).weekday;
+    final daysInMonth = DateUtils.getDaysInMonth(
+      _currentMonth.year,
+      _currentMonth.month,
+    );
+    final firstWeekday = DateTime(
+      _currentMonth.year,
+      _currentMonth.month,
+      1,
+    ).weekday;
 
-    final selectedRecord = provider.getAttendanceForStaffOnDate(widget.staff.id, _selectedDate);
+    final selectedRecord = provider.getAttendanceForStaffOnDate(
+      widget.staff.id,
+      _selectedDate,
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.staff.name} - Attendance', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          '${widget.staff.name} - Attendance',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.receipt_rounded),
@@ -115,6 +136,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
+                    tooltip: 'Previous month',
                     icon: const Icon(Icons.chevron_left_rounded),
                     onPressed: () => _changeMonth(-1),
                   ),
@@ -130,6 +152,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                     ),
                   ),
                   IconButton(
+                    tooltip: 'Next month',
                     icon: const Icon(Icons.chevron_right_rounded),
                     onPressed: () => _changeMonth(1),
                   ),
@@ -141,13 +164,29 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
             // Monthly Summary KPI Grid
             Row(
               children: [
-                _buildSummaryBadge('Present', '${salarySummary["presentDays"] ?? 0}', palette.present),
+                _buildSummaryBadge(
+                  'Present',
+                  '${salarySummary["presentDays"] ?? 0}',
+                  palette.present,
+                ),
                 const SizedBox(width: 8),
-                _buildSummaryBadge('Half Day', '${salarySummary["halfDays"] ?? 0}', palette.halfDay),
+                _buildSummaryBadge(
+                  'Half Day',
+                  '${salarySummary["halfDays"] ?? 0}',
+                  palette.halfDay,
+                ),
                 const SizedBox(width: 8),
-                _buildSummaryBadge('Absent', '${salarySummary["absentDays"] ?? 0}', palette.absent),
+                _buildSummaryBadge(
+                  'Absent',
+                  '${salarySummary["absentDays"] ?? 0}',
+                  palette.absent,
+                ),
                 const SizedBox(width: 8),
-                _buildSummaryBadge('Leaves', '${salarySummary["leaveDays"] ?? 0}', palette.leave),
+                _buildSummaryBadge(
+                  'Leaves',
+                  '${salarySummary["leaveDays"] ?? 0}',
+                  palette.leave,
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -175,7 +214,9 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w700,
                             fontSize: AppText.caption,
-                            color: isSunday ? palette.pending : palette.textMuted,
+                            color: isSunday
+                                ? palette.pending
+                                : palette.textMuted,
                           ),
                         ),
                       );
@@ -189,12 +230,13 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 7,
-                      mainAxisSpacing: 6,
-                      crossAxisSpacing: 6,
-                      childAspectRatio: 0.9,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          mainAxisSpacing: 6,
+                          crossAxisSpacing: 6,
+                          childAspectRatio: 0.9,
+                        ),
                     itemCount: (firstWeekday - 1) + daysInMonth,
                     itemBuilder: (context, index) {
                       if (index < firstWeekday - 1) {
@@ -202,10 +244,20 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                       }
 
                       final dayNum = index - (firstWeekday - 1) + 1;
-                      final date = DateTime(_currentMonth.year, _currentMonth.month, dayNum);
-                      final isSelected = DateUtils.isSameDay(_selectedDate, date);
+                      final date = DateTime(
+                        _currentMonth.year,
+                        _currentMonth.month,
+                        dayNum,
+                      );
+                      final isSelected = DateUtils.isSameDay(
+                        _selectedDate,
+                        date,
+                      );
                       final isSunday = date.weekday == DateTime.sunday;
-                      final record = provider.getAttendanceForStaffOnDate(widget.staff.id, date);
+                      final record = provider.getAttendanceForStaffOnDate(
+                        widget.staff.id,
+                        date,
+                      );
 
                       Color? dotColor;
                       if (record != null) {
@@ -234,10 +286,14 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? palette.primary.withOpacity(0.2)
-                                : (isSunday ? palette.cardAlt : Colors.transparent),
+                                : (isSunday
+                                      ? palette.cardAlt
+                                      : Colors.transparent),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: isSelected ? palette.primary : palette.border,
+                              color: isSelected
+                                  ? palette.primary
+                                  : palette.border,
                               width: isSelected ? 2 : 1,
                             ),
                           ),
@@ -246,30 +302,34 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '$dayNum',
-                                style: GoogleFonts.poppins(
-                                  fontSize: AppText.caption,
-                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                                  color: isSunday ? palette.pending : palette.textPrimary,
-                                ),
-                              ),
-                              if (dotColor != null) ...[
-                                const SizedBox(height: 3),
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: dotColor,
-                                    shape: BoxShape.circle,
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '$dayNum',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: AppText.caption,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                    color: isSunday
+                                        ? palette.pending
+                                        : palette.textPrimary,
                                   ),
                                 ),
+                                if (dotColor != null) ...[
+                                  const SizedBox(height: 3),
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: dotColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
-                          ),
+                            ),
                           ),
                         ),
                       );
@@ -296,11 +356,17 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                     children: [
                       Text(
                         AppDateFormatter.formatDayDate(_selectedDate),
-                        style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.poppins(
+                          fontSize: AppText.title,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       if (selectedRecord != null)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: palette.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(8),
@@ -321,7 +387,8 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () => _markAttendance(AttendanceStatus.present),
+                          onPressed: () =>
+                              _markAttendance(AttendanceStatus.present),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: palette.present,
                             foregroundColor: palette.onPrimary,
@@ -332,7 +399,8 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () => _markAttendance(AttendanceStatus.halfDay),
+                          onPressed: () =>
+                              _markAttendance(AttendanceStatus.halfDay),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: palette.halfDay,
                             foregroundColor: palette.onPrimary,
@@ -347,7 +415,8 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () => _markAttendance(AttendanceStatus.absent),
+                          onPressed: () =>
+                              _markAttendance(AttendanceStatus.absent),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: palette.absent,
                             foregroundColor: palette.onPrimary,
@@ -358,7 +427,8 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () => _markAttendance(AttendanceStatus.leave),
+                          onPressed: () =>
+                              _markAttendance(AttendanceStatus.leave),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: palette.leave,
                             foregroundColor: palette.onPrimary,

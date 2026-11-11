@@ -25,6 +25,7 @@ class AddVehicleDialog extends StatefulWidget {
 
 class _AddVehicleDialogState extends State<AddVehicleDialog> {
   final _formKey = GlobalKey<FormState>();
+
   /// Set by the first submit attempt; from then on fields re-validate
   /// as they are edited, so fixed errors clear immediately.
   bool _submitted = false;
@@ -86,11 +87,15 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
           registrationNumber: _regNoController.text.trim().toUpperCase(),
           make: _makeController.text.trim(),
           model: _modelController.text.trim(),
-          variant: _variantController.text.trim().isEmpty ? null : _variantController.text.trim(),
+          variant: _variantController.text.trim().isEmpty
+              ? null
+              : _variantController.text.trim(),
           year: int.tryParse(_yearController.text.trim()),
           fuelType: _fuelType,
           currentKm: parseGroupedInt(_kmController.text) ?? 0,
-          color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
+          color: _colorController.text.trim().isEmpty
+              ? null
+              : _colorController.text.trim(),
           chassisNumber: original.chassisNumber,
           engineNumber: original.engineNumber,
           createdAt: original.createdAt,
@@ -109,11 +114,15 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
         registrationNumber: _regNoController.text.trim().toUpperCase(),
         make: _makeController.text.trim(),
         model: _modelController.text.trim(),
-        variant: _variantController.text.trim().isEmpty ? null : _variantController.text.trim(),
+        variant: _variantController.text.trim().isEmpty
+            ? null
+            : _variantController.text.trim(),
         year: int.tryParse(_yearController.text.trim()),
         fuelType: _fuelType,
         currentKm: parseGroupedInt(_kmController.text) ?? 0,
-        color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
+        color: _colorController.text.trim().isEmpty
+            ? null
+            : _colorController.text.trim(),
       );
 
       final created = await provider.addVehicle(newVehicle);
@@ -121,9 +130,9 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
       Navigator.pop(context, created);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage(e))));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -162,6 +171,7 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                       ),
                     ),
                     IconButton(
+                      tooltip: 'Close',
                       icon: const Icon(Icons.close_rounded),
                       onPressed: () => Navigator.pop(context),
                     ),
@@ -179,7 +189,8 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                     prefixIcon: Icon(Icons.pin_rounded, color: palette.primary),
                   ),
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Registration number is required';
+                    if (val == null || val.trim().isEmpty)
+                      return 'Registration number is required';
                     return null;
                   },
                 ),
@@ -196,7 +207,9 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                           labelText: 'Make *',
                           hintText: 'e.g. Maruti, Hyundai',
                         ),
-                        validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
+                        validator: (val) => val == null || val.trim().isEmpty
+                            ? 'Required'
+                            : null,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -208,7 +221,9 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                           labelText: 'Model *',
                           hintText: 'e.g. Swift, Creta',
                         ),
-                        validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
+                        validator: (val) => val == null || val.trim().isEmpty
+                            ? 'Required'
+                            : null,
                       ),
                     ),
                   ],
@@ -262,8 +277,12 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                       selected: isSelected,
                       selectedColor: palette.primary.withValues(alpha: 0.15),
                       labelStyle: TextStyle(
-                        color: isSelected ? palette.primary : palette.textPrimary,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected
+                            ? palette.primary
+                            : palette.textPrimary,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                       ),
                       onSelected: (selected) {
                         if (selected) setState(() => _fuelType = fuel);
@@ -284,12 +303,17 @@ class _AddVehicleDialogState extends State<AddVehicleDialog> {
                         decoration: InputDecoration(
                           labelText: 'KM *',
                           hintText: 'e.g. 35000',
-                          prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
+                          prefixIcon: Icon(
+                            Icons.speed_rounded,
+                            color: palette.primary,
+                          ),
                         ),
                         validator: (val) {
-                          if (val == null || val.trim().isEmpty) return 'KM is required';
+                          if (val == null || val.trim().isEmpty)
+                            return 'KM is required';
                           final km = parseGroupedInt(val);
-                          if (km == null || km < 0) return 'Enter a valid KM reading';
+                          if (km == null || km < 0)
+                            return 'Enter a valid KM reading';
                           return null;
                         },
                       ),

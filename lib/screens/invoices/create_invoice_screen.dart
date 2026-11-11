@@ -61,10 +61,8 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     final items = await Navigator.push<List<MaintenanceItem>>(
       context,
       MaterialPageRoute(
-        builder: (_) => AddMaintenanceScreen(
-          initialItems: _items,
-          title: 'Add items',
-        ),
+        builder: (_) =>
+            AddMaintenanceScreen(initialItems: _items, title: 'Add items'),
       ),
     );
 
@@ -153,11 +151,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(
-        context,
-        errorMessage(e),
-        type: SnackBarType.error,
-      );
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

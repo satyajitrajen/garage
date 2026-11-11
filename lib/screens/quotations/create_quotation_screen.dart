@@ -107,10 +107,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     final items = await Navigator.push<List<MaintenanceItem>>(
       context,
       MaterialPageRoute(
-        builder: (_) => AddMaintenanceScreen(
-          initialItems: _items,
-          title: 'Add items',
-        ),
+        builder: (_) =>
+            AddMaintenanceScreen(initialItems: _items, title: 'Add items'),
       ),
     );
 
@@ -152,8 +150,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     final notes = _notesController.text.trim().isEmpty
         ? null
         : _notesController.text.trim();
-    final km =
-        parseGroupedInt(_kmController.text) ?? widget.vehicle.currentKm;
+    final km = parseGroupedInt(_kmController.text) ?? widget.vehicle.currentKm;
 
     try {
       if (_isEditing) {
@@ -168,8 +165,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           quotationNumber: existing.quotationNumber,
           customerId: existing.customerId,
           vehicleId: existing.vehicleId,
-          kmReading:
-              parseGroupedInt(_kmController.text) ?? existing.kmReading,
+          kmReading: parseGroupedInt(_kmController.text) ?? existing.kmReading,
           items: _items,
           overallDiscount: discount,
           taxPercent: _taxPercent,
@@ -234,11 +230,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(
-        context,
-        errorMessage(e),
-        type: SnackBarType.error,
-      );
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -428,29 +420,31 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     ),
                   ),
                   if (!_perItemTax) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<double>(
-                      isExpanded: true,
-                      initialValue: _taxPercent,
-                      decoration: const InputDecoration(labelText: 'Tax Rate'),
-                      items: taxOptions.map((rate) {
-                        return DropdownMenuItem(
-                          value: rate,
-                          child: Text(
-                            rate > 0
-                                ? '${rate.toStringAsFixed(0)}% (CGST ${(rate / 2).toStringAsFixed(1)}% + SGST ${(rate / 2).toStringAsFixed(1)}%)'
-                                : '${rate.toStringAsFixed(0)}%',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (val) => setState(
-                        () => _taxPercent = val ?? config.defaultTaxPercent,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<double>(
+                        isExpanded: true,
+                        initialValue: _taxPercent,
+                        decoration: const InputDecoration(
+                          labelText: 'Tax Rate',
+                        ),
+                        items: taxOptions.map((rate) {
+                          return DropdownMenuItem(
+                            value: rate,
+                            child: Text(
+                              rate > 0
+                                  ? '${rate.toStringAsFixed(0)}% (CGST ${(rate / 2).toStringAsFixed(1)}% + SGST ${(rate / 2).toStringAsFixed(1)}%)'
+                                  : '${rate.toStringAsFixed(0)}%',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) => setState(
+                          () => _taxPercent = val ?? config.defaultTaxPercent,
+                        ),
                       ),
                     ),
-                  ),
                   ],
                 ],
               ),
@@ -575,9 +569,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _saveQuotation,
                   icon: const Icon(Icons.check_circle_outline_rounded),
-                  label: Text(
-                    _isEditing ? 'Save Changes' : 'Save Estimate',
-                  ),
+                  label: Text(_isEditing ? 'Save Changes' : 'Save Estimate'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),

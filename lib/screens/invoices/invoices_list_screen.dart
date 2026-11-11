@@ -72,22 +72,30 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
     final totalInvoiced = provider.invoices
         .where((inv) => inv.status != InvoiceStatus.cancelled)
         .fold(0.0, (sum, inv) => sum + inv.grandTotal);
-    final totalCollected = provider.invoices.fold(0.0, (sum, inv) => sum + inv.totalPaidAmount);
+    final totalCollected = provider.invoices.fold(
+      0.0,
+      (sum, inv) => sum + inv.totalPaidAmount,
+    );
     final totalPending = provider.totalPendingPayments;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bills', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          'Bills',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
       ),
       // Empty list: its empty state already has the Add button.
-      floatingActionButton: provider.invoices.isEmpty ? null : PermissionGate(
-        permission: Permissions.invoicesManage,
-        child: GradientFloatingActionButton(
-        onPressed: _createNewInvoice,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Bill'),
-      ),
-      ),
+      floatingActionButton: provider.invoices.isEmpty
+          ? null
+          : PermissionGate(
+              permission: Permissions.invoicesManage,
+              child: GradientFloatingActionButton(
+                onPressed: _createNewInvoice,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('New Bill'),
+              ),
+            ),
       body: Column(
         children: [
           // Top Summary KPI Strip
@@ -98,10 +106,21 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             color: palette.cardAlt,
             child: Row(
               children: [
-                _buildKpiItem('Billed', CurrencyFormatter.format(totalInvoiced), null),
-                _buildKpiItem('Collected', CurrencyFormatter.format(totalCollected), null),
-                _buildKpiItem('Due', CurrencyFormatter.format(totalPending),
-                    totalPending > 0 ? palette.pending : null),
+                _buildKpiItem(
+                  'Billed',
+                  CurrencyFormatter.format(totalInvoiced),
+                  null,
+                ),
+                _buildKpiItem(
+                  'Collected',
+                  CurrencyFormatter.format(totalCollected),
+                  null,
+                ),
+                _buildKpiItem(
+                  'Due',
+                  CurrencyFormatter.format(totalPending),
+                  totalPending > 0 ? palette.pending : null,
+                ),
               ],
             ),
           ),
@@ -121,7 +140,10 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
             controller: _tabController,
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
+            labelStyle: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: AppText.body,
+            ),
             tabs: const [
               Tab(text: 'All Bills'),
               Tab(text: 'Paid'),
@@ -183,7 +205,8 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
         final vehicle = provider.getVehicleById(inv.vehicleId);
 
         final custMatches = customer?.name.toLowerCase().contains(q) ?? false;
-        final vehMatches = vehicle?.registrationNumber.toLowerCase().contains(q) ?? false;
+        final vehMatches =
+            vehicle?.registrationNumber.toLowerCase().contains(q) ?? false;
 
         return invMatches || custMatches || vehMatches;
       }
@@ -210,12 +233,17 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
         final inv = filtered[index];
         final customer = provider.getCustomerById(inv.customerId);
         final vehicle = provider.getVehicleById(inv.vehicleId);
-        final open = inv.balanceDue > 0 && inv.status != InvoiceStatus.cancelled;
+        final open =
+            inv.balanceDue > 0 && inv.status != InvoiceStatus.cancelled;
 
         return ListRow(
-          overline: '${inv.invoiceNumber} · ${AppDateFormatter.formatDate(inv.invoiceDate)}',
+          overline:
+              '${inv.invoiceNumber} · ${AppDateFormatter.formatDate(inv.invoiceDate)}',
           title: customer?.name ?? 'Customer',
-          subtitle: [vehicle?.registrationNumber, vehicle?.displayName].whereType<String>().join(' · '),
+          subtitle: [
+            vehicle?.registrationNumber,
+            vehicle?.displayName,
+          ].whereType<String>().join(' · '),
           trailingTop: RowAmount(CurrencyFormatter.format(inv.grandTotal)),
           trailingBottom: open
               ? Text(
@@ -231,7 +259,9 @@ class _InvoicesListScreenState extends State<InvoicesListScreen>
               : StatusBadge.fromInvoiceStatus(inv.status),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => InvoicePreviewScreen(invoiceId: inv.id)),
+            MaterialPageRoute(
+              builder: (_) => InvoicePreviewScreen(invoiceId: inv.id),
+            ),
           ),
         );
       },

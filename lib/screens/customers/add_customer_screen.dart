@@ -30,6 +30,7 @@ class AddCustomerScreen extends StatefulWidget {
 
 class _AddCustomerScreenState extends State<AddCustomerScreen> {
   final _formKey = GlobalKey<FormState>();
+
   /// Set by the first submit attempt; from then on fields re-validate
   /// as they are edited, so fixed errors clear immediately.
   bool _submitted = false;
@@ -76,8 +77,12 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       _notesController.text = c.notes ?? '';
       _hasVehicle = false;
       // Editing: open the optional section if anything in it is filled in.
-      _showMoreCustomer = [c.email, c.gstin, c.address, c.notes]
-          .any((v) => v != null && v.trim().isNotEmpty);
+      _showMoreCustomer = [
+        c.email,
+        c.gstin,
+        c.address,
+        c.notes,
+      ].any((v) => v != null && v.trim().isNotEmpty);
     }
   }
 
@@ -100,7 +105,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     super.dispose();
   }
 
-  Future<void> _handleSave({bool startJob = false, bool createQuote = false}) async {
+  Future<void> _handleSave({
+    bool startJob = false,
+    bool createQuote = false,
+  }) async {
     if (!_submitted) setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) return;
 
@@ -117,11 +125,21 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         phone: _phoneController.text.trim(),
         whatsappNumber: _sameAsPhone
             ? _phoneController.text.trim()
-            : (_whatsappController.text.trim().isEmpty ? null : _whatsappController.text.trim()),
-        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-        address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-        gstin: _gstinController.text.trim().isEmpty ? null : _gstinController.text.trim(),
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+            : (_whatsappController.text.trim().isEmpty
+                  ? null
+                  : _whatsappController.text.trim()),
+        email: _emailController.text.trim().isEmpty
+            ? null
+            : _emailController.text.trim(),
+        address: _addressController.text.trim().isEmpty
+            ? null
+            : _addressController.text.trim(),
+        gstin: _gstinController.text.trim().isEmpty
+            ? null
+            : _gstinController.text.trim(),
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
         createdAt: original.createdAt,
       );
 
@@ -144,18 +162,29 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       phone: _phoneController.text.trim(),
       whatsappNumber: _sameAsPhone
           ? _phoneController.text.trim()
-          : (_whatsappController.text.trim().isEmpty ? null : _whatsappController.text.trim()),
-      email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-      address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-      gstin: _gstinController.text.trim().isEmpty ? null : _gstinController.text.trim(),
-      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+          : (_whatsappController.text.trim().isEmpty
+                ? null
+                : _whatsappController.text.trim()),
+      email: _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim(),
+      address: _addressController.text.trim().isEmpty
+          ? null
+          : _addressController.text.trim(),
+      gstin: _gstinController.text.trim().isEmpty
+          ? null
+          : _gstinController.text.trim(),
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
     );
 
     // Reject a duplicate plate before creating the customer, so a taken plate
     // doesn't leave a customer behind without the vehicle.
     if (_hasVehicle && _regNoController.text.trim().isNotEmpty) {
-      final existing =
-          provider.vehicleWithRegistration(_regNoController.text.trim());
+      final existing = provider.vehicleWithRegistration(
+        _regNoController.text.trim(),
+      );
       if (existing != null) {
         final owner = provider.getCustomerById(existing.customerId)?.name;
         showAppSnackBar(
@@ -168,7 +197,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     }
 
     // Retry after vehicle failure: customer already created, skip creation
-    final createdCustomer = _createdCustomer ?? await provider.addCustomer(newCustomer);
+    final createdCustomer =
+        _createdCustomer ?? await provider.addCustomer(newCustomer);
     _createdCustomer = createdCustomer;
     if (!mounted) return;
 
@@ -180,11 +210,15 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         registrationNumber: _regNoController.text.trim().toUpperCase(),
         make: _makeController.text.trim(),
         model: _modelController.text.trim(),
-        variant: _variantController.text.trim().isEmpty ? null : _variantController.text.trim(),
+        variant: _variantController.text.trim().isEmpty
+            ? null
+            : _variantController.text.trim(),
         year: int.tryParse(_yearController.text.trim()),
         fuelType: _fuelType,
         currentKm: parseGroupedInt(_kmController.text) ?? 0,
-        color: _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
+        color: _colorController.text.trim().isEmpty
+            ? null
+            : _colorController.text.trim(),
       );
       try {
         createdVehicle = await provider.addVehicle(newVehicle);
@@ -192,11 +226,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         _createdCustomer = null;
       } catch (e) {
         if (!mounted) return;
-        showAppSnackBar(
-          context,
-          errorMessage(e),
-          type: SnackBarType.error,
-        );
+        showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
         return;
       }
     } else {
@@ -272,10 +302,14 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 decoration: InputDecoration(
                   labelText: 'Customer Full Name *',
                   hintText: 'e.g. Ramesh Patel',
-                  prefixIcon: Icon(Icons.person_rounded, color: palette.primary),
+                  prefixIcon: Icon(
+                    Icons.person_rounded,
+                    color: palette.primary,
+                  ),
                 ),
-                validator: (val) =>
-                    val == null || val.trim().isEmpty ? 'Customer name is required' : null,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'Customer name is required'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -286,10 +320,14 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 decoration: InputDecoration(
                   labelText: 'Mobile Number *',
                   hintText: 'e.g. +91 98765 43210',
-                  prefixIcon: Icon(Icons.phone_android_rounded, color: palette.primary),
+                  prefixIcon: Icon(
+                    Icons.phone_android_rounded,
+                    color: palette.primary,
+                  ),
                 ),
-                validator: (val) =>
-                    val == null || val.trim().isEmpty ? 'Mobile number is required' : null,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'Mobile number is required'
+                    : null,
               ),
               const SizedBox(height: 10),
 
@@ -314,7 +352,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                   decoration: InputDecoration(
                     labelText: 'WhatsApp Number',
                     hintText: 'e.g. +91 98765 43210',
-                    prefixIcon: Icon(Icons.chat_bubble_outline_rounded, color: palette.paid),
+                    prefixIcon: Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      color: palette.paid,
+                    ),
                   ),
                 ),
               ],
@@ -325,63 +366,64 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
               _moreToggle(
                 label: 'More customer details (email, address, GSTIN, notes)',
                 expanded: _showMoreCustomer,
-                onTap: () => setState(() => _showMoreCustomer = !_showMoreCustomer),
+                onTap: () =>
+                    setState(() => _showMoreCustomer = !_showMoreCustomer),
               ),
               if (_showMoreCustomer) ...[
-              const SizedBox(height: 14),
-              // Email & Address
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address (Optional)',
-                  hintText: 'e.g. customer@gmail.com',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              TextFormField(
-                controller: _addressController,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Customer Address / Location',
-                  hintText: 'e.g. Flat 101, Palm Residency, Mumbai',
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // GSTIN (optional tax identity) — uppercase forced so stored
-              // values match the format printed on invoices.
-              TextFormField(
-                controller: _gstinController,
-                maxLength: 15,
-                textCapitalization: TextCapitalization.characters,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-                  TextInputFormatter.withFunction(
-                    (oldValue, newValue) =>
-                        newValue.copyWith(text: newValue.text.toUpperCase()),
+                const SizedBox(height: 14),
+                // Email & Address
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email Address (Optional)',
+                    hintText: 'e.g. customer@gmail.com',
+                    prefixIcon: Icon(Icons.email_outlined),
                   ),
-                ],
-                decoration: const InputDecoration(
-                  counterText: '',
-                  labelText: 'GSTIN (Optional)',
-                  hintText: 'e.g. 27ABCDE1234F1Z5',
-                  prefixIcon: Icon(Icons.receipt_long_outlined),
                 ),
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _notesController,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Customer / Special Preference Notes',
-                  hintText: 'e.g. VIP client, requests synthetic oil always',
-                  prefixIcon: Icon(Icons.note_alt_outlined),
+                const SizedBox(height: 14),
+
+                TextFormField(
+                  controller: _addressController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Customer Address / Location',
+                    hintText: 'e.g. Flat 101, Palm Residency, Mumbai',
+                    prefixIcon: Icon(Icons.location_on_outlined),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 14),
+
+                // GSTIN (optional tax identity) — uppercase forced so stored
+                // values match the format printed on invoices.
+                TextFormField(
+                  controller: _gstinController,
+                  maxLength: 15,
+                  textCapitalization: TextCapitalization.characters,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                    TextInputFormatter.withFunction(
+                      (oldValue, newValue) =>
+                          newValue.copyWith(text: newValue.text.toUpperCase()),
+                    ),
+                  ],
+                  decoration: const InputDecoration(
+                    counterText: '',
+                    labelText: 'GSTIN (Optional)',
+                    hintText: 'e.g. 27ABCDE1234F1Z5',
+                    prefixIcon: Icon(Icons.receipt_long_outlined),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _notesController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Customer / Special Preference Notes',
+                    hintText: 'e.g. VIP client, requests synthetic oil always',
+                    prefixIcon: Icon(Icons.note_alt_outlined),
+                  ),
+                ),
               ],
               const SizedBox(height: 28),
 
@@ -449,7 +491,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                           labelText: 'Make *',
                           hintText: 'e.g. Maruti / Hyundai / Honda',
                         ),
-                        validator: (val) => _hasVehicle && (val == null || val.trim().isEmpty)
+                        validator: (val) =>
+                            _hasVehicle && (val == null || val.trim().isEmpty)
                             ? 'Required'
                             : null,
                       ),
@@ -463,7 +506,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                           labelText: 'Model *',
                           hintText: 'e.g. Swift / Creta / City',
                         ),
-                        validator: (val) => _hasVehicle && (val == null || val.trim().isEmpty)
+                        validator: (val) =>
+                            _hasVehicle && (val == null || val.trim().isEmpty)
                             ? 'Required'
                             : null,
                       ),
@@ -480,9 +524,13 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                   decoration: InputDecoration(
                     labelText: 'KM Reading *',
                     hintText: 'e.g. 45000',
-                    prefixIcon: Icon(Icons.speed_rounded, color: palette.primary),
+                    prefixIcon: Icon(
+                      Icons.speed_rounded,
+                      color: palette.primary,
+                    ),
                   ),
-                  validator: (val) => _hasVehicle && (val == null || val.trim().isEmpty)
+                  validator: (val) =>
+                      _hasVehicle && (val == null || val.trim().isEmpty)
                       ? 'KM is required'
                       : null,
                 ),
@@ -511,7 +559,9 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                         color: isSelected
                             ? palette.primary
                             : palette.textPrimary,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                       ),
                       onSelected: (selected) {
                         if (selected) setState(() => _fuelType = fuel);
@@ -524,43 +574,44 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                 _moreToggle(
                   label: 'More vehicle details (variant, year, colour)',
                   expanded: _showMoreVehicle,
-                  onTap: () => setState(() => _showMoreVehicle = !_showMoreVehicle),
+                  onTap: () =>
+                      setState(() => _showMoreVehicle = !_showMoreVehicle),
                 ),
                 if (_showMoreVehicle) ...[
-                const SizedBox(height: 14),
-                TextFormField(
-                  controller: _variantController,
-                  decoration: const InputDecoration(
-                    labelText: 'Variant',
-                    hintText: 'e.g. VXI, SX (O)',
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _variantController,
+                    decoration: const InputDecoration(
+                      labelText: 'Variant',
+                      hintText: 'e.g. VXI, SX (O)',
+                    ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                // Year & Color
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _yearController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Year',
-                          hintText: 'e.g. 2022',
+                  const SizedBox(height: 14),
+                  // Year & Color
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _yearController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Year',
+                            hintText: 'e.g. 2022',
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _colorController,
-                        decoration: const InputDecoration(
-                          labelText: 'Vehicle Color',
-                          hintText: 'e.g. White / Silver',
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _colorController,
+                          decoration: const InputDecoration(
+                            labelText: 'Vehicle Color',
+                            hintText: 'e.g. White / Silver',
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 ],
               ],
               const SizedBox(height: 32),
@@ -650,8 +701,13 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   }) {
     return TextButton.icon(
       onPressed: onTap,
-      style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
-      icon: Icon(expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded),
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        alignment: Alignment.centerLeft,
+      ),
+      icon: Icon(
+        expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+      ),
       label: Text(
         expanded ? 'Hide optional details' : label,
         textAlign: TextAlign.start,
@@ -659,7 +715,11 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, {required String title, required IconData icon}) {
+  Widget _buildSectionTitle(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+  }) {
     return Row(
       children: [
         Icon(icon, color: context.palette.primary, size: 22),

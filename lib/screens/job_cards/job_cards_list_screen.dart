@@ -70,17 +70,22 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Job Cards & Workshop', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          'Job Cards & Workshop',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
       ),
       // Empty list: its empty state already has the Add button.
-      floatingActionButton: provider.jobCards.isEmpty ? null : PermissionGate(
-        permission: Permissions.jobcardsManage,
-        child: GradientFloatingActionButton(
-        onPressed: _createNewJobCard,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Job Card'),
-      ),
-      ),
+      floatingActionButton: provider.jobCards.isEmpty
+          ? null
+          : PermissionGate(
+              permission: Permissions.jobcardsManage,
+              child: GradientFloatingActionButton(
+                onPressed: _createNewJobCard,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('New Job Card'),
+              ),
+            ),
       body: Column(
         children: [
           // Search Bar
@@ -98,7 +103,10 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
             controller: _tabController,
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
+            labelStyle: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: AppText.body,
+            ),
             tabs: const [
               Tab(text: 'All Jobs'),
               Tab(text: 'In Progress'),
@@ -133,8 +141,10 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
         final vehicle = provider.getVehicleById(jc.vehicleId);
         final customer = provider.getCustomerById(jc.customerId);
 
-        final vehicleMatches = vehicle?.registrationNumber.toLowerCase().contains(q) ?? false;
-        final customerMatches = customer?.name.toLowerCase().contains(q) ?? false;
+        final vehicleMatches =
+            vehicle?.registrationNumber.toLowerCase().contains(q) ?? false;
+        final customerMatches =
+            customer?.name.toLowerCase().contains(q) ?? false;
 
         return jcMatches || vehicleMatches || customerMatches;
       }
@@ -148,8 +158,8 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
         description: _searchQuery.trim().isNotEmpty
             ? 'No job cards match "${_searchQuery.trim()}".'
             : filterStatus != null
-                ? 'No vehicles currently matching status "${filterStatus.displayName}".'
-                : 'No job cards yet.',
+            ? 'No vehicles currently matching status "${filterStatus.displayName}".'
+            : 'No job cards yet.',
         buttonText: 'Create New Job Card',
         onButtonPressed: _createNewJobCard,
       );
@@ -163,14 +173,21 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
         final jc = filtered[index];
         final customer = provider.getCustomerById(jc.customerId);
         final vehicle = provider.getVehicleById(jc.vehicleId);
-        final staff = jc.assignedStaffId != null ? provider.getStaffById(jc.assignedStaffId!) : null;
-        final open = jc.status != JobStatus.delivered && jc.status != JobStatus.cancelled;
+        final staff = jc.assignedStaffId != null
+            ? provider.getStaffById(jc.assignedStaffId!)
+            : null;
+        final open =
+            jc.status != JobStatus.delivered &&
+            jc.status != JobStatus.cancelled;
         final late = open && jc.promisedDeliveryDate.isBefore(DateTime.now());
 
         return ListRow(
           overline: jc.jobCardNumber,
           title: vehicle?.registrationNumber ?? 'Unknown vehicle',
-          subtitle: [vehicle?.displayName, customer?.name].whereType<String>().join(' · '),
+          subtitle: [
+            vehicle?.displayName,
+            customer?.name,
+          ].whereType<String>().join(' · '),
           detail: [
             staff?.name ?? 'Unassigned',
             if (open)
@@ -178,11 +195,15 @@ class _JobCardsListScreenState extends State<JobCardsListScreen>
                   ? 'Late, promised ${AppDateFormatter.formatRelative(jc.promisedDeliveryDate)}'
                   : 'Promised ${AppDateFormatter.formatRelative(jc.promisedDeliveryDate)}',
           ].join(' · '),
-          trailingTop: jc.items.isEmpty ? null : RowAmount(CurrencyFormatter.format(jc.grandTotal)),
+          trailingTop: jc.items.isEmpty
+              ? null
+              : RowAmount(CurrencyFormatter.format(jc.grandTotal)),
           trailingBottom: StatusBadge.fromJobStatus(jc.status),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => JobCardDetailScreen(jobCardId: jc.id)),
+            MaterialPageRoute(
+              builder: (_) => JobCardDetailScreen(jobCardId: jc.id),
+            ),
           ),
         );
       },

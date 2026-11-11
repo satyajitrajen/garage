@@ -46,6 +46,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
   ItemCategory _customCategory = ItemCategory.sparePart;
   bool _customIsLabour = false;
   bool _customSaveToCatalog = false;
+
   /// GST rate for the custom line; null until the sheet first opens and
   /// reads the garage default.
   double? _customTaxPercent;
@@ -75,13 +76,13 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
       // Increment quantity
       final existing = _currentItems[existingIndex];
       setState(() {
-        _currentItems[existingIndex] = existing.copyWith(quantity: existing.quantity + 1);
+        _currentItems[existingIndex] = existing.copyWith(
+          quantity: existing.quantity + 1,
+        );
       });
     } else {
       setState(() {
-        _currentItems.add(
-          item.copyWith(id: const Uuid().v4(), quantity: 1),
-        );
+        _currentItems.add(item.copyWith(id: const Uuid().v4(), quantity: 1));
       });
     }
     // No snackbar: the selected-items header and the Done button count already
@@ -89,26 +90,44 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
   }
 
   void _addCustomItem() {
-    if (_customNameController.text.trim().isEmpty || _customPriceController.text.trim().isEmpty) {
-      showAppSnackBar(context, 'Please enter item name and price', type: SnackBarType.info);
+    if (_customNameController.text.trim().isEmpty ||
+        _customPriceController.text.trim().isEmpty) {
+      showAppSnackBar(
+        context,
+        'Please enter item name and price',
+        type: SnackBarType.info,
+      );
       return;
     }
 
     final price = double.tryParse(_customPriceController.text.trim()) ?? 0.0;
     final qty = double.tryParse(_customQtyController.text.trim()) ?? 1.0;
-    final discount = double.tryParse(_customDiscountController.text.trim()) ?? 0.0;
+    final discount =
+        double.tryParse(_customDiscountController.text.trim()) ?? 0.0;
 
     // Validate inputs so bad line items can't corrupt invoice totals.
     if (price <= 0) {
-      showAppSnackBar(context, 'Price must be greater than zero', type: SnackBarType.info);
+      showAppSnackBar(
+        context,
+        'Price must be greater than zero',
+        type: SnackBarType.info,
+      );
       return;
     }
     if (qty <= 0) {
-      showAppSnackBar(context, 'Quantity must be greater than zero', type: SnackBarType.info);
+      showAppSnackBar(
+        context,
+        'Quantity must be greater than zero',
+        type: SnackBarType.info,
+      );
       return;
     }
     if (discount < 0 || discount > 100) {
-      showAppSnackBar(context, 'Discount must be between 0 and 100 percent', type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Discount must be between 0 and 100 percent',
+        type: SnackBarType.error,
+      );
       return;
     }
 
@@ -118,9 +137,12 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
       category: _customCategory,
       unitPrice: price,
       quantity: qty,
-      unit: _customUnitController.text.trim().isEmpty ? 'Pcs' : _customUnitController.text.trim(),
+      unit: _customUnitController.text.trim().isEmpty
+          ? 'Pcs'
+          : _customUnitController.text.trim(),
       discountPercent: discount,
-      taxPercent: _customTaxPercent ??
+      taxPercent:
+          _customTaxPercent ??
           context.read<GarageProvider>().config.defaultTaxPercent,
       isLabour: _customIsLabour || _customCategory == ItemCategory.labour,
     );
@@ -145,22 +167,28 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
     final provider = context.read<GarageProvider>();
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await provider.addCatalogItem(MaintenanceItem(
-        id: const Uuid().v4(),
-        name: item.name,
-        category: item.category,
-        unitPrice: item.unitPrice,
-        taxPercent: item.taxPercent,
-        unit: item.unit,
-        isLabour: item.isLabour,
-      ));
+      await provider.addCatalogItem(
+        MaintenanceItem(
+          id: const Uuid().v4(),
+          name: item.name,
+          category: item.category,
+          unitPrice: item.unitPrice,
+          taxPercent: item.taxPercent,
+          unit: item.unit,
+          isLabour: item.isLabour,
+        ),
+      );
     } catch (e) {
-      messenger.showSnackBar(SnackBar(
-        content: Text(e is ApiException
-            ? 'Not saved to price list: ${e.userMessage}'
-            : 'Could not save item to price list'),
-        behavior: SnackBarBehavior.floating,
-      ));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            e is ApiException
+                ? 'Not saved to price list: ${e.userMessage}'
+                : 'Could not save item to price list',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -170,15 +198,19 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Remove from price list?'),
-        content: Text('"${item.name}" will no longer appear in the catalog. '
-            'Existing bills are not affected.'),
+        content: Text(
+          '"${item.name}" will no longer appear in the catalog. '
+          'Existing bills are not affected.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Keep')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Remove')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove'),
+          ),
         ],
       ),
     );
@@ -201,7 +233,9 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
       isScrollControlled: true,
       useSafeArea: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusSheet)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppDimens.radiusSheet),
+        ),
       ),
       backgroundColor: context.palette.surface,
       builder: (ctx) => SafeArea(
@@ -229,7 +263,10 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         Expanded(
                           child: Text(
                             'Add Custom Item / Service',
-                            style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.title,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                         IconButton(
@@ -300,7 +337,10 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     const SizedBox(height: 14),
                     Text(
                       'Category',
-                      style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.caption,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Wrap(
@@ -310,10 +350,16 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         return ChoiceChip(
                           label: Text(cat.displayName),
                           selected: isSelected,
-                          selectedColor: palette.primary.withValues(alpha: 0.15),
+                          selectedColor: palette.primary.withValues(
+                            alpha: 0.15,
+                          ),
                           labelStyle: TextStyle(
-                            color: isSelected ? palette.primary : palette.textPrimary,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected
+                                ? palette.primary
+                                : palette.textPrimary,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                           ),
                           checkmarkColor: palette.primary,
                           onSelected: (selected) {
@@ -330,35 +376,51 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                     const SizedBox(height: 14),
                     Text(
                       'GST rate',
-                      style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.caption,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 6),
-                    Builder(builder: (context) {
-                      final config = context.read<GarageProvider>().config;
-                      final selectedRate = _customTaxPercent ?? config.defaultTaxPercent;
-                      final rates = config.taxPercentOptions.contains(selectedRate)
-                          ? config.taxPercentOptions
-                          : [selectedRate, ...config.taxPercentOptions];
-                      return Wrap(
-                        spacing: 8,
-                        children: rates.map((rate) {
-                          final isSelected = rate == selectedRate;
-                          return ChoiceChip(
-                            label: Text('${rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 1)}%'),
-                            selected: isSelected,
-                            selectedColor: palette.primary.withValues(alpha: 0.15),
-                            labelStyle: TextStyle(
-                              color: isSelected ? palette.primary : palette.textPrimary,
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            ),
-                            checkmarkColor: palette.primary,
-                            onSelected: (selected) {
-                              if (selected) setSheetState(() => _customTaxPercent = rate);
-                            },
-                          );
-                        }).toList(),
-                      );
-                    }),
+                    Builder(
+                      builder: (context) {
+                        final config = context.read<GarageProvider>().config;
+                        final selectedRate =
+                            _customTaxPercent ?? config.defaultTaxPercent;
+                        final rates =
+                            config.taxPercentOptions.contains(selectedRate)
+                            ? config.taxPercentOptions
+                            : [selectedRate, ...config.taxPercentOptions];
+                        return Wrap(
+                          spacing: 8,
+                          children: rates.map((rate) {
+                            final isSelected = rate == selectedRate;
+                            return ChoiceChip(
+                              label: Text(
+                                '${rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 1)}%',
+                              ),
+                              selected: isSelected,
+                              selectedColor: palette.primary.withValues(
+                                alpha: 0.15,
+                              ),
+                              labelStyle: TextStyle(
+                                color: isSelected
+                                    ? palette.primary
+                                    : palette.textPrimary,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                              checkmarkColor: palette.primary,
+                              onSelected: (selected) {
+                                if (selected)
+                                  setSheetState(() => _customTaxPercent = rate);
+                              },
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 12),
                     CheckboxListTile(
                       value: _customIsLabour,
@@ -384,7 +446,8 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         ),
                         onChanged: (val) {
                           setSheetState(
-                              () => _customSaveToCatalog = val ?? false);
+                            () => _customSaveToCatalog = val ?? false,
+                          );
                         },
                       ),
                     ),
@@ -393,7 +456,9 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _addCustomItem,
-                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
                         child: const Text('Add to Bill Items'),
                       ),
                     ),
@@ -437,15 +502,24 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
     final labourSubtotal = _currentItems
         .where((i) => i.isLabour)
         .fold(0.0, (sum, i) => sum + i.totalAmount);
-    final totalAmount = _currentItems.fold(0.0, (sum, i) => sum + i.totalAmount);
+    final totalAmount = _currentItems.fold(
+      0.0,
+      (sum, i) => sum + i.totalAmount,
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          widget.title,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
         actions: [
           TextButton.icon(
             onPressed: _showAddCustomItemSheet,
-            icon: Icon(Icons.add_circle_outline_rounded, color: palette.primary),
+            icon: Icon(
+              Icons.add_circle_outline_rounded,
+              color: palette.primary,
+            ),
             label: Text(
               'Custom Item',
               style: GoogleFonts.poppins(
@@ -462,300 +536,372 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
         headerSliverBuilder: (context, _) => [
           SliverToBoxAdapter(
             child: Column(
-        children: [
-          // ---------------------------------------------------------
-          // SELECTED ITEMS DRAWER / ACCORDION PREVIEW
-          // ---------------------------------------------------------
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: palette.card,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Selected Work Items (${_currentItems.length})',
-                        style: GoogleFonts.poppins(
-                          fontSize: AppText.subtitle,
-                          fontWeight: FontWeight.w700,
-                          color: palette.textPrimary,
-                        ),
-                      ),
-                    ),
-                    if (_currentItems.isNotEmpty)
-                      TextButton(
-                        onPressed: () => setState(() => _currentItems.clear()),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: Text(
-                          'Clear All',
-                          style: GoogleFonts.poppins(
-                            fontSize: AppText.caption,
-                            color: palette.pending,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                if (_currentItems.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    // Grows with the text scale so the price lines fit.
-                    height: 132 * MediaQuery.textScalerOf(context).scale(1),
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _currentItems.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 10),
-                      itemBuilder: (context, index) {
-                        final item = _currentItems[index];
-                        // Tap a selected line to change its price / qty.
-                        return GestureDetector(
-                          onTap: () => _editItem(index),
-                          child: Container(
-                          width: 200,
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: palette.background,
-                            borderRadius: BorderRadius.circular(AppDimens.radiusBadge),
-                            border: Border.all(
-                              color: item.isLabour
-                                  ? palette.inProgress.withOpacity(0.4)
-                                  : palette.primary.withOpacity(0.4),
+                // ---------------------------------------------------------
+                // SELECTED ITEMS DRAWER / ACCORDION PREVIEW
+                // ---------------------------------------------------------
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  color: palette.card,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Selected Work Items (${_currentItems.length})',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.subtitle,
+                                fontWeight: FontWeight.w700,
+                                color: palette.textPrimary,
+                              ),
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      item.name,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: AppText.caption,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  // 36px touch target around a small glyph.
-                                  _TapTarget(
-                                    tooltip: 'Remove ${item.name}',
-                                    onTap: () => setState(() => _currentItems.removeAt(index)),
-                                    child: Icon(Icons.close_rounded, size: 18, color: palette.textMuted),
-                                  ),
-                                ],
+                          if (_currentItems.isNotEmpty)
+                            TextButton(
+                              onPressed: () =>
+                                  setState(() => _currentItems.clear()),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Flexible(
-                                    child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                  Text(
-                                    '@ ${CurrencyFormatter.format(item.unitPrice)}',
-                                    style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
-                                  ),
-                                  Text(
-                                    CurrencyFormatter.format(item.totalAmount),
-                                    style: GoogleFonts.poppins(
-                                      fontSize: AppText.body,
-                                      fontWeight: FontWeight.w700,
-                                      color: palette.primary,
+                              child: Text(
+                                'Clear All',
+                                style: GoogleFonts.poppins(
+                                  fontSize: AppText.caption,
+                                  color: palette.pending,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      if (_currentItems.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          // Grows with the text scale so the price lines fit.
+                          height:
+                              132 * MediaQuery.textScalerOf(context).scale(1),
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _currentItems.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 10),
+                            itemBuilder: (context, index) {
+                              final item = _currentItems[index];
+                              // Tap a selected line to change its price / qty.
+                              return GestureDetector(
+                                onTap: () => _editItem(index),
+                                child: Container(
+                                  width: 200,
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: palette.background,
+                                    borderRadius: BorderRadius.circular(
+                                      AppDimens.radiusBadge,
+                                    ),
+                                    border: Border.all(
+                                      color: item.isLabour
+                                          ? palette.inProgress.withOpacity(0.4)
+                                          : palette.primary.withOpacity(0.4),
                                     ),
                                   ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              item.name,
+                                              style: GoogleFonts.poppins(
+                                                fontSize: AppText.caption,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          // 36px touch target around a small glyph.
+                                          _TapTarget(
+                                            tooltip: 'Remove ${item.name}',
+                                            onTap: () => setState(
+                                              () =>
+                                                  _currentItems.removeAt(index),
+                                            ),
+                                            child: Icon(
+                                              Icons.close_rounded,
+                                              size: 18,
+                                              color: palette.textMuted,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Flexible(
+                                            child: FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              alignment: Alignment.centerLeft,
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    '@ ${CurrencyFormatter.format(item.unitPrice)}',
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: AppText.label,
+                                                      color: palette.textMuted,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    CurrencyFormatter.format(
+                                                      item.totalAmount,
+                                                    ),
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: AppText.body,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: palette.primary,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          Row(
+                                            children: [
+                                              _TapTarget(
+                                                tooltip: 'Decrease quantity',
+                                                onTap: () =>
+                                                    _updateItemQuantity(
+                                                      index,
+                                                      -1,
+                                                    ),
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(
+                                                    4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: palette.cardAlt,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.remove,
+                                                    size: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                    ),
+                                                child: Text(
+                                                  formatQuantity(item.quantity),
+                                                  style: GoogleFonts.poppins(
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: AppText.caption,
+                                                  ),
+                                                ),
+                                              ),
+                                              _TapTarget(
+                                                tooltip: 'Increase quantity',
+                                                onTap: () =>
+                                                    _updateItemQuantity(
+                                                      index,
+                                                      1,
+                                                    ),
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(
+                                                    4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: palette.cardAlt,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.add,
+                                                    size: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      _TapTarget(
-                                        tooltip: 'Decrease quantity',
-                                        onTap: () => _updateItemQuantity(index, -1),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: palette.cardAlt,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: const Icon(Icons.remove, size: 16),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                                        child: Text(
-                                          formatQuantity(item.quantity),
-                                          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: AppText.caption),
-                                        ),
-                                      ),
-                                      _TapTarget(
-                                        tooltip: 'Increase quantity',
-                                        onTap: () => _updateItemQuantity(index, 1),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: palette.cardAlt,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: const Icon(Icons.add, size: 16),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
+                                ),
+                              );
+                            },
                           ),
                         ),
-                        );
-                      },
-                    ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap an item to edit its price',
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.label,
+                            color: palette.textMuted,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Tap an item to edit its price',
-                    style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
+                ),
+                const Divider(height: 1),
+
+                // Search in Catalogue
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: CustomSearchBar(
+                    controller: _searchController,
+                    hintText: 'Search parts, oils, labour...',
+                    onChanged: (val) => setState(() => _searchQuery = val),
                   ),
-                ],
+                ),
+
+                // Categories Tabs
+                TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  labelStyle: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: AppText.body,
+                  ),
+                  tabs: [
+                    const Tab(text: 'All Items'),
+                    Tab(text: ItemCategory.sparePart.displayName),
+                    Tab(text: ItemCategory.labour.displayName),
+                    Tab(text: ItemCategory.fluids.displayName),
+                    Tab(text: ItemCategory.tyresBattery.displayName),
+                    Tab(text: ItemCategory.transportMisc.displayName),
+                  ],
+                ),
               ],
-            ),
-          ),
-          const Divider(height: 1),
-
-          // Search in Catalogue
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: CustomSearchBar(
-              controller: _searchController,
-              hintText: 'Search parts, oils, labour...',
-              onChanged: (val) => setState(() => _searchQuery = val),
-            ),
-          ),
-
-          // Categories Tabs
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
-            tabs: [
-              const Tab(text: 'All Items'),
-              Tab(text: ItemCategory.sparePart.displayName),
-              Tab(text: ItemCategory.labour.displayName),
-              Tab(text: ItemCategory.fluids.displayName),
-              Tab(text: ItemCategory.tyresBattery.displayName),
-              Tab(text: ItemCategory.transportMisc.displayName),
-            ],
-          ),
-        ],
             ),
           ),
         ],
         // Catalogue List
         body: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildCatalogueList(provider.catalog, null),
-                _buildCatalogueList(provider.catalog, ItemCategory.sparePart),
-                _buildCatalogueList(provider.catalog, ItemCategory.labour),
-                _buildCatalogueList(provider.catalog, ItemCategory.fluids),
-                _buildCatalogueList(provider.catalog, ItemCategory.tyresBattery),
-                _buildCatalogueList(provider.catalog, ItemCategory.transportMisc),
-              ],
-            ),
+          controller: _tabController,
+          children: [
+            _buildCatalogueList(provider.catalog, null),
+            _buildCatalogueList(provider.catalog, ItemCategory.sparePart),
+            _buildCatalogueList(provider.catalog, ItemCategory.labour),
+            _buildCatalogueList(provider.catalog, ItemCategory.fluids),
+            _buildCatalogueList(provider.catalog, ItemCategory.tyresBattery),
+            _buildCatalogueList(provider.catalog, ItemCategory.transportMisc),
+          ],
+        ),
       ),
 
       // Bottom Totals & Confirmation Bar
       bottomNavigationBar: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            decoration: BoxDecoration(
-              color: palette.card,
-              boxShadow: AppDimens.cardShadow(palette.textPrimary),
-            ),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: palette.card,
+          boxShadow: AppDimens.cardShadow(palette.textPrimary),
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 8,
                       children: [
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            Text(
-                              'Parts: ${CurrencyFormatter.format(partsSubtotal)}',
-                              style: GoogleFonts.poppins(
-                                fontSize: AppText.label,
-                                color: palette.textSecondary,
-                              ),
-                            ),
-                            Text(
-                              'Labour: ${CurrencyFormatter.format(labourSubtotal)}',
-                              style: GoogleFonts.poppins(
-                                fontSize: AppText.label,
-                                color: palette.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
                         Text(
-                          CurrencyFormatter.format(totalAmount),
+                          'Parts: ${CurrencyFormatter.format(partsSubtotal)}',
                           style: GoogleFonts.poppins(
-                            fontSize: AppText.headline,
-                            fontWeight: FontWeight.w700,
-                            color: palette.primary,
+                            fontSize: AppText.label,
+                            color: palette.textSecondary,
+                          ),
+                        ),
+                        Text(
+                          'Labour: ${CurrencyFormatter.format(labourSubtotal)}',
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.label,
+                            color: palette.textSecondary,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context, _currentItems);
-                      },
-                      icon: const Icon(Icons.check_rounded, size: 18),
-                      label: Text('Done (${_currentItems.length} item${_currentItems.length == 1 ? '' : 's'})',
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    const SizedBox(height: 2),
+                    Text(
+                      CurrencyFormatter.format(totalAmount),
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.headline,
+                        fontWeight: FontWeight.w700,
+                        color: palette.primary,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context, _currentItems);
+                  },
+                  icon: const Icon(Icons.check_rounded, size: 18),
+                  label: Text(
+                    'Done (${_currentItems.length} item${_currentItems.length == 1 ? '' : 's'})',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
-  Widget _buildCatalogueList(List<MaintenanceItem> allCatalog, ItemCategory? filterCat) {
+  Widget _buildCatalogueList(
+    List<MaintenanceItem> allCatalog,
+    ItemCategory? filterCat,
+  ) {
     final palette = context.palette;
     final filtered = allCatalog.where((item) {
       if (filterCat != null && item.category != filterCat) return false;
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
         final nameMatches = item.name.toLowerCase().contains(q);
-        final partNoMatches = item.partNumber?.toLowerCase().contains(q) ?? false;
+        final partNoMatches =
+            item.partNumber?.toLowerCase().contains(q) ?? false;
         return nameMatches || partNoMatches;
       }
       return true;
@@ -768,7 +914,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
           child: Text(
             allCatalog.isEmpty
                 ? 'Your price list is empty.\nAdd a custom item and tick '
-                    '"Save to price list" to reuse it.'
+                      '"Save to price list" to reuse it.'
                 : 'No items found in this category',
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(color: context.palette.textMuted),
@@ -804,8 +950,12 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                         ? palette.inProgress.withOpacity(0.12)
                         : palette.primary.withOpacity(0.12),
                     child: Icon(
-                      item.isLabour ? Icons.build_rounded : Icons.precision_manufacturing_rounded,
-                      color: item.isLabour ? palette.inProgress : palette.primary,
+                      item.isLabour
+                          ? Icons.build_rounded
+                          : Icons.precision_manufacturing_rounded,
+                      color: item.isLabour
+                          ? palette.inProgress
+                          : palette.primary,
                       size: 20,
                     ),
                   ),
@@ -818,31 +968,42 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
                           item.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.subtitle,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           meta,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.label,
+                            color: palette.textMuted,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text.rich(
-                          TextSpan(children: [
-                            TextSpan(
-                              text: CurrencyFormatter.format(item.unitPrice),
-                              style: GoogleFonts.poppins(
-                                fontSize: AppText.subtitle,
-                                fontWeight: FontWeight.w700,
-                                color: palette.primary,
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: CurrencyFormatter.format(item.unitPrice),
+                                style: GoogleFonts.poppins(
+                                  fontSize: AppText.subtitle,
+                                  fontWeight: FontWeight.w700,
+                                  color: palette.primary,
+                                ),
                               ),
-                            ),
-                            TextSpan(
-                              text: ' / ${item.unit}',
-                              style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
-                            ),
-                          ]),
+                              TextSpan(
+                                text: ' / ${item.unit}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: AppText.label,
+                                  color: palette.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -867,7 +1028,11 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen>
 /// A small control with a 36x36 touch area (the visible glyph stays small),
 /// so +/- and remove are easy to hit with a thumb.
 class _TapTarget extends StatelessWidget {
-  const _TapTarget({required this.onTap, required this.child, required this.tooltip});
+  const _TapTarget({
+    required this.onTap,
+    required this.child,
+    required this.tooltip,
+  });
   final VoidCallback onTap;
   final Widget child;
   final String tooltip;

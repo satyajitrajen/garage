@@ -31,7 +31,8 @@ class _DeletionPendingScreenState extends State<DeletionPendingScreen> {
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = errorMessage(e));
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not cancel. Please try again.');
+      if (mounted)
+        setState(() => _error = 'Could not cancel. Please try again.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -77,14 +78,18 @@ class _DeletionPendingScreenState extends State<DeletionPendingScreen> {
                             height: 18,
                             width: 18,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
                         : const Text('Cancel deletion'),
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
-                  onPressed:
-                      _busy ? null : () => context.read<AuthProvider>().logout(),
+                  onPressed: _busy
+                      ? null
+                      : () => context.read<AuthProvider>().logout(),
                   child: const Text('Sign out'),
                 ),
               ],

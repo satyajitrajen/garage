@@ -43,8 +43,11 @@ class _LoginScreenState extends State<LoginScreen> {
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Sign in failed. Please try again.',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Sign in failed. Please try again.',
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -118,11 +121,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         border: const OutlineInputBorder(),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscure
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined),
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure),
+                          tooltip: _obscure ? 'Show password' : 'Hide password',
+                          icon: Icon(
+                            _obscure
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                          onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                       ),
                       validator: (v) =>
@@ -134,14 +139,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: auth.isBusy
                             ? null
                             : () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) =>
-                                          const ForgotPasswordScreen()),
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ForgotPasswordScreen(),
                                 ),
+                              ),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 8),
+                            horizontal: 4,
+                            vertical: 8,
+                          ),
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.padded,
                         ),
@@ -158,7 +165,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
                               )
                             : const Text('Sign in'),
                       ),
@@ -167,8 +176,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       children: [
                         Expanded(
-                            child: Divider(
-                                color: Theme.of(context).hintColor.withValues(alpha: 0.3))),
+                          child: Divider(
+                            color: Theme.of(
+                              context,
+                            ).hintColor.withValues(alpha: 0.3),
+                          ),
+                        ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
@@ -180,8 +193,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         Expanded(
-                            child: Divider(
-                                color: Theme.of(context).hintColor.withValues(alpha: 0.3))),
+                          child: Divider(
+                            color: Theme.of(
+                              context,
+                            ).hintColor.withValues(alpha: 0.3),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -189,15 +206,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: auth.isBusy
                           ? null
                           : () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const RegisterScreen()),
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const RegisterScreen(),
                               ),
+                            ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Theme.of(context).colorScheme.primary,
                         shape: const StadiumBorder(),
                         side: BorderSide(
-                            color: Theme.of(context).colorScheme.primary),
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                       child: const Padding(
                         padding: EdgeInsets.symmetric(vertical: 4),

@@ -50,8 +50,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await context.read<GarageProvider>().refresh();
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, errorMessage(e),
-          type: SnackBarType.error);
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     }
   }
 
@@ -69,12 +68,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(provider.profile.name,
-                maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(
+              provider.profile.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             Text(
               AppDateFormatter.formatDayDate(DateTime.now()),
               style: GoogleFonts.poppins(
-                  fontSize: AppText.label, color: palette.textMuted),
+                fontSize: AppText.label,
+                color: palette.textMuted,
+              ),
             ),
           ],
         ),
@@ -114,7 +118,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => _push(
-                          const CustomersListScreen(isSelectionMode: true)),
+                        const CustomersListScreen(isSelectionMode: true),
+                      ),
                       icon: const Icon(Icons.add_rounded, size: 18),
                       label: const Text('New job card'),
                     ),
@@ -157,14 +162,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final q = _query.toLowerCase();
     final plateQ = q.replaceAll(' ', '');
     final vehicles = provider.vehicles
-        .where((v) =>
-            v.registrationNumber.toLowerCase().replaceAll(' ', '').contains(plateQ))
+        .where(
+          (v) => v.registrationNumber
+              .toLowerCase()
+              .replaceAll(' ', '')
+              .contains(plateQ),
+        )
         .take(8)
         .toList();
     final customers = provider.customers
-        .where((c) =>
-            c.name.toLowerCase().contains(q) ||
-            c.phone.replaceAll(' ', '').contains(plateQ))
+        .where(
+          (c) =>
+              c.name.toLowerCase().contains(q) ||
+              c.phone.replaceAll(' ', '').contains(plateQ),
+        )
         .take(8)
         .toList();
     if (vehicles.isEmpty && customers.isEmpty) {
@@ -173,8 +184,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           padding: const EdgeInsets.symmetric(vertical: 32),
           child: Column(
             children: [
-              Text('No match for "$_query"',
-                  style: GoogleFonts.poppins(color: palette.textSecondary)),
+              Text(
+                'No match for "$_query"',
+                style: GoogleFonts.poppins(color: palette.textSecondary),
+              ),
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: () => _push(const CustomersListScreen()),
@@ -186,36 +199,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ];
     }
     return [
-      _Group(children: [
-        for (final v in vehicles)
-          _vehicleRow(v, provider.getCustomerById(v.customerId), palette),
-        for (final c in customers)
-          _Row(
-            title: c.name,
-            subtitle: c.phone,
-            onTap: () => _push(CustomerDetailScreen(customer: c)),
-          ),
-      ]),
+      _Group(
+        children: [
+          for (final v in vehicles)
+            _vehicleRow(v, provider.getCustomerById(v.customerId), palette),
+          for (final c in customers)
+            _Row(
+              title: c.name,
+              subtitle: c.phone,
+              onTap: () => _push(CustomerDetailScreen(customer: c)),
+            ),
+        ],
+      ),
     ];
   }
 
   Widget _vehicleRow(Vehicle v, Customer? owner, AppPalette palette) => _Row(
-        title: v.registrationNumber,
-        subtitle: [v.displayName, if (owner != null) owner.name].join(' · '),
-        onTap: owner == null
-            ? null
-            : () => _push(CustomerDetailScreen(customer: owner)),
-      );
+    title: v.registrationNumber,
+    subtitle: [v.displayName, if (owner != null) owner.name].join(' · '),
+    onTap: owner == null
+        ? null
+        : () => _push(CustomerDetailScreen(customer: owner)),
+  );
 
   Widget _workshopList(GarageProvider provider, AppPalette palette) {
     final jobs = provider.activeJobCards
-      ..sort((a, b) => a.promisedDeliveryDate.compareTo(b.promisedDeliveryDate));
+      ..sort(
+        (a, b) => a.promisedDeliveryDate.compareTo(b.promisedDeliveryDate),
+      );
     if (jobs.isEmpty) {
       return const _Empty('No vehicles in the workshop.');
     }
-    return _Group(children: [
-      for (final jc in jobs.take(5)) _jobRow(jc, provider, palette),
-    ]);
+    return _Group(
+      children: [for (final jc in jobs.take(5)) _jobRow(jc, provider, palette)],
+    );
   }
 
   Widget _jobRow(JobCard jc, GarageProvider provider, AppPalette palette) {
@@ -250,40 +267,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _billsList(GarageProvider provider, AppPalette palette) {
     final bills = provider.recentInvoices.take(4).toList();
     if (bills.isEmpty) return const _Empty('No bills yet.');
-    return _Group(children: [
-      for (final inv in bills)
-        _Row(
-          title: provider.getCustomerById(inv.customerId)?.name ??
-              inv.invoiceNumber,
-          subtitle:
-              '${inv.invoiceNumber} · ${AppDateFormatter.formatShortDate(inv.invoiceDate)}',
-          trailing: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(CurrencyFormatter.format(inv.grandTotal),
+    return _Group(
+      children: [
+        for (final inv in bills)
+          _Row(
+            title:
+                provider.getCustomerById(inv.customerId)?.name ??
+                inv.invoiceNumber,
+            subtitle:
+                '${inv.invoiceNumber} · ${AppDateFormatter.formatShortDate(inv.invoiceDate)}',
+            trailing: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  CurrencyFormatter.format(inv.grandTotal),
                   style: GoogleFonts.poppins(
-                      fontSize: AppText.body, fontWeight: FontWeight.w600)),
-              Text(
-                switch (inv.status) {
-                  InvoiceStatus.paid => 'Paid',
-                  InvoiceStatus.cancelled => 'Cancelled',
-                  _ => '${CurrencyFormatter.format(inv.balanceDue)} due',
-                },
-                style: GoogleFonts.poppins(
-                  fontSize: AppText.label,
-                  color: switch (inv.status) {
-                    InvoiceStatus.paid => palette.paid,
-                    InvoiceStatus.cancelled => palette.textMuted,
-                    _ => palette.pending,
-                  },
+                    fontSize: AppText.body,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+                Text(
+                  switch (inv.status) {
+                    InvoiceStatus.paid => 'Paid',
+                    InvoiceStatus.cancelled => 'Cancelled',
+                    _ => '${CurrencyFormatter.format(inv.balanceDue)} due',
+                  },
+                  style: GoogleFonts.poppins(
+                    fontSize: AppText.label,
+                    color: switch (inv.status) {
+                      InvoiceStatus.paid => palette.paid,
+                      InvoiceStatus.cancelled => palette.textMuted,
+                      _ => palette.pending,
+                    },
+                  ),
+                ),
+              ],
+            ),
+            onTap: () => _push(InvoicePreviewScreen(invoiceId: inv.id)),
           ),
-          onTap: () => _push(InvoicePreviewScreen(invoiceId: inv.id)),
-        ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -295,34 +319,45 @@ class _MoneyToday extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    Widget figure(String label, double value, Color color, {VoidCallback? onTap}) =>
-        Expanded(
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: GoogleFonts.poppins(
-                          fontSize: AppText.label, color: palette.textMuted)),
-                  const SizedBox(height: 2),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(CurrencyFormatter.format(value),
-                        style: GoogleFonts.poppins(
-                            fontSize: AppText.title,
-                            fontWeight: FontWeight.w600,
-                            color: color)),
-                  ),
-                ],
+    Widget figure(
+      String label,
+      double value,
+      Color color, {
+      VoidCallback? onTap,
+    }) => Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: AppText.label,
+                  color: palette.textMuted,
+                ),
               ),
-            ),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  CurrencyFormatter.format(value),
+                  style: GoogleFonts.poppins(
+                    fontSize: AppText.title,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
           ),
-        );
+        ),
+      ),
+    );
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -332,14 +367,22 @@ class _MoneyToday extends StatelessWidget {
       ),
       child: Row(
         children: [
-          figure('Collected today', provider.todayCollection, palette.textPrimary),
+          figure(
+            'Collected today',
+            provider.todayCollection,
+            palette.textPrimary,
+          ),
           figure('Spent today', provider.todayExpenses, palette.textPrimary),
           figure(
             'Due from customers',
             provider.totalPendingPayments,
-            provider.totalPendingPayments > 0 ? palette.pending : palette.textPrimary,
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const InvoicesListScreen())),
+            provider.totalPendingPayments > 0
+                ? palette.pending
+                : palette.textPrimary,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const InvoicesListScreen()),
+            ),
           ),
         ],
       ),
@@ -365,7 +408,9 @@ class _SectionTitle extends StatelessWidget {
             child: Text(
               count == null ? title : '$title ($count)',
               style: GoogleFonts.poppins(
-                  fontSize: AppText.body, fontWeight: FontWeight.w600),
+                fontSize: AppText.body,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           if (action != null)
@@ -411,7 +456,12 @@ class _Group extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row({required this.title, required this.subtitle, this.trailing, this.onTap});
+  const _Row({
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+    this.onTap,
+  });
   final String title;
   final String subtitle;
   final Widget? trailing;
@@ -431,17 +481,25 @@ class _Row extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
-                          fontSize: AppText.body, fontWeight: FontWeight.w600)),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: AppText.body,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
-                          fontSize: AppText.label, color: palette.textSecondary)),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: AppText.label,
+                      color: palette.textSecondary,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -477,8 +535,10 @@ class _Empty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Text(text,
-            style: GoogleFonts.poppins(color: context.palette.textMuted)),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    child: Text(
+      text,
+      style: GoogleFonts.poppins(color: context.palette.textMuted),
+    ),
+  );
 }

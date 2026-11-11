@@ -59,11 +59,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       );
     } catch (e) {
       if (!context.mounted) return;
-      showAppSnackBar(
-        context,
-        errorMessage(e),
-        type: SnackBarType.error,
-      );
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } finally {
       if (mounted) setState(() => _isConverting = false);
     }
@@ -92,8 +88,9 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           invoiceDate: DateTime.now(),
           // Real due date so the invoice can age and become overdue, matching
           // the direct invoice form's config-driven term.
-          dueDate:
-              DateTime.now().add(Duration(days: provider.config.invoiceDueDays)),
+          dueDate: DateTime.now().add(
+            Duration(days: provider.config.invoiceDueDays),
+          ),
         ),
       );
 
@@ -109,11 +106,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       );
     } catch (e) {
       if (!context.mounted) return;
-      showAppSnackBar(
-        context,
-        errorMessage(e),
-        type: SnackBarType.error,
-      );
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } finally {
       if (mounted) setState(() => _isConverting = false);
     }
@@ -157,11 +150,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       );
     } catch (e) {
       if (!context.mounted) return;
-      showAppSnackBar(
-        context,
-        errorMessage(e),
-        type: SnackBarType.error,
-      );
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     }
   }
 
@@ -174,7 +163,8 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
         return AlertDialog(
           title: const Text('Decline Estimate?'),
           content: Text(
-              'Mark estimate #${quote.quotationNumber} as declined by the customer? This cannot be undone.'),
+            'Mark estimate #${quote.quotationNumber} as declined by the customer? This cannot be undone.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, false),
@@ -204,19 +194,16 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       );
     } catch (e) {
       if (!context.mounted) return;
-      showAppSnackBar(
-        context,
-        errorMessage(e),
-        type: SnackBarType.error,
-      );
+      showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GarageProvider>(context);
-    final quote =
-        provider.quotations.where((q) => q.id == widget.quotationId).firstOrNull;
+    final quote = provider.quotations
+        .where((q) => q.id == widget.quotationId)
+        .firstOrNull;
 
     if (quote == null) {
       return Scaffold(
@@ -232,7 +219,10 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(quote.quotationNumber, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          quote.quotationNumber,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.share_rounded),
@@ -255,7 +245,9 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
               if (quote.status == QuotationStatus.draft) {
                 try {
                   await provider.updateQuotationStatus(
-                      quote.id, QuotationStatus.sent);
+                    quote.id,
+                    QuotationStatus.sent,
+                  );
                 } catch (_) {
                   // Status is cosmetic; the share itself already happened.
                 }
@@ -278,9 +270,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
               decoration: BoxDecoration(
                 color: palette.paperBg,
                 borderRadius: BorderRadius.circular(AppDimens.radiusCard),
-                border: Border.all(
-                  color: palette.border,
-                ),
+                border: Border.all(color: palette.border),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.04),
@@ -340,8 +330,10 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                             for (final line in [
                               if (profile.gstin.trim().isNotEmpty)
                                 'GSTIN: ${profile.gstin.trim()}',
-                              if ([profile.addressLine, profile.city]
-                                  .any((p) => p.trim().isNotEmpty))
+                              if ([
+                                profile.addressLine,
+                                profile.city,
+                              ].any((p) => p.trim().isNotEmpty))
                                 [profile.addressLine, profile.city]
                                     .map((p) => p.trim())
                                     .where((p) => p.isNotEmpty)
@@ -376,11 +368,17 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                         children: [
                           Text(
                             quote.quotationNumber,
-                            style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.subtitle,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           Text(
                             AppDateFormatter.formatDate(quote.createdAt),
-                            style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.label,
+                              color: palette.textMuted,
+                            ),
                           ),
                         ],
                       ),
@@ -397,26 +395,65 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                     children: [
                       Expanded(
                         child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('ESTIMATE FOR:', style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w600, color: palette.textMuted)),
-                          const SizedBox(height: 2),
-                          Text(customer?.name ?? '', style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
-                          Text(customer?.phone ?? '', style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary)),
-                        ],
-                      ),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ESTIMATE FOR:',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.label,
+                                fontWeight: FontWeight.w600,
+                                color: palette.textMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              customer?.name ?? '',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.subtitle,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              customer?.phone ?? '',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.caption,
+                                color: palette.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text('VEHICLE:', style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w600, color: palette.textMuted)),
-                          const SizedBox(height: 2),
-                          Text(vehicle?.registrationNumber ?? '', style: GoogleFonts.poppins(fontSize: AppText.subtitle, fontWeight: FontWeight.w700)),
-                          Text('${vehicle?.displayName ?? ""} • ${quote.kmReading} KM', textAlign: TextAlign.end, style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary)),
-                        ],
-                      ),
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'VEHICLE:',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.label,
+                                fontWeight: FontWeight.w600,
+                                color: palette.textMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              vehicle?.registrationNumber ?? '',
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.subtitle,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              '${vehicle?.displayName ?? ""} • ${quote.kmReading} KM',
+                              textAlign: TextAlign.end,
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.caption,
+                                color: palette.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -424,7 +461,10 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
 
                   // Table Header
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: palette.paperHeaderBg,
                       borderRadius: BorderRadius.circular(8),
@@ -433,19 +473,50 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                       children: [
                         Expanded(
                           flex: 3,
-                          child: Text('DESCRIPTION', style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(
+                            'DESCRIPTION',
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.label,
+                              fontWeight: FontWeight.w700,
+                              color: palette.textSecondary,
+                            ),
+                          ),
                         ),
                         Expanded(
                           flex: 1,
-                          child: Text('QTY', textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(
+                            'QTY',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.label,
+                              fontWeight: FontWeight.w700,
+                              color: palette.textSecondary,
+                            ),
+                          ),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('RATE', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(
+                            'RATE',
+                            textAlign: TextAlign.right,
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.label,
+                              fontWeight: FontWeight.w700,
+                              color: palette.textSecondary,
+                            ),
+                          ),
                         ),
                         Expanded(
                           flex: 2,
-                          child: Text('AMOUNT', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.label, fontWeight: FontWeight.w700, color: palette.textSecondary)),
+                          child: Text(
+                            'AMOUNT',
+                            textAlign: TextAlign.right,
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.label,
+                              fontWeight: FontWeight.w700,
+                              color: palette.textSecondary,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -455,7 +526,10 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                   // Line Items
                   ...quote.items.map((item) {
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
                       child: Row(
                         children: [
                           Expanded(
@@ -463,28 +537,58 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(item.name, style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600)),
+                                Text(
+                                  item.name,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: AppText.body,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                                 Text(
                                   [
-                                    item.isLabour ? 'Labour' : 'Part (${item.category.displayName})',
+                                    item.isLabour
+                                        ? 'Labour'
+                                        : 'Part (${item.category.displayName})',
                                     ?item.discountLabel,
                                   ].join(' • '),
-                                  style: GoogleFonts.poppins(fontSize: AppText.label, color: palette.textMuted),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: AppText.label,
+                                    color: palette.textMuted,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           Expanded(
                             flex: 1,
-                            child: Text(formatQuantity(item.quantity), textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: AppText.caption)),
+                            child: Text(
+                              formatQuantity(item.quantity),
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.caption,
+                              ),
+                            ),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(CurrencyFormatter.format(item.unitPrice), textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.caption)),
+                            child: Text(
+                              CurrencyFormatter.format(item.unitPrice),
+                              textAlign: TextAlign.right,
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.caption,
+                              ),
+                            ),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Text(CurrencyFormatter.format(item.taxableAmount), textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w700)),
+                            child: Text(
+                              CurrencyFormatter.format(item.taxableAmount),
+                              textAlign: TextAlign.right,
+                              style: GoogleFonts.poppins(
+                                fontSize: AppText.body,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -493,25 +597,52 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                   const Divider(height: 24),
 
                   // Summary
-                  _buildSummaryLine('Parts Subtotal', CurrencyFormatter.format(quote.partsSubtotal), palette),
-                  _buildSummaryLine('Labour Subtotal', CurrencyFormatter.format(quote.labourSubtotal), palette),
+                  _buildSummaryLine(
+                    'Parts Subtotal',
+                    CurrencyFormatter.format(quote.partsSubtotal),
+                    palette,
+                  ),
+                  _buildSummaryLine(
+                    'Labour Subtotal',
+                    CurrencyFormatter.format(quote.labourSubtotal),
+                    palette,
+                  ),
                   if (quote.overallDiscount > 0)
-                    _buildSummaryLine('Discount', '- ${CurrencyFormatter.format(quote.overallDiscount)}', palette, color: palette.paid),
+                    _buildSummaryLine(
+                      'Discount',
+                      '- ${CurrencyFormatter.format(quote.overallDiscount)}',
+                      palette,
+                      color: palette.paid,
+                    ),
                   for (final line in gstLines(quote.taxBreakdown))
-                    _buildSummaryLine('Estimated ${line.key}', CurrencyFormatter.format(line.value), palette),
+                    _buildSummaryLine(
+                      'Estimated ${line.key}',
+                      CurrencyFormatter.format(line.value),
+                      palette,
+                    ),
                   const Divider(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text('Net Estimated Total:', style: GoogleFonts.poppins(fontSize: AppText.title, fontWeight: FontWeight.w700)),
+                        child: Text(
+                          'Net Estimated Total:',
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.title,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
                           CurrencyFormatter.format(quote.grandTotal),
-                          style: GoogleFonts.poppins(fontSize: AppText.headline, fontWeight: FontWeight.w700, color: palette.primary),
+                          style: GoogleFonts.poppins(
+                            fontSize: AppText.headline,
+                            fontWeight: FontWeight.w700,
+                            color: palette.primary,
+                          ),
                         ),
                       ),
                     ],
@@ -520,19 +651,30 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
 
                   // Validity banner
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: palette.accent.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline_rounded, size: 16, color: palette.accent),
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 16,
+                          color: palette.accent,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Valid until ${AppDateFormatter.formatDate(quote.validUntil)} (${quote.validityDays} days)',
-                            style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w500, color: palette.accent),
+                            style: GoogleFonts.poppins(
+                              fontSize: AppText.caption,
+                              fontWeight: FontWeight.w500,
+                              color: palette.accent,
+                            ),
                           ),
                         ),
                       ],
@@ -630,11 +772,19 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.lock_outline_rounded, size: 16, color: palette.textMuted),
+                    Icon(
+                      Icons.lock_outline_rounded,
+                      size: 16,
+                      color: palette.textMuted,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'This estimate is ${quote.status.displayName.toLowerCase()} — no further actions',
-                      style: GoogleFonts.poppins(fontSize: AppText.caption, fontWeight: FontWeight.w600, color: palette.textMuted),
+                      style: GoogleFonts.poppins(
+                        fontSize: AppText.caption,
+                        fontWeight: FontWeight.w600,
+                        color: palette.textMuted,
+                      ),
                     ),
                   ],
                 ),
@@ -646,7 +796,12 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     );
   }
 
-  Widget _buildSummaryLine(String label, String val, AppPalette palette, {Color? color}) {
+  Widget _buildSummaryLine(
+    String label,
+    String val,
+    AppPalette palette, {
+    Color? color,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -655,11 +810,21 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.poppins(fontSize: AppText.caption, color: palette.textSecondary),
+              style: GoogleFonts.poppins(
+                fontSize: AppText.caption,
+                color: palette.textSecondary,
+              ),
             ),
           ),
           const SizedBox(width: 8),
-          Text(val, style: GoogleFonts.poppins(fontSize: AppText.body, fontWeight: FontWeight.w600, color: color ?? palette.textPrimary)),
+          Text(
+            val,
+            style: GoogleFonts.poppins(
+              fontSize: AppText.body,
+              fontWeight: FontWeight.w600,
+              color: color ?? palette.textPrimary,
+            ),
+          ),
         ],
       ),
     );

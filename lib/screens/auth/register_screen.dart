@@ -19,6 +19,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _form = GlobalKey<FormState>();
+
   /// Set by the first submit attempt; from then on fields re-validate
   /// as they are edited, so fixed errors clear immediately.
   bool _submitted = false;
@@ -56,8 +57,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       showAppSnackBar(context, errorMessage(e), type: SnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Registration failed. Please try again.',
-          type: SnackBarType.error);
+      showAppSnackBar(
+        context,
+        'Registration failed. Please try again.',
+        type: SnackBarType.error,
+      );
     }
   }
 
@@ -98,8 +102,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Text(
                       'You will be the owner with full permissions.',
                       style: GoogleFonts.poppins(
-                          fontSize: AppText.body,
-                          color: Theme.of(context).hintColor),
+                        fontSize: AppText.body,
+                        color: Theme.of(context).hintColor,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
@@ -110,9 +115,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.person_outline),
                       ),
-                      validator: (v) => (v ?? '').trim().isEmpty
-                          ? 'Name is required'
-                          : null,
+                      validator: (v) =>
+                          (v ?? '').trim().isEmpty ? 'Name is required' : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -154,16 +158,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         border: const OutlineInputBorder(),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscure
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined),
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure),
+                          tooltip: _obscure ? 'Show password' : 'Hide password',
+                          icon: Icon(
+                            _obscure
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                          onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                       ),
-                      validator: (v) => (v ?? '').length < 8
-                          ? 'Minimum 8 characters'
-                          : null,
+                      validator: (v) =>
+                          (v ?? '').length < 8 ? 'Minimum 8 characters' : null,
                     ),
                     const SizedBox(height: 20),
                     FilledButton(
@@ -175,7 +180,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
                               )
                             : const Text('Create account'),
                       ),

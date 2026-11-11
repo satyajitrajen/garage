@@ -69,17 +69,22 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Estimates', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          'Estimates',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
       ),
       // Empty list: its empty state already has the Add button.
-      floatingActionButton: provider.quotations.isEmpty ? null : PermissionGate(
-        permission: Permissions.quotationsManage,
-        child: GradientFloatingActionButton(
-        onPressed: _createNewQuotation,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Estimate'),
-      ),
-      ),
+      floatingActionButton: provider.quotations.isEmpty
+          ? null
+          : PermissionGate(
+              permission: Permissions.quotationsManage,
+              child: GradientFloatingActionButton(
+                onPressed: _createNewQuotation,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('New Estimate'),
+              ),
+            ),
       body: Column(
         children: [
           Padding(
@@ -94,7 +99,10 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
             controller: _tabController,
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: AppText.body),
+            labelStyle: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: AppText.body,
+            ),
             tabs: const [
               Tab(text: 'All Estimates'),
               Tab(text: 'Sent'),
@@ -116,7 +124,10 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
     );
   }
 
-  Widget _buildQuotationsList(GarageProvider provider, QuotationStatus? filter) {
+  Widget _buildQuotationsList(
+    GarageProvider provider,
+    QuotationStatus? filter,
+  ) {
     final filtered = provider.quotations.where((q) {
       if (filter != null && q.status != filter) return false;
 
@@ -126,8 +137,10 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
         final customer = provider.getCustomerById(q.customerId);
         final vehicle = provider.getVehicleById(q.vehicleId);
 
-        final custMatches = customer?.name.toLowerCase().contains(query) ?? false;
-        final vehMatches = vehicle?.registrationNumber.toLowerCase().contains(query) ?? false;
+        final custMatches =
+            customer?.name.toLowerCase().contains(query) ?? false;
+        final vehMatches =
+            vehicle?.registrationNumber.toLowerCase().contains(query) ?? false;
 
         return qMatches || custMatches || vehMatches;
       }
@@ -155,15 +168,21 @@ class _QuotationsListScreenState extends State<QuotationsListScreen>
         final customer = provider.getCustomerById(quote.customerId);
         final vehicle = provider.getVehicleById(quote.vehicleId);
         return ListRow(
-          overline: '${quote.quotationNumber} · ${AppDateFormatter.formatDate(quote.createdAt)}',
+          overline:
+              '${quote.quotationNumber} · ${AppDateFormatter.formatDate(quote.createdAt)}',
           title: customer?.name ?? 'Customer',
-          subtitle: [vehicle?.registrationNumber, vehicle?.displayName].whereType<String>().join(' · '),
+          subtitle: [
+            vehicle?.registrationNumber,
+            vehicle?.displayName,
+          ].whereType<String>().join(' · '),
           detail: 'Valid ${quote.validityDays} days',
           trailingTop: RowAmount(CurrencyFormatter.format(quote.grandTotal)),
           trailingBottom: StatusBadge.fromQuotationStatus(quote.status),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => QuotationDetailScreen(quotationId: quote.id)),
+            MaterialPageRoute(
+              builder: (_) => QuotationDetailScreen(quotationId: quote.id),
+            ),
           ),
         );
       },

@@ -107,7 +107,10 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Select Vehicle', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          'Select Vehicle',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
         actions: [
           TextButton.icon(
             onPressed: _openAddVehicleDialog,
@@ -161,7 +164,11 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         runSpacing: 4,
                         children: [
-                          Icon(Icons.phone_rounded, size: 14, color: palette.textMuted),
+                          Icon(
+                            Icons.phone_rounded,
+                            size: 14,
+                            color: palette.textMuted,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             widget.customer.phone,
@@ -172,7 +179,10 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                           ),
                           const SizedBox(width: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: palette.cardAlt,
                               borderRadius: BorderRadius.circular(6),
@@ -202,12 +212,18 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                 ? EmptyStateWidget(
                     icon: Icons.directions_car_filled_rounded,
                     title: 'No Vehicles Registered',
-                    description: 'This customer has no vehicles listed yet. Add a vehicle to begin maintenance or estimates.',
+                    description:
+                        'This customer has no vehicles listed yet. Add a vehicle to begin maintenance or estimates.',
                     buttonText: 'Add First Vehicle',
                     onButtonPressed: _openAddVehicleDialog,
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 84),
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      bottom: 84,
+                    ),
                     itemCount: vehicles.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
@@ -220,17 +236,25 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                           setState(() => _selectedVehicle = vehicle);
                           _proceedWithVehicle(vehicle);
                         },
-                        borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                        borderRadius: BorderRadius.circular(
+                          AppDimens.radiusTile,
+                        ),
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: palette.card,
-                            borderRadius: BorderRadius.circular(AppDimens.radiusTile),
+                            borderRadius: BorderRadius.circular(
+                              AppDimens.radiusTile,
+                            ),
                             border: Border.all(
-                              color: isSelected ? palette.primary : palette.border,
+                              color: isSelected
+                                  ? palette.primary
+                                  : palette.border,
                               width: isSelected ? 2 : 1,
                             ),
-                            boxShadow: AppDimens.cardShadow(palette.textPrimary),
+                            boxShadow: AppDimens.cardShadow(
+                              palette.textPrimary,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,50 +265,70 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                   // License Plate visual box
                                   Flexible(
                                     child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: palette.background,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: palette.primary.withOpacity(0.5), width: 1.2),
-                                    ),
-                                    // Plate scales down as a unit on narrow cards.
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      alignment: Alignment.centerLeft,
-                                      child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        // Indian flag navy band — deliberate theme-invariant literal.
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF003399),
-                                            borderRadius: BorderRadius.circular(2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: palette.background,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: palette.primary.withOpacity(
+                                            0.5,
                                           ),
-                                          child: const Text(
-                                            'IND',
-                                            style: TextStyle(color: Colors.white, fontSize: AppText.micro, fontWeight: FontWeight.bold),
-                                          ),
+                                          width: 1.2,
                                         ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          vehicle.registrationNumber,
-                                          maxLines: 1,
-                                          style: GoogleFonts.poppins(
-                                            fontSize: AppText.body,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 0.8,
-                                            color: palette.textPrimary,
-                                          ),
+                                      ),
+                                      // Plate scales down as a unit on narrow cards.
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            // Indian flag navy band — deliberate theme-invariant literal.
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 4,
+                                                    vertical: 2,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF003399),
+                                                borderRadius:
+                                                    BorderRadius.circular(2),
+                                              ),
+                                              child: const Text(
+                                                'IND',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: AppText.micro,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              vehicle.registrationNumber,
+                                              maxLines: 1,
+                                              style: GoogleFonts.poppins(
+                                                fontSize: AppText.body,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.8,
+                                                color: palette.textPrimary,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                    ),
-                                  ),
                                   ),
                                   const Spacer(),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: palette.primary.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(6),
@@ -314,7 +358,11 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 runSpacing: 4,
                                 children: [
-                                  Icon(Icons.speed_rounded, size: 15, color: palette.textMuted),
+                                  Icon(
+                                    Icons.speed_rounded,
+                                    size: 15,
+                                    color: palette.textMuted,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${vehicle.currentKm.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} KM',
@@ -326,7 +374,11 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                   ),
                                   if (vehicle.year != null) ...[
                                     const SizedBox(width: 12),
-                                    Icon(Icons.calendar_today_rounded, size: 14, color: palette.textMuted),
+                                    Icon(
+                                      Icons.calendar_today_rounded,
+                                      size: 14,
+                                      color: palette.textMuted,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${vehicle.year} Model',
@@ -338,7 +390,11 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                   ],
                                   if (vehicle.color != null) ...[
                                     const SizedBox(width: 12),
-                                    Icon(Icons.palette_outlined, size: 14, color: palette.textMuted),
+                                    Icon(
+                                      Icons.palette_outlined,
+                                      size: 14,
+                                      color: palette.textMuted,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       vehicle.color!,
@@ -378,7 +434,11 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  Icon(Icons.arrow_forward_rounded, size: 16, color: palette.primary),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 16,
+                                    color: palette.primary,
+                                  ),
                                 ],
                               ),
                             ],
