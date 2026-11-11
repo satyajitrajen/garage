@@ -14,12 +14,21 @@ import 'theme/app_theme.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/settings/deletion_pending_screen.dart';
 import 'services/push_notification_service.dart';
+import 'services/app_analytics.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Mock mode never talks to the backend, so it has no use for push.
   if (!ApiConfig.useMock) {
     await PushNotificationService.instance.initialize();
+  }
+  // First-party usage/crash analytics for the Nexory admin panel. The key is
+  // a per-app ingestion key (not a secret); override with --dart-define.
+  if (!ApiConfig.useMock) {
+    await AppAnalytics.instance.init(
+      appKey: const String.fromEnvironment('NX_APP_KEY', defaultValue: 'nxapp_f18a42ebbb54c74409b510527018014cca82b69cb6cde371'),
+      appVersion: '1.0.0+5',
+    );
   }
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -91,6 +100,7 @@ class NTGarageApp extends StatelessWidget {
         title: 'NT Garage',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        navigatorObservers: [AppAnalytics.instance.observer],
         home: const AppGate(),
       ),
     );
